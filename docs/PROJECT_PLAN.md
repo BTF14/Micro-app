@@ -1,13 +1,18 @@
-# Reconciliación vigente — PR #380 integrada y Paso 2B BCV 0027 (2026-11-18)
+# Plan vigente — Nivel 1 cerrado; Paso 3B (0027) desbloqueado — 2026-11-18
 
-- **Main vivo verificado:** `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe`, merge SHA de PR #380. PR #380 está MERGED; su HEAD de rama fue `28fb579c98078db158d5c011039b7d985d8b0cc0`. Los checks de PR #380 pertenecen a ese HEAD de rama, no se heredan como checks del merge SHA.
-- **Paso 2B:** especificación documental `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md` en preparación/revisión sobre una rama desde el main indicado. No se implementa migración ni lógica 0027 en este paso.
-- **Carril A:** PR #380 integrada. No reabrir ni replicar su código en este frente.
-- **AC-6:** sigue ABIERTO; `FX_CONTINGENCY_ENABLED` apagado/no configurado. **Freeze v1.1** vigente. **Issue #53 OPEN/P0**. **PRODUCTION: NOT READY**.
-- El ADR-20261117 autoriza solo esta especificación. No autoriza migración 0027, implementación API, Neon, despliegue, activación de contingencia ni cierre de gates.
-- La antigua regla manual de calendario SUDEBAN queda supersedida para elegibilidad de checkout; el historial del documento de calendario se conserva.
+- **Base exacta auditada:** main = 25dbf6e40a99e011c951ab55338de6d4b98332ad, post-merge PR #381.
+- **PR #382:** [reconciliación Nivel 1](https://github.com/BTF14/Micro-app/pull/382), OPEN/Draft; mantener Draft, sin merge ni auto-merge hasta autorización separada.
+- **Nivel 1: CERRADO / RECONCILIADO para desbloquear Paso 3B.** Evidencia: protección de main + seis checks requeridos; backup cifrado diario + restore real cifrado hoy; smoke poblado PostgreSQL 18 efímero 0001–0026 con recibos 0025 y tablas 0026; canary de alerta con correo y ACK explícito del propietario; CORS/bundle live hoy sobre main exacto; confirmación del propietario de planes Free $0.
+- **Restore real post-0026:** Neon main permanece en 0025 por regla de AGENTS.md; ejecutar restore remoto real de 0026 solo cuando el propietario autorice explícitamente migrar 0026+0027 a Neon.
+- **GHSA-fc5q-39xc-vjpf:** riesgo HIGH de picomatch@4.0.7 en dependencias dev/build (vite/tinyglobby/fdir/vitest), pnpm audit patched <0.0.0; fuera del runtime Worker y bundle Pages. Mantener visible en daily-dependency-watch.yml; no bloquea Paso 3B, remediar cuando exista versión compatible.
+- **Pendientes globales de producción:** RTO operacional completo y RPO real de incidente no certificados; AC-6 ABIERTO y FX_CONTINGENCY_ENABLED apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- **Coste:** propietario confirma GitHub/Cloudflare/Neon Free ($0), sin tarjeta, R2 ni billing activo. La IA no inspeccionó los paneles privados de billing/consumo vía API.
+- **Siguiente:** iniciar Paso 3B en rama nueva desde main exacto y desarrollar migración aditiva 0027 conforme a ADR-20261117. No tocar Neon main sin autorización específica. Esta PR de reconciliación no implementa 0027.
 
 ---
+
+---
+
 
 # Plan vigente — reconciliación post-PR #377 y decisión BCV no hábil (2026-11-17)
 

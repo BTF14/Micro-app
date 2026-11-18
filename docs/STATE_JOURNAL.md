@@ -1,3 +1,36 @@
+## Turno 59 — cierre/reconciliación Nivel 1 y desbloqueo Paso 3B (2026-11-18)
+
+- Base auditada: main = 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381). PR #382 sigue OPEN/Draft, sin merge ni auto-merge.
+- Protección: endpoint de rama confirma protected=true y seis checks obligatorios (Chromium authentication smoke tests, JavaScript and TypeScript static analysis, Scan tracked files and reachable Git history, Trivy filesystem and configuration scan, postgres-migration, verify). El 403 de /branches/main/protection es Resource not accessible by integration, limitación de permisos del token, no ausencia de protección.
+- Backup cifrado diario [#44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS. Restore real cifrado [#44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS en PostgreSQL 18 efímero sobre backup backup-2026-11-18T16-03-47Z.dump.age, perfil 0025/25 migraciones/29 tablas; ventana técnica 1.996ms, descarga+SHA 844ms, AGE 4ms, pg_restore --list 6ms, restore/assertions/logins 1102ms, freshness proxy 7706s. No es RTO/RPO operacional.
+- Fixture ampliada en scripts/backup_restore_fixture_bcv.sql y scripts/test_backup_restore_schema_bcv.sh: recibo 0025 con línea y movimiento purchase_receipt; tablas 0026 pobladas con bytes KDF sintéticos, delegación y autorización revocadas, evento append-only y observación BCV. Assertions pre/post restore comprueban valores, relaciones, conteos, proyección y manifiestos. Sin autorización activa, sin venta manual contingency, evento registra commercial_enabled=false.
+- Smoke [ #44371526287](https://github.com/BTF14/Micro-app/actions/runs/44371526287) SUCCESS en HEAD bf12806016aefbe539e06b00ed2804e49ba2e449: 26 migraciones, perfil bcv-0026, 34 objetos, logins/ACL/search_path, manifiestos source/restored idénticos, round-trip 5s y DR drill 5.098s. Los tres jobs del workflow SUCCESS.
+- Canary [#44366308621](https://github.com/BTF14/Micro-app/actions/runs/44366308621) falló intencionalmente en ~3s; log confirma ausencia de side effects. Propietario confirma correo en buzón personal, captura y ACK explícito.
+- Bundle Pages [#44367872780](https://github.com/BTF14/Micro-app/actions/runs/44367872780) SUCCESS; API base /api. CORS Worker [#44367813536](https://github.com/BTF14/Micro-app/actions/runs/44367813536) intento #2 SUCCESS; origen Pages permitido y attacker.example sin ACAO.
+- Coste: propietario confirma cuentas GitHub/Cloudflare/Neon Free $0, sin tarjeta/R2/billing activo. IA no inspeccionó por API paneles privados de billing/consumo.
+- GHSA-fc5q-39xc-vjpf en picomatch@4.0.7 queda como riesgo HIGH de tooling dev/build, fuera de runtime Worker y bundle Pages; patched versions <0.0.0. Monitorear daily-dependency-watch, no bloquea 0027, remediar cuando haya versión compatible. No se modificó lockfile.
+- Neon main permanece intencionalmente en 0025 por AGENTS.md; restore real post-0026 cuando el propietario autorice migrar 0026+0027 a Neon.
+- Resultado: Nivel 1 CERRADO/RECONCILIADO para desbloquear Paso 3B (0027). AC-6 sigue ABIERTO y flag apagado; freeze v1.1; Issue #53 OPEN/P0; RPO/RTO operativos completos sin certificar; PRODUCTION NOT READY.
+- No se tocaron apps/**, migraciones SQL, Neon, secretos, Cloudflare manual, datos reales, billing ni despliegues. AGENTS.md intacto.
+
+---
+
+## Turno 58 — Paso 3A: auditoría viva y reconciliación parcial de Nivel 1 (2026-11-18)
+
+- Base exacta consultada: `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad`, post-merge PR #381. Rama documental `chore/level1-gate-evidence-20261118`.
+- GitHub informa `protected=true` y seis checks requeridos. El endpoint detallado de branch protection devolvió 403; no se arrastran los parámetros históricos de enforcement/reviews/force-push.
+- Backup natural #44342447079 SUCCESS (18 nov); artefacto `backup-2026-11-18T16-03-47Z.dump.age`. El anterior #44127105127 generó `backup-2026-11-17T16-33-55Z.dump.age`. Último intervalo 23h29m52s; máximo entre snapshots exitosos observados 50h08m33s (15→17 nov) por run del 16 nov cancelado #43909110314.
+- Restore remoto #43767762632 SUCCESS, perfil `bcv-0025` (25 migraciones/29 tablas), 61s workflow; recovery window técnico 1.753s, DB restore/assertions 1.021s. No alcanza 0026.
+- Smoke #44191419753 SUCCESS en PR branch `feat/fx-contingency-pr1-20261117`, perfil `bcv-0026` (26 migraciones/34 objetos), DR sintético 3.479s y workflow 129s. La fixture poblada no inserta filas en recibos 0025 ni las cinco tablas 0026; el esquema/assertions pasan, pero no hay round-trip de datos sintéticos de esas tablas.
+- Daily dependency watch #44355990636 FAILURE: instalación frozen OK; `pnpm audit --audit-level high` encontró GHSA-fc5q-39xc-vjpf HIGH en `picomatch@4.0.7` vía Vitest. No se tocaron dependencias/lockfile.
+- CORS #43938901337 y bundle #43938418766 SUCCESS el 16 nov, SHA anterior al HEAD actual. Código de cabeceras existe, pero no se verificó HTTP live de cada header ni run exacto-current-SHA.
+- Canary #43508458992 falló intencionalmente el 13 nov; no hay ACK verificable del propietario. El mecanismo $0 es Actions notification + Issue P0 de backup; no hay canal externo de correo/Slack/webhook configurado en los workflows revisados.
+- Coste total USD 0 no certificado: runners estándar del repo público son gratuitos según documentación GitHub; planes/uso/billing de Cloudflare, Neon y repo privado de backups no se consultaron.
+- AGENTS.md fue auditado y mantiene correctamente el gate Nivel 1. No se modificaron app, SQL/migraciones, workflows, dependencias, Neon, secretos, Cloudflare manual, datos reales, billing ni despliegue.
+- AC-6 permanece ABIERTO y `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1, Issue #53 OPEN/P0 y PRODUCTION NOT READY permanecen intactos. Paso 3B/0027 no autorizado por este checkpoint; sigue bloqueado hasta cierre Nivel 1 y acciones/ACK del propietario.
+
+---
+
 ## Turno 57 — sincronización documental de PR #378 tras merge de PR #379 (2026-11-18)
 
 - `main` verificado en `89a478c0315fa9d3b51062858198d357b0738084`, merge commit de PR #379 (`fix/sales-panel-test-deterministic-clock`). PR #377 permanece MERGED en `25e37dc5dcfb18349a6b7f384d109e493a581c3d`; PR #379 MERGED en `89a478c0315fa9d3b51062858198d357b0738084`.

@@ -539,7 +539,7 @@ SELECT 'fixture_tenant_b_graph|' || count(*)::text
    AND bm.user_id='15151515-1515-4515-8515-151515151515'
    AND w.id='19191919-1919-4919-8919-191919191919'
    AND p.id='18181818-1818-4818-8818-181818181818'
-   AND ib.on_hand_quantity=5.000 AND ib.balance_version=1;
+   AND ib.on_hand_quantity=8.000 AND ib.balance_version=2;
 SELECT 'fixture_cross_tenant_links|' || count(*)::text
   FROM public.inventory_balances ib
   JOIN public.warehouses w ON w.id=ib.warehouse_id
@@ -665,11 +665,11 @@ SELECT
   AND (SELECT count(*) = 3 FROM public.inventory_counts WHERE id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020') AND status='confirmed')
   AND (SELECT count(*) = 3 FROM public.inventory_count_lines WHERE count_id IN ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','cccccccc-cccc-4ccc-8ccc-cccccccccccc','20202020-2020-4020-8020-202020202020'))
   AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='11111111-1111-4111-8111-111111111111' AND warehouse_id='99999999-9999-4999-8999-999999999999' AND product_id='77777777-7777-4777-8777-777777777777' AND on_hand_quantity=9.000 AND balance_version=3)
-  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='14141414-1414-4414-8414-141414141414' AND warehouse_id='19191919-1919-4919-8919-191919191919' AND product_id='18181818-1818-4818-8818-181818181818' AND on_hand_quantity=5.000 AND balance_version=1)
-  AND (SELECT count(*) = 4 FROM public.warehouse_inventory_movements WHERE organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414') AND product_id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818'))
+  AND (SELECT count(*) = 1 FROM public.inventory_balances WHERE organization_id='14141414-1414-4414-8414-141414141414' AND warehouse_id='19191919-1919-4919-8919-191919191919' AND product_id='18181818-1818-4818-8818-181818181818' AND on_hand_quantity=8.000 AND balance_version=2)
+  AND (SELECT count(*) = 5 FROM public.warehouse_inventory_movements WHERE organization_id IN ('11111111-1111-4111-8111-111111111111','14141414-1414-4414-8414-141414141414') AND product_id IN ('77777777-7777-4777-8777-777777777777','18181818-1818-4818-8818-181818181818'))
   AND (SELECT pg_catalog.to_regclass('public.inventory_balance_ledger_intents') IS NULL
           AND pg_catalog.to_regprocedure('public.project_inventory_movement_to_balance()') IS NOT NULL)
-  AND (SELECT count(*) = 1 FROM public.organizations o JOIN public.branches b ON b.organization_id=o.id JOIN public.branch_memberships bm ON bm.organization_id=o.id AND bm.branch_id=b.id JOIN public.warehouses w ON w.organization_id=o.id AND w.branch_id=b.id JOIN public.products p ON p.organization_id=o.id JOIN public.inventory_balances ib ON ib.organization_id=o.id AND ib.warehouse_id=w.id AND ib.product_id=p.id WHERE o.id='14141414-1414-4414-8414-141414141414' AND b.id='16161616-1616-4616-8616-161616161616' AND bm.user_id='15151515-1515-4515-8515-151515151515' AND w.id='19191919-1919-4919-8919-191919191919' AND p.id='18181818-1818-4818-8818-181818181818' AND ib.on_hand_quantity=5.000 AND ib.balance_version=1)
+  AND (SELECT count(*) = 1 FROM public.organizations o JOIN public.branches b ON b.organization_id=o.id JOIN public.branch_memberships bm ON bm.organization_id=o.id AND bm.branch_id=b.id JOIN public.warehouses w ON w.organization_id=o.id AND w.branch_id=b.id JOIN public.products p ON p.organization_id=o.id JOIN public.inventory_balances ib ON ib.organization_id=o.id AND ib.warehouse_id=w.id AND ib.product_id=p.id WHERE o.id='14141414-1414-4414-8414-141414141414' AND b.id='16161616-1616-4616-8616-161616161616' AND bm.user_id='15151515-1515-4515-8515-151515151515' AND w.id='19191919-1919-4919-8919-191919191919' AND p.id='18181818-1818-4818-8818-181818181818' AND ib.on_hand_quantity=8.000 AND ib.balance_version=2)
   AND (SELECT count(*) = 0 FROM public.inventory_balances ib JOIN public.warehouses w ON w.id=ib.warehouse_id JOIN public.products p ON p.id=ib.product_id WHERE ib.organization_id<>w.organization_id OR ib.organization_id<>p.organization_id OR ib.branch_id<>w.branch_id)
   AND (SELECT count(*) = 1 FROM public.auth_bootstrap WHERE id=true AND consumed_at IS NOT NULL AND created_organization_id='11111111-1111-4111-8111-111111111111')
   AND (SELECT count(*) = 1 FROM public.exchange_rates
@@ -722,10 +722,82 @@ SELECT
        WHERE s.id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
          AND s.total_usd=(SELECT sum(si.line_total_usd) FROM public.sale_items si WHERE si.sale_id=s.id)
          AND s.total_usd=(SELECT sum(pay.usd_equivalent_snapshot) FROM public.payments pay WHERE pay.sale_id=s.id))
+  AND (SELECT count(*) = 1 FROM public.inventory_receipts
+       WHERE organization_id='14141414-1414-4414-8414-141414141414'
+         AND branch_id='16161616-1616-4616-8616-161616161616'
+         AND warehouse_id='19191919-1919-4919-8919-191919191919'
+         AND reason='Synthetic restore receipt 0025'
+         AND idempotency_key='synthetic-restore-receipt-0025'
+         AND request_hash=repeat('f',64)
+         AND created_by='15151515-1515-4515-8515-151515151515')
+  AND (SELECT count(*) = 1 FROM public.inventory_receipt_lines
+       WHERE organization_id='14141414-1414-4414-8414-141414141414'
+         AND receipt_id=(SELECT id FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025')
+         AND product_id='18181818-1818-4818-8818-181818181818'
+         AND quantity=3.000 AND unit_cost_usd=2.0000)
+  AND (SELECT count(*) = 1 FROM public.warehouse_inventory_movements
+       WHERE organization_id='14141414-1414-4414-8414-141414141414'
+         AND movement_type='purchase_receipt' AND quantity_delta=3.000
+         AND reference_type='inventory_receipt'
+         AND reference_id=(SELECT id FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025')
+         AND product_id='18181818-1818-4818-8818-181818181818')
+  AND (SELECT count(*) = 1 FROM public.fx_user_pin_credentials
+       WHERE organization_id='11111111-1111-4111-8111-111111111111'
+         AND user_id='22222222-2222-4222-8222-222222222222'
+         AND kdf_version='pbkdf2-sha256-v1' AND iterations=100000
+         AND salt=decode(repeat('5a',16),'hex')
+         AND pin_hash=decode(repeat('a5',32),'hex'))
+  AND (SELECT count(*) = 1 FROM public.fx_contingency_delegations
+       WHERE id='24242424-2424-4424-8424-242424242424'
+         AND organization_id='11111111-1111-4111-8111-111111111111'
+         AND branch_id='33333333-3333-4333-8333-333333333333'
+         AND user_id='22222222-2222-4222-8222-222222222222'
+         AND granted_by_user_id='22222222-2222-4222-8222-222222222222'
+         AND status='revoked' AND revoked_at IS NOT NULL)
+  AND (SELECT count(*) = 1 FROM public.fx_contingency_authorizations
+       WHERE id='25252525-2525-4525-8525-252525252525'
+         AND organization_id='11111111-1111-4111-8111-111111111111'
+         AND branch_id='33333333-3333-4333-8333-333333333333'
+         AND rate=250.12345600 AND reference_rate_value=250.12345600
+         AND reference_exchange_rate_id='88888888-8888-4888-8888-888888888888'
+         AND deviation_bps=0 AND authorized_by_role='owner'
+         AND status='revoked' AND revoked_at IS NOT NULL)
+  AND (SELECT count(*) = 1 FROM public.fx_contingency_events
+       WHERE organization_id='11111111-1111-4111-8111-111111111111'
+         AND branch_id='33333333-3333-4333-8333-333333333333'
+         AND authorization_id='25252525-2525-4525-8525-252525252525'
+         AND event_type='revoked' AND actor_user_id='22222222-2222-4222-8222-222222222222'
+         AND actor_role='owner' AND details->>'commercial_enabled'='false')
+  AND (SELECT count(*) = 1 FROM public.bcv_sync_success_observations
+       WHERE attempt_id='88888888-8888-4888-8888-888888888887'
+         AND last_outcome='inserted'
+         AND last_effective_date=(now() AT TIME ZONE 'America/Caracas')::date
+         AND exchange_rate_id='88888888-8888-4888-8888-888888888888'
+         AND rate_snapshot=250.123456 AND validation_status='valid')
+  AND (SELECT count(*) = 0 FROM public.fx_contingency_authorizations WHERE status='active')
+  AND (SELECT count(*) = 0 FROM public.sales WHERE fx_source='manual_contingency')
 "
 }
 source_fixture_ok="$(fixture_assertions "$schema_source_url")"
 restored_fixture_ok="$(fixture_assertions "$schema_restore_url")"
+if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
+  for target in "$schema_source_url" "$schema_restore_url"; do
+    echo "== Diagnostic populated 0025/0026 fixture assertions for $target"
+    psql "$target" -X -v ON_ERROR_STOP=1 -Atqc "
+      SELECT 'receipt|' || (SELECT count(*) FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025')
+        || '|receipt_lines|' || (SELECT count(*) FROM public.inventory_receipt_lines WHERE receipt_id=(SELECT id FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025'))
+        || '|receipt_movement|' || (SELECT count(*) FROM public.warehouse_inventory_movements WHERE movement_type='purchase_receipt' AND reference_type='inventory_receipt')
+        || '|tenant_b_balance|' || COALESCE((SELECT on_hand_quantity::text || ':' || balance_version::text FROM public.inventory_balances WHERE organization_id='14141414-1414-4414-8414-141414141414' AND warehouse_id='19191919-1919-4919-8919-191919191919' AND product_id='18181818-1818-4818-8818-181818181818'),'missing')
+        || '|pin|' || (SELECT count(*) FROM public.fx_user_pin_credentials WHERE user_id='22222222-2222-4222-8222-222222222222')
+        || '|delegation|' || (SELECT count(*) FROM public.fx_contingency_delegations WHERE id='24242424-2424-4424-8424-242424242424')
+        || '|authorization|' || (SELECT count(*) FROM public.fx_contingency_authorizations WHERE id='25252525-2525-4525-8525-252525252525')
+        || '|event|' || (SELECT count(*) FROM public.fx_contingency_events WHERE authorization_id='25252525-2525-4525-8525-252525252525')
+        || '|observation|' || (SELECT count(*) FROM public.bcv_sync_success_observations WHERE attempt_id='88888888-8888-4888-8888-888888888887')
+        || '|active_authorizations|' || (SELECT count(*) FROM public.fx_contingency_authorizations WHERE status='active')
+        || '|manual_sales|' || (SELECT count(*) FROM public.sales WHERE fx_source='manual_contingency');
+    "
+  done
+fi
 if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
   echo "Synthetic business graph assertions failed before or after restore." >&2
   exit 1
@@ -744,5 +816,7 @@ restored_ledger_ok="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SE
 echo "PASS: all $expected_migrations numbered migrations applied through scripts/db/migrate.sh."
 echo "PASS: encrypted restore preserved schema, ownership, ACLs, RLS/policies, role contract and effective search_path."
 echo "PASS: populated PR #287 BCV/checkout and projection-ledger graph and cross-table relationships survived restore."
+echo "PASS: populated 0025 inventory receipts/lines/purchase movements survived restore with quantity, cost and ledger projection assertions."
+echo "PASS: populated 0026 PIN verifier, revoked delegation/authorization, append-only event and BCV success observation survived restore; no active authorization or manual-contingency sale exists."
 echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts preserved their schema while all synthetic source rows were excluded from restore."
 echo "Schema/data round-trip elapsed seconds: $((SECONDS - started_at))."

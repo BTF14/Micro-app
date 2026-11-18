@@ -1,13 +1,28 @@
-# Handoff vigente — Paso 2B especificación BCV 0027 (2026-11-18)
+# Handoff vigente — Nivel 1 cerrado; Paso 3B (0027) desbloqueado — 2026-11-18
 
-- Rama de trabajo: `docs/spec-0027-bcv-nonbusiness-days`; base exacta: `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe` (merge PR #380).
-- Documento principal: `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md`. Revisar prioridades 1–3, sincronización `bcv_sync_state`, snapshot `operation_date` + `exchange_rate_effective_date`, guard SQL aditivo y matriz PostgreSQL.
-- Documentos reconciliados: `docs/sdd/BANKING_CALENDAR_VERSIONING.md`, `docs/sdd/SALES_CHECKOUT_MODEL.md`, `docs/PROJECT_PLAN.md`, `docs/CURRENT_STATE.md`, `docs/STATE_JOURNAL.md`.
-- Este trabajo especifica; no implementa 0027. No modificar apps, SQL, workflows ni dependencias. No tocar Neon/Cloudflare/secretos/datos reales.
-- AC-6 abierto, `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
-- Antes de cualquier siguiente acción, verificar el HEAD vivo de esta rama/PR y checks del HEAD exacto. PR debe permanecer Draft; no merge/auto-merge.
+- **Base auditada:** main = 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381).
+- **PR documental:** [#382](https://github.com/BTF14/Micro-app/pull/382), rama chore/level1-gate-evidence-20261118, OPEN / Draft; no merge ni auto-merge.
+- **Estado de Nivel 1:** CERRADO / RECONCILIADO para desbloquear Paso 3B (0027), según docs/SECURITY_ROADMAP.md y las evidencias enlazadas.
+- **Protección main:** protected=true, seis checks obligatorios confirmados. El endpoint detallado devolvió 403 Resource not accessible by integration por permisos del token; no es ausencia de protección.
+- **Backup/restore:** backup cifrado [#44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS. Restore real cifrado hoy [#44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS en PostgreSQL 18 efímero, perfil 0025/25 migraciones/29 tablas; 1.996ms ventana técnica, freshness proxy 7.706s. Smoke [ #44371526287](https://github.com/BTF14/Micro-app/actions/runs/44371526287) SUCCESS en HEAD bf12806016aefbe539e06b00ed2804e49ba2e449, perfil 0026/26 migraciones/34 objetos; datos sintéticos poblados 0025/0026 con manifiestos idénticos; round-trip 5s y DR 5.098s.
+- **Alertas:** canary [#44366308621](https://github.com/BTF14/Micro-app/actions/runs/44366308621) fallo controlado deliberado; el propietario confirma correo recibido con captura y ACK explícito.
+- **CORS/bundle:** bundle [#44367872780](https://github.com/BTF14/Micro-app/actions/runs/44367872780) SUCCESS; CORS [#44367813536](https://github.com/BTF14/Micro-app/actions/runs/44367813536) intento #2 SUCCESS; permitido https://micro-app-63i.pages.dev, atacante sin ACAO.
+- **Coste:** propietario confirma GitHub/Cloudflare/Neon Free ($0), sin tarjeta, R2 ni billing activo. La IA no inspeccionó paneles privados de billing/consumo vía API.
+- **GHSA:** GHSA-fc5q-39xc-vjpf HIGH en picomatch@4.0.7, tooling dev/build únicamente; pnpm audit informa <0.0.0 (sin parche disponible). No entra en runtime Worker ni bundle Pages; monitorear daily-dependency-watch.yml, no bloquea 0027, remediar al existir versión compatible.
+- **Restore real 0026:** Neon main permanece intencionalmente en 0025 por AGENTS.md. Restore real post-0026 solo después de autorización explícita para migrar 0026+0027 a Neon.
+- **Invariantes:** AC-6 ABIERTO; FX_CONTINGENCY_ENABLED apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; RPO/RTO operativos completos sin certificar; PRODUCTION NOT READY.
+- **AGENTS.md:** auditado y sin modificación. Paso 3B desbloqueado; esta PR solo reconcilia y fortalece fixture de pruebas. No se cambió apps/**, SQL/migraciones, Neon, secretos, Cloudflare manual, datos reales, billing o despliegues.
+
+## Siguiente paso autorizado
+Iniciar Paso 3B para implementar la migración aditiva 0027 en una rama nueva desde el main exacto y seguir ADR-20261117, sin modificar Neon main hasta autorización explícita. Mantener todos los gates globales de producción y no tocar Issue #53 ni AC-6.
+
+## Límites preservados
+PR #382 sigue Draft y sin merge/auto-merge. No cambiar AC-6, freeze v1.1, Issue #53, Neon main, secretos, Cloudflare manual, datos reales, billing ni despliegues.
 
 ---
+
+---
+
 
 # Handoff vigente — Paso 1 docs/tooling y spec BCV 0027 pendiente (2026-11-17)
 

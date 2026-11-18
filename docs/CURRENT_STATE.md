@@ -1,13 +1,21 @@
-# Corte vigente — post-merge PR #380 / especificación 0027 (2026-11-18)
+# Corte vigente — Nivel 1 cerrado/reconciliado; Paso 3B desbloqueado (2026-11-18)
 
-- **Main verificado:** `7eebc7fc8d155c275c43859fb66fdeb0f8bd46fe`, merge commit de PR #380. PR #380 MERGED; HEAD de su rama `28fb579c98078db158d5c011039b7d985d8b0cc0`.
-- **Paso 2B:** especificación técnica aditiva 0027 documentada en `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md`; no implica que exista migración 0027 ni implementación en API/UI. Rama documental `docs/spec-0027-bcv-nonbusiness-days` parte del SHA de main anterior.
-- **Selección aprobada:** prioridad fila oficial válida exacta de hoy; sin ella, sábado/domingo menor fecha futura oficial válida en `(today,today+5]` con sync sano; lunes-viernes menor fecha futura dentro de la misma ventana solo con sync exitoso del día Caracas. Cualquier falta de evidencia => 409 `BCV_RATE_NOT_CURRENT`. No calendario manual.
-- **AC-6 ABIERTO**; `FX_CONTINGENCY_ENABLED` apagado/no configurado. **Freeze v1.1** vigente. **Issue #53 OPEN/P0**. **PRODUCTION: NOT READY**.
-- **0022/0026 intactas:** no ampliar grants de `microapp_runtime` ni `microapp_bcv_sync`; preservar integridad de ventas/contingencia y guards append-only. La futura 0027 debe ser aditiva.
-- **Límites de este paso:** docs/** únicamente; 0 apps/**, 0 SQL, 0 workflows, 0 dependencias; no Neon, Cloudflare manual, secretos, datos reales, billing, despliegue, merge ni auto-merge.
+- **Main exacto auditado:** 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381). PR documental [#382](https://github.com/BTF14/Micro-app/pull/382) permanece OPEN/Draft, sin merge ni auto-merge.
+- **Nivel 1: CERRADO / RECONCILIADO para desbloquear Paso 3B (0027).** Main protegido (protected=true) con seis checks requeridos; 403 del endpoint detallado es permiso insuficiente del token de integración, no ausencia de protección.
+- **Backup/DR:** backup diario cifrado [#44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS; restore real cifrado de hoy [#44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS, perfil 0025/25 migraciones/29 tablas, 1.996ms ventana técnica y freshness proxy 7.706s. Smoke sintético [ #44371526287](https://github.com/BTF14/Micro-app/actions/runs/44371526287) SUCCESS, perfil 0026/26 migraciones/34 objetos, fixture poblada 0025/0026, manifiestos source/restored iguales, round-trip 5s y DR drill 5.098s.
+- **Alertas:** canary [#44366308621](https://github.com/BTF14/Micro-app/actions/runs/44366308621) falló de forma controlada; propietario confirma correo recibido con captura y ACK explícito.
+- **CORS/bundle:** [bundle #44367872780](https://github.com/BTF14/Micro-app/actions/runs/44367872780) y [CORS #44367813536](https://github.com/BTF14/Micro-app/actions/runs/44367813536) SUCCESS hoy sobre main exacto; Pages usa /api, CORS permite origen Pages y no emite ACAO para attacker.example.
+- **Coste:** propietario confirma cuentas GitHub, Cloudflare y Neon Free ($0), sin tarjeta, R2 ni billing activo. La IA no inspeccionó paneles privados de billing/consumo vía API.
+- **GHSA-fc5q-39xc-vjpf:** picomatch@4.0.7 HIGH en tooling dev/build (vite/tinyglobby/fdir/vitest), patched versions <0.0.0; no forma parte del runtime Worker ni bundle Pages. Monitoreado por daily dependency watch; no bloquea 0027. Remediar al existir versión compatible.
+- **Neon:** main sigue intencionalmente en 0025. Restore real post-0026 se hará cuando el propietario autorice migrar 0026+0027 a Neon.
+- **Paso 3B:** DESBLOQUEADO para implementación aditiva 0027, en rama separada desde main; esta actualización no implementa 0027 ni modifica SQL.
+- **Gates globales intactos:** AC-6 ABIERTO y FX_CONTINGENCY_ENABLED apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; RPO/RTO operativos completos no certificados; **PRODUCTION: NOT READY**.
+- **Límites:** no se tocó apps/**, migraciones SQL, Neon, secretos, Cloudflare manual, datos reales, billing ni despliegue. AGENTS.md sigue intacto.
 
 ---
+
+---
+
 
 # Corte vigente — post-merge PR #377 y roadmap BCV no hábil (2026-11-17)
 

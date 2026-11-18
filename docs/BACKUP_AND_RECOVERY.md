@@ -1,3 +1,33 @@
+## Turno 59 — restore real cifrado de hoy y smoke poblado 0025/0026 (2026-11-18)
+
+- Base de referencia: main = 25dbf6e40a99e011c951ab55338de6d4b98332ad; Neon main permanece en 0025. No se ejecutó DDL/DML remoto ni se conectó a Neon en este turno.
+- Backup natural [run 44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS; artefacto cifrado backup-2026-11-18T16-03-47Z.dump.age.
+- Restore real cifrado [run 44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS sobre el artefacto anterior, perfil bcv-0025, 25 migraciones/29 tablas públicas. Ventana técnica 1.996ms; descarga+SHA-256 844ms; AGE 4ms; pg_restore --list 6ms; restore+assertions+logins 1102ms. Freshness proxy 7706s. El run no restaura 0026 porque Neon main sigue en 0025.
+- Smoke [run 44370849960](https://github.com/BTF14/Micro-app/actions/runs/44371526287) SUCCESS en PostgreSQL 18 efímero, HEAD bf12806016aefbe539e06b00ed2804e49ba2e449, perfil bcv-0026, 26 migraciones, 34 objetos/tablas requeridos. Manifiestos source/restored idénticos; restore round-trip 5s; DR drill 5.098s. Los tres jobs del workflow SUCCESS.
+- Fixture 0025: recibo sintético creado por create_inventory_receipt(), línea de cantidad 3/coste 2, movimiento purchase_receipt asociado y proyección de balance Tenant B 8.000/version 2. Assertions comprueban receipt header, line, movement, quantity, cost, FK scope y ledger balance.
+- Fixture 0026: PIN credential sintética (salt/hash bytes inventados, nunca PIN); delegación revocada; autorización revocada; evento append-only con commercial_enabled=false; observación BCV generada por trigger de bcv_sync_state. Assertions post-restore validan valores, relaciones, KDF params, event type/actor, observation/effective date y ausencia de auth activa o venta manual contingency.
+- Las tres tablas ephemeral auth siguen vacías en destino; roles/ACL/ownership/RLS/search_path y logins runtime/producer se validan.
+- RPO real de incidente no medido. 7706s es solo freshness proxy del artefacto al inicio del restore. RTO operacional completo (aprovisionamiento, aplicación, traffic switch y aceptación humana) no medido; 4.796s es DR drill sintético, no servicio productivo.
+- Restore remoto real post-0026 se ejecutará cuando el propietario autorice explícitamente migrar 0026+0027 a Neon. Nunca usar Neon main como entorno de prueba.
+
+---
+
+## Turno 58 — evidencia viva de backup/restore y límites (2026-11-18)
+
+- Base de revisión: `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad`. No se conectó Neon ni se leyeron secretos.
+- Último backup natural: [run 44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079), 18 nov, SUCCESS, SHA de ejecución `ae0db833bc74263a5e1f93a9eb131e1fd2793b76`, workflow 1m56s. Artefacto `backup-2026-11-18T16-03-47Z.dump.age`, checksum/readback `OK`. Anterior [44127105127](https://github.com/BTF14/Micro-app/actions/runs/44127105127) SUCCESS, artefacto `backup-2026-11-17T16-33-55Z.dump.age`.
+- Intervalo observado entre los dos últimos artefactos: **23h29m52s**. Máximo entre snapshots exitosos revisados del 10→18 nov: **50h08m33s**, desde 15 nov 14:25:22Z a 17 nov 16:33:55Z. El schedule del 16 nov [43909110314](https://github.com/BTF14/Micro-app/actions/runs/43909110314) fue CANCELLED; el del 11 nov [43041961402](https://github.com/BTF14/Micro-app/actions/runs/43041961402) fue FAILURE. Estos intervalos son cadencia de artefactos, no RPO operacional de incidente.
+- El workflow valida el principal esperado `microapp_backup`; el diagnóstico emite booleanos sin DSN/usuario/secretos. El último log accesible no incluye los valores del step summary; esta pasada no certifica el principal efectivo de la corrida #44342447079. El último registro histórico explícito de los seis booleanos está en el bloque Turno 37 y run #43447849855 (13 nov); no se extrapola como verificación actual.
+- Último restore remoto real: [run 43767762632](https://github.com/BTF14/Micro-app/actions/runs/43767762632), 15 nov, main, SUCCESS; perfil `bcv-0025`, 25 migraciones/29 tablas públicas. Workflow 61s; T0 técnico posterior a cola/apt hasta validación: **1.753s**; DB restore + assertions + login probes: **1.021s**. No incluye recuperación operacional ni migration 0026.
+- Último smoke sintético con perfil 0026: [run 44191419753](https://github.com/BTF14/Micro-app/actions/runs/44191419753), 17 nov, PR branch `feat/fx-contingency-pr1-20261117`, SUCCESS; log: 26 migraciones, perfil `bcv-0026`, 34 objetos y DR drill **3.479s** (workflow 129s). El último smoke schedule de main sigue siendo [41323379454](https://github.com/BTF14/Micro-app/actions/runs/41323379454), 1 nov.
+- **Brecha de fixture:** `scripts/backup_restore_fixture_bcv.sql` tiene comentario objetivo 0001–0022 y no inserta datos en `inventory_receipts`/`inventory_receipt_lines` (0025) ni en `fx_user_pin_credentials`, `fx_contingency_delegations`, `fx_contingency_authorizations`, `fx_contingency_events`, `bcv_sync_success_observations` (0026). El smoke prueba esquema, objetos, ACL/assertions y el grafo comercial previo; no prueba datos poblados round-trip de estas tablas.
+- **Ajuste seguro propuesto:** ampliar la fixture solo en PostgreSQL efímero con un recibo sintético relacionado y filas ficticias válidas en las cinco tablas 0026; usar bytes de credencial ficticios, nunca PIN/secretos reales; comparar manifiestos/conteos antes y después, validar tenant/sucursal, append-only y permisos; ejecutar pruebas de transición en transacción rollback-only. Reejecutar exact-HEAD. No tocar Neon ni datos reales.
+- **RPO/RTO:** RPO real de incidente no medido (no hay source cutoff/incident timestamp). RTO técnico aislado medido como arriba; no equivale a RTO operacional de servicio (provisioning, aplicación, traffic cutover, aceptación humana).
+- **Canal de alerta:** backup workflow puede crear/comentar Issue P0 mediante `scripts/backup_failure_alert.sh`; Actions emite fallo y depende de preferencias/notificaciones GitHub del propietario. Canary #43508458992 (13 nov) falló intencionalmente; no hay ACK del propietario. Repetir con `confirm_controlled_failure=true` y registrar ACK antes de cerrar.
+- **Estado:** backup natural funciona y restore técnico aislado existe; cobertura 0025/0026 poblada, restore remoto post-0026, RPO/RTO operativos, alert ACK y coste total USD 0 permanecen abiertos. Issue #53 OPEN/P0; PRODUCTION NOT READY.
+
+---
+
 ## Turno 37 — cierre de Gates A/B y ejecución de Fase 3B (2026-11-13 UTC)
 
 - **Neon main:** proyecto `restless-fire-99110035`, branch default `main` (`br-summer-math-b7297a60`), database `neondb`, PostgreSQL 18.7.

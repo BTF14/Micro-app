@@ -421,7 +421,7 @@ BEGIN
 END;
 $assert_completed_sale_reconciled$;
 ALTER FUNCTION public.assert_completed_sale_reconciled() OWNER TO microapp_migrator;
-REVOKE ALL ON FUNCTION public.assert_completed_sale_reconciled() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.assert_completed_sale_reconciled() FROM PUBLIC,microapp_runtime,microapp_bcv_sync;
 
 CREATE OR REPLACE FUNCTION public.assert_sale_latest_bcv_sync_success()
 RETURNS trigger

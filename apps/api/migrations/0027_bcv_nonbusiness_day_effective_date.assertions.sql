@@ -41,6 +41,14 @@ BEGIN
  OR has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','INSERT')
  OR has_table_privilege('microapp_runtime','public.bcv_sync_success_observations','UPDATE')
  THEN RAISE EXCEPTION 'BCV_0027_ROLE_PRIVILEGES_WERE_BROADENED'; END IF;
+ fn := 'public.create_fx_contingency_authorization(uuid,uuid,numeric,numeric,uuid,text,timestamptz,uuid,text,text,text)'::regprocedure::oid;
+ SELECT pg_get_userbyid(proowner),pg_get_functiondef(oid) INTO owner_name,fn_def FROM pg_proc WHERE oid=fn;
+ IF owner_name<>'microapp_migrator' OR NOT(SELECT prosecdef FROM pg_proc WHERE oid=fn)
+   OR NOT(SELECT proconfig @> ARRAY['search_path=pg_catalog'] FROM pg_proc WHERE oid=fn)
+   OR NOT has_function_privilege('microapp_runtime',fn,'EXECUTE')
+ THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_FUNCTION_SECURITY_CONTRACT_INVALID'; END IF;
+ IF EXISTS(SELECT 1 FROM aclexplode(COALESCE((SELECT proacl FROM pg_proc WHERE oid=fn),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=fn)))) acl WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE')
+ THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_FUNCTION_PUBLIC_EXECUTE'; END IF;
  IF NOT has_function_privilege('microapp_runtime','public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text)','EXECUTE')
  THEN RAISE EXCEPTION 'BCV_0026_TRANSITION_RUNTIME_EXECUTE_WAS_REMOVED'; END IF;
 END;

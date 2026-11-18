@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { formatDecimal, parseNumeric } from "@micro-app/money";
+import { parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
 import { formatLocalizedDecimal, normalizeDecimalInput } from "./decimal";
 import "./catalog.css";
@@ -333,7 +333,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.product_id}>
-                    <td>
+                    <td data-label="Producto">
                       <strong>{item.name}</strong>
                       <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""}</span>
                     </td>
@@ -343,7 +343,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
                     {canReadCosts && (
                       <td className="catalog-money" data-label="Costo USD">{item.cost_usd === undefined ? "—" : `US$ ${formatUsd(item.cost_usd)}`}</td>
                     )}
-                    <td>
+                    <td data-label="Estado">
                       {!item.is_active ? (
                         <span className="catalog-product-status inactive">Inactivo</span>
                       ) : isLowStock(item) ? (

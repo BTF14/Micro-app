@@ -477,7 +477,6 @@ async function findLatestBcvRate(
   client: DatabaseClient,
   now = new Date(),
 ): Promise<(StoredRateRow & { fetched_at: string; status: "current" | "scheduled" | "stale"; priority: string | null; operation_date: string }) | null> {
-  const today = bcvCaracasDate(now);
   const stateResult = await client.query<{
     operation_date: string; last_success_at: string | Date | null; last_outcome: string | null;
     last_effective_date: string | null; last_error_code: string | null;

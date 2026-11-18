@@ -426,8 +426,12 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (renewalId && active.rows[0]?.id !== renewalId) return { kind: "authorization_not_active" as const };
         if (active.rows[0]) {
           const recovery = await tx.query<{ restored: boolean }>(
-            `SELECT EXISTS (
+            `WITH operation AS (
+               SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date AS operation_date
+             )
+             SELECT EXISTS (
                SELECT 1 FROM public.bcv_sync_success_observations obs
+               CROSS JOIN operation op
                 WHERE obs.observed_at > $1::timestamptz
                   AND obs.last_outcome IN ('inserted','unchanged')
                   AND obs.last_error_code IS NULL
@@ -439,16 +443,21 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                        AND er.source='BCV_OFFICIAL_HTML_V1'
                        AND er.validation_status='valid'
                        AND er.effective_date=obs.last_effective_date
-                       AND er.effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date + 5
-                       AND (er.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date OR NOT EXISTS (SELECT 1 FROM public.exchange_rates exact WHERE exact.source='BCV_OFFICIAL_HTML_V1' AND exact.validation_status='valid' AND exact.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date))
                        AND obs.rate_snapshot=er.rate
+                       AND er.effective_date <= op.operation_date + 5
+                       AND (er.effective_date=op.operation_date OR NOT EXISTS (
+                         SELECT 1 FROM public.exchange_rates exact
+                          WHERE exact.source='BCV_OFFICIAL_HTML_V1'
+                            AND exact.validation_status='valid'
+                            AND exact.effective_date=op.operation_date
+                       ))
                        AND (
-                         er.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                         er.effective_date=op.operation_date
                          OR (
-                           er.effective_date > (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                           er.effective_date > op.operation_date
                            AND (
-                             EXTRACT(ISODOW FROM (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date) IN (6,7)
-                             OR obs.last_success_at >= ((pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::timestamp AT TIME ZONE 'America/Caracas')
+                             EXTRACT(ISODOW FROM op.operation_date) IN (6,7)
+                             OR obs.last_success_at >= (op.operation_date::timestamp AT TIME ZONE 'America/Caracas')
                            )
                          )
                        )
@@ -456,9 +465,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                          SELECT 1 FROM public.exchange_rates earlier
                           WHERE earlier.source='BCV_OFFICIAL_HTML_V1'
                             AND earlier.validation_status='valid'
-                            AND earlier.effective_date > (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
+                            AND earlier.effective_date > op.operation_date
                             AND earlier.effective_date < er.effective_date
-                            AND earlier.effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date + 5
+                            AND earlier.effective_date <= op.operation_date + 5
                        )
                   )
                   AND ((obs.last_outcome='inserted' AND obs.rate_fetched_at > $1::timestamptz)

@@ -11,6 +11,8 @@ BEGIN
  SELECT count(*) INTO trigger_count FROM pg_trigger WHERE tgrelid='public.sales'::regclass AND NOT tgisinternal AND tgenabled='A'
  AND tgname IN('sales_00_capture_bcv_0027_snapshot','sales_01_guard_bcv_0027_snapshot_immutable','sales_99_assert_bcv_0027_snapshot');
  IF trigger_count<>3 THEN RAISE EXCEPTION 'BCV_0027_ENABLE_ALWAYS_TRIGGERS_MISSING'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.sales'::regclass AND tgname='sales_99_assert_bcv_0027_snapshot' AND strpos(pg_get_triggerdef(oid),'INSERT')>0)
+ THEN RAISE EXCEPTION 'BCV_0027_DIRECT_INSERT_ASSERTION_TRIGGER_MISSING'; END IF;
  FOREACH fn IN ARRAY ARRAY[
  'public.select_bcv_rate_for_operation(date)'::regprocedure::oid,
  'public.capture_sales_bcv_0027_snapshot()'::regprocedure::oid,
@@ -28,7 +30,7 @@ BEGIN
  THEN RAISE EXCEPTION 'BCV_0027_TRIGGER_ONLY_FUNCTION_ACL_INVALID_%',fn::regprocedure; END IF;
  END LOOP;
  SELECT pg_get_functiondef('public.select_bcv_rate_for_operation(date)'::regprocedure) INTO fn_def;
- IF strpos(fn_def,'weekend_prepublished')=0 OR strpos(fn_def,'weekday_same_day_sync')=0 OR strpos(fn_def,'p_operation_date + 5')=0 OR strpos(fn_def,'America/Caracas')=0 OR strpos(fn_def,'FOR SHARE')=0 OR strpos(fn_def,'base_currency')=0 OR strpos(fn_def,'rate > 0')=0 OR strpos(fn_def,'bcv_sync_success_observations')=0
+ IF strpos(fn_def,'weekend_prepublished')=0 OR strpos(fn_def,'weekday_same_day_sync')=0 OR strpos(fn_def,'p_operation_date + 5')=0 OR strpos(fn_def,'America/Caracas')=0 OR strpos(fn_def,'FOR SHARE')=0 OR strpos(fn_def,'base_currency')=0 OR strpos(fn_def,'rate > 0')=0 OR strpos(fn_def,'bcv_sync_success_observations')=0 OR strpos(fn_def,'obs.last_success_at')=0 OR strpos(fn_def,'obs.last_effective_date')=0
  THEN RAISE EXCEPTION 'BCV_0027_SELECTION_POLICY_DEFINITION_INVALID'; END IF;
  SELECT pg_get_functiondef('public.assert_completed_sale_reconciled()'::regprocedure) INTO fn_def;
  IF strpos(fn_def,'public.select_bcv_rate_for_operation')=0 OR strpos(fn_def,'operation_date')=0 OR strpos(fn_def,'exchange_rate_effective_date')=0
@@ -49,6 +51,8 @@ BEGIN
  THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_FUNCTION_SECURITY_CONTRACT_INVALID'; END IF;
  IF EXISTS(SELECT 1 FROM aclexplode(COALESCE((SELECT proacl FROM pg_proc WHERE oid=fn),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=fn)))) acl WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE')
  THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_FUNCTION_PUBLIC_EXECUTE'; END IF;
+ IF strpos(fn_def,'public.select_bcv_rate_for_operation(operation_date)')=0 OR strpos(fn_def,'BCV_RATE_ALREADY_AVAILABLE')=0
+ THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_MUST_DEFER_TO_APPLICABLE_OFFICIAL_RATE'; END IF;
  IF NOT has_function_privilege('microapp_runtime','public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text)','EXECUTE')
  THEN RAISE EXCEPTION 'BCV_0026_TRANSITION_RUNTIME_EXECUTE_WAS_REMOVED'; END IF;
 END;

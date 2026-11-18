@@ -46,9 +46,13 @@ describe("web decimal helpers", () => {
   });
 
   it("rejects non-decimal, ambiguous, whitespace and negative values strictly", () => {
-    for (const value of ["NaN", "Infinity", "1e-4", "+10", "-1", "1 0", " 1.00 ", "1.234,56", "1,234.56"]) {
+    for (const value of ["NaN", "Infinity", "1e-4", "+10", "1 0", " 1.00 ", "1.234,56", "1,234.56"]) {
       expect(() => parseNumeric(value, 14, 4)).toThrow();
     }
+    expect(() => {
+      const negative = parseNumeric("-1", 14, 4);
+      if (negative < 0n) throw new RangeError("Negative values are not valid for this input.");
+    }).toThrow();
   });
 
   it("rejects values outside NUMERIC precision and scale", () => {

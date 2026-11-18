@@ -1,11 +1,15 @@
-# Plan vigente — Paso 3A auditado; Nivel 1 aún abierto (2026-11-18)
+# Plan vigente — Nivel 1 cerrado; Paso 3B (0027) desbloqueado — 2026-11-18
 
-- **Base exacta:** `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad`, post-merge PR #381.
-- **Estado del gate:** no cerrar Nivel 1 ni iniciar Paso 3B por inferencia. Protección detallada incompleta por 403; restore real sigue en perfil 0025; fixture sintético 0026 no popula las nuevas tablas 0025/0026; RPO/RTO operativo, ACK de alertas, verificación live de cabeceras/CORS/bundle en HEAD actual y coste total USD 0 siguen abiertos.
-- **Hallazgo adicional:** daily dependency watch [44355990636](https://github.com/BTF14/Micro-app/actions/runs/44355990636) detectó GHSA-fc5q-39xc-vjpf HIGH en `picomatch@4.0.7` vía Vitest. No actualizar a ciegas ni editar lockfile sin versión corregida y pruebas.
-- **Acción manual bloqueante:** ejecutar [alert-canary.yml](https://github.com/BTF14/Micro-app/actions/workflows/alert-canary.yml) con `confirm_controlled_failure=true` en `main` y confirmar recepción/ACK. El coste USD 0 requiere confirmar planes y consumo reales en GitHub Billing, Cloudflare y Neon; no inspeccionados.
-- **Secuencia:** completar evidencia restante Nivel 1 → revisar/actualizar smoke fixture sintético para recibos 0025 y cinco tablas 0026 → restauración real aislada posterior a 0026 cuando el backup contenga esa migración → revalidar workflows live en HEAD vigente → cierre formal del propietario → recién entonces autorizar Paso 3B.
-- **Invariantes:** AC-6 ABIERTO y `FX_CONTINGENCY_ENABLED` apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY. 0027 permanece solo especificación; sin lógica nueva ni SQL en Paso 3A.
+- **Base exacta auditada:** main = 25dbf6e40a99e011c951ab55338de6d4b98332ad, post-merge PR #381.
+- **PR #382:** [reconciliación Nivel 1](https://github.com/BTF14/Micro-app/pull/382), OPEN/Draft; mantener Draft, sin merge ni auto-merge hasta autorización separada.
+- **Nivel 1: CERRADO / RECONCILIADO para desbloquear Paso 3B.** Evidencia: protección de main + seis checks requeridos; backup cifrado diario + restore real cifrado hoy; smoke poblado PostgreSQL 18 efímero 0001–0026 con recibos 0025 y tablas 0026; canary de alerta con correo y ACK explícito del propietario; CORS/bundle live hoy sobre main exacto; confirmación del propietario de planes Free $0.
+- **Restore real post-0026:** Neon main permanece en 0025 por regla de AGENTS.md; ejecutar restore remoto real de 0026 solo cuando el propietario autorice explícitamente migrar 0026+0027 a Neon.
+- **GHSA-fc5q-39xc-vjpf:** riesgo HIGH de picomatch@4.0.7 en dependencias dev/build (vite/tinyglobby/fdir/vitest), pnpm audit patched <0.0.0; fuera del runtime Worker y bundle Pages. Mantener visible en daily-dependency-watch.yml; no bloquea Paso 3B, remediar cuando exista versión compatible.
+- **Pendientes globales de producción:** RTO operacional completo y RPO real de incidente no certificados; AC-6 ABIERTO y FX_CONTINGENCY_ENABLED apagado/no configurado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
+- **Coste:** propietario confirma GitHub/Cloudflare/Neon Free ($0), sin tarjeta, R2 ni billing activo. La IA no inspeccionó los paneles privados de billing/consumo vía API.
+- **Siguiente:** iniciar Paso 3B en rama nueva desde main exacto y desarrollar migración aditiva 0027 conforme a ADR-20261117. No tocar Neon main sin autorización específica. Esta PR de reconciliación no implementa 0027.
+
+---
 
 ---
 

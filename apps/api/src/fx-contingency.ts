@@ -434,6 +434,10 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                CROSS JOIN operation op
                JOIN public.bcv_sync_state current_state ON current_state.singleton=true
                 WHERE current_state.last_success_at IS NOT NULL
+                  AND current_state.last_success_at = obs.last_success_at
+                  AND current_state.last_outcome = obs.last_outcome
+                  AND current_state.last_effective_date = obs.last_effective_date
+                  AND obs.observed_at >= obs.last_success_at
                   AND current_state.last_outcome IN ('inserted','unchanged')
                   AND current_state.last_error_code IS NULL
                   AND current_state.last_effective_date >= obs.last_effective_date
@@ -453,7 +457,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                        AND (er.effective_date=op.operation_date OR NOT EXISTS (
                          SELECT 1 FROM public.exchange_rates exact
                           WHERE exact.source='BCV_OFFICIAL_HTML_V1'
-                            AND exact.validation_status='valid'
+                            AND exact.validation_status='valid' AND exact.base_currency='USD' AND exact.quote_currency='VES' AND exact.rate > 0
                             AND exact.effective_date=op.operation_date
                        ))
                        AND (
@@ -469,7 +473,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                        AND NOT EXISTS (
                          SELECT 1 FROM public.exchange_rates earlier
                           WHERE earlier.source='BCV_OFFICIAL_HTML_V1'
-                            AND earlier.validation_status='valid'
+                            AND earlier.validation_status='valid' AND earlier.base_currency='USD' AND earlier.quote_currency='VES' AND earlier.rate > 0
                             AND earlier.effective_date > op.operation_date
                             AND earlier.effective_date < er.effective_date
                             AND earlier.effective_date <= op.operation_date + 5

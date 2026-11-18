@@ -142,7 +142,7 @@ function formatBcvAttemptAge(value: number | null): string {
 
 // Keep the official rate exact and apply the shared es-VE decimal formatter.
 function formatBcvRate(value: string): string {
-  return formatLocalizedDecimal(value, 18, 8, 2);
+  return formatLocalizedDecimal(value, 18, 8, 8);
 }
 function formatBcvEffectiveDate(value: string): string {
   return new Intl.DateTimeFormat("es-VE", {

@@ -132,3 +132,16 @@ La recuperación de PIN exige reautenticación fuerte de la cuenta y MFA o códi
 - Mostrarlo únicamente a identidades con permiso de gestión del calendario; no a cajeros.
 - La v1 no promete notificación push/email si nadie inicia sesión. Un canal externo puede añadirse después de verificar destinatario, consentimiento, coste y entrega.
 - El aviso nunca aprueba, publica ni modifica fechas por sí mismo.
+
+
+## Enmienda normativa — ADR-20261117 / futura especificación 0027
+
+**Precedencia vigente:** el ADR `docs/decisions/ADR-20261117-bcv-nonbusiness-day-effective-date.md` supersede la regla anterior de este documento que hacía depender la selección de la siguiente fecha hábil de un calendario bancario manual o de su verificación anual. La especificación `docs/sdd/0027_BCV_NONBUSINESS_DAY_EFFECTIVE_DATE.md` define la selección operativa de tasa BCV sin calendario SUDEBAN manual.
+
+- El PDF/calendario 2026, su hash, procedencia provisional y todo el historial de revisión permanecen intactos como evidencia histórica y referencia administrativa opcional.
+- Las secciones anteriores sobre carga, versionado, vigilancia, aprobación, recordatorios y seguridad PDF no se borran; describen el subsistema opcional de calendario, no una dependencia de checkout.
+- Para checkout, el calendario no determina si una fecha es hábil, no elige una tasa, no bloquea por ausencia de versión anual y no sustituye la `effective_date` publicada por BCV.
+- La aplicación selecciona solo filas oficiales BCV válidas según prioridad exacta/futura y evidencia de sync establecida en 0027. No se codifican feriados ni se infiere una fecha hábil a partir del día de la semana.
+- Si BCV no publica una fecha valor aplicable o no existe evidencia de sincronización suficiente, checkout falla cerrado con `409 BCV_RATE_NOT_CURRENT`.
+
+Esta enmienda es normativa para la futura implementación 0027; no afirma que el comportamiento ya esté desplegado.

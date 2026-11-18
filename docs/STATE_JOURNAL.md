@@ -1,3 +1,20 @@
+## Turno 59 — cierre/reconciliación Nivel 1 y desbloqueo Paso 3B (2026-11-18)
+
+- Base auditada: main = 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381). PR #382 sigue OPEN/Draft, sin merge ni auto-merge.
+- Protección: endpoint de rama confirma protected=true y seis checks obligatorios (Chromium authentication smoke tests, JavaScript and TypeScript static analysis, Scan tracked files and reachable Git history, Trivy filesystem and configuration scan, postgres-migration, verify). El 403 de /branches/main/protection es Resource not accessible by integration, limitación de permisos del token, no ausencia de protección.
+- Backup cifrado diario [#44342447079](https://github.com/BTF14/Micro-app/actions/runs/44342447079) SUCCESS. Restore real cifrado [#44366607906](https://github.com/BTF14/Micro-app/actions/runs/44366607906) SUCCESS en PostgreSQL 18 efímero sobre backup backup-2026-11-18T16-03-47Z.dump.age, perfil 0025/25 migraciones/29 tablas; ventana técnica 1.996ms, descarga+SHA 844ms, AGE 4ms, pg_restore --list 6ms, restore/assertions/logins 1102ms, freshness proxy 7706s. No es RTO/RPO operacional.
+- Fixture ampliada en scripts/backup_restore_fixture_bcv.sql y scripts/test_backup_restore_schema_bcv.sh: recibo 0025 con línea y movimiento purchase_receipt; tablas 0026 pobladas con bytes KDF sintéticos, delegación y autorización revocadas, evento append-only y observación BCV. Assertions pre/post restore comprueban valores, relaciones, conteos, proyección y manifiestos. Sin autorización activa, sin venta manual contingency, evento registra commercial_enabled=false.
+- Smoke [#44370849960](https://github.com/BTF14/Micro-app/actions/runs/44370849960) SUCCESS en HEAD dbd4444312795d4c2160a5da2fbf784c70b53870: 26 migraciones, perfil bcv-0026, 34 objetos, logins/ACL/search_path, manifiestos source/restored idénticos, round-trip 5s y DR drill 4.796s. Los tres jobs del workflow SUCCESS.
+- Canary [#44366308621](https://github.com/BTF14/Micro-app/actions/runs/44366308621) falló intencionalmente en ~3s; log confirma ausencia de side effects. Propietario confirma correo en buzón personal, captura y ACK explícito.
+- Bundle Pages [#44367872780](https://github.com/BTF14/Micro-app/actions/runs/44367872780) SUCCESS; API base /api. CORS Worker [#44367813536](https://github.com/BTF14/Micro-app/actions/runs/44367813536) intento #2 SUCCESS; origen Pages permitido y attacker.example sin ACAO.
+- Coste: propietario confirma cuentas GitHub/Cloudflare/Neon Free $0, sin tarjeta/R2/billing activo. IA no inspeccionó por API paneles privados de billing/consumo.
+- GHSA-fc5q-39xc-vjpf en picomatch@4.0.7 queda como riesgo HIGH de tooling dev/build, fuera de runtime Worker y bundle Pages; patched versions <0.0.0. Monitorear daily-dependency-watch, no bloquea 0027, remediar cuando haya versión compatible. No se modificó lockfile.
+- Neon main permanece intencionalmente en 0025 por AGENTS.md; restore real post-0026 cuando el propietario autorice migrar 0026+0027 a Neon.
+- Resultado: Nivel 1 CERRADO/RECONCILIADO para desbloquear Paso 3B (0027). AC-6 sigue ABIERTO y flag apagado; freeze v1.1; Issue #53 OPEN/P0; RPO/RTO operativos completos sin certificar; PRODUCTION NOT READY.
+- No se tocaron apps/**, migraciones SQL, Neon, secretos, Cloudflare manual, datos reales, billing ni despliegues. AGENTS.md intacto.
+
+---
+
 ## Turno 58 — Paso 3A: auditoría viva y reconciliación parcial de Nivel 1 (2026-11-18)
 
 - Base exacta consultada: `main` = `25dbf6e40a99e011c951ab55338de6d4b98332ad`, post-merge PR #381. Rama documental `chore/level1-gate-evidence-20261118`.

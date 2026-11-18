@@ -94,7 +94,7 @@ trap 'rm -f "$tmp_sql"' EXIT
         next
       }
     ' "$file" | {
-      if [[ "$profile" == "bcv" || "$profile" == "bcv-0024" || "$profile" == "bcv-0025" || "$profile" == "bcv-0026" ]]; then
+      if [[ "$profile" == "bcv" || "$profile" == "bcv-0024" || "$profile" == "bcv-0025" || "$profile" == "bcv-0026" || "$profile" == "bcv-0027" ]]; then
         # Projection migration 0019 removes these paired-intent objects. Skip
         # only their now-inapplicable historical ACL statements.
         grep -Ev 'inventory_balance_ledger_intents|record_inventory_balance_ledger_intent|consume_inventory_balance_ledger_intent|assert_inventory_balance_ledger_intent_consumed' || true

@@ -79,7 +79,7 @@ jobs:
         run: bash scripts/tests/test_backup_git_remote.sh
       - name: Test bounded apt retry helper
         run: bash .github/scripts/test-apt-retry.sh
-      - name: Install age and PostgreSQL 18 client wrappers wrappers
+      - name: Install age and PostgreSQL 18 client wrappers
         shell: bash
         run: |
           set -euo pipefail

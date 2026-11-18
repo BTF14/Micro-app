@@ -177,6 +177,17 @@ function BcvSyncAdminPanel({ organizationId }: { organizationId: string }) {
   const [refreshVersion, setRefreshVersion] = useState(0);
 
   useEffect(() => {
+    const handleUnauthorized = () => {
+      setSession(null);
+      setBcvRate(null);
+      setBcvError("");
+      setActiveView("overview");
+    };
+    window.addEventListener("micro-app:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("micro-app:unauthorized", handleUnauthorized);
+  }, []);
+
+  useEffect(() => {
     let active = true;
     let requestSequence = 0;
     const refresh = async () => {

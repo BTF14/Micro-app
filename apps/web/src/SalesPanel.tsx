@@ -379,7 +379,7 @@ export default function SalesPanel({
       payments: payments.map((payment) => ({
         method: payment.method,
         currency,
-        amount: payment.amount,
+        amount: normalizeDecimalInput(payment.amount),
         reference: payment.reference.trim() ? payment.reference.trim() : null,
       })),
     };

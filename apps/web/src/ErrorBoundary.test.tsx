@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ErrorBoundary from "./ErrorBoundary";
@@ -13,16 +13,13 @@ describe("ErrorBoundary", () => {
     const root: Root = createRoot(container);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
-      await new Promise<void>((resolve) => {
-        root.render(createElement(ErrorBoundary, null, createElement(BrokenScreen)));
-        queueMicrotask(resolve);
-      });
+      await act(async () => { root.render(createElement(ErrorBoundary, null, createElement(BrokenScreen))); });
       expect(container.querySelector('[role="alert"]')).toBeTruthy();
       expect(container.textContent).toContain("No pudimos mostrar esta pantalla");
       expect(container.textContent).not.toContain("private diagnostic detail");
       expect(container.querySelector("button")?.textContent).toContain("Volver a cargar");
     } finally {
-      root.unmount();
+      await act(async () => { root.unmount(); });
       container.remove();
       errorSpy.mockRestore();
     }

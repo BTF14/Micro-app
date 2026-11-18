@@ -162,13 +162,21 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     event.preventDefault();
     const selectedProductId = receiptProductId || manageableProducts[0]?.product_id || "";
     if (!branchId || !warehouseId || !selectedProductId) return;
+    const quantity = normalizeDecimalInput(receiptQuantity);
+    const unitCost = normalizeDecimalInput(receiptCost);
+    try {
+      if (parseNumeric(quantity, 14, 3) <= 0n || parseNumeric(unitCost, 14, 4) < 0n) throw new Error("La cantidad debe ser mayor que cero y el costo no puede ser negativo.");
+    } catch {
+      setError("Usa una cantidad válida (hasta 3 decimales) y un costo USD válido (hasta 4 decimales).");
+      return;
+    }
     setReceiptBusy(true); setError(""); setNotice("");
     try {
       const path = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}/receipts`;
       const result = await apiRequest<{ id: string; replayed: boolean }>(path, {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: selectedProductId, quantity: receiptQuantity, unit_cost_usd: receiptCost }] }),
+        body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: selectedProductId, quantity, unit_cost_usd: unitCost }] }),
       });
       setNotice(result.replayed ? "La recepción ya estaba registrada." : "Recepción registrada y existencias actualizadas.");
       setReceiptReason("");
@@ -182,13 +190,20 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     event.preventDefault();
     const selectedProductId = countProductId || manageableProducts[0]?.product_id || "";
     if (!branchId || !warehouseId || !selectedProductId) return;
+    const countedQuantity = normalizeDecimalInput(countQuantity);
+    try {
+      if (parseNumeric(countedQuantity, 14, 3) < 0n) throw new Error("El conteo no puede ser negativo.");
+    } catch {
+      setError("Usa una cantidad válida de hasta 3 decimales, sin valores negativos.");
+      return;
+    }
     setCountBusy(true); setError(""); setNotice("");
     try {
       const prefix = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}`;
       const created = await apiRequest<{ id: string }>(`${prefix}/counts/physical`, {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ reason: countReason, lines: [{ product_id: selectedProductId, counted_quantity: countQuantity }] }),
+        body: JSON.stringify({ reason: countReason, lines: [{ product_id: selectedProductId, counted_quantity: countedQuantity }] }),
       });
       await apiRequest(`${prefix}/counts/${encodeURIComponent(created.id)}/confirm`, { method: "POST" });
       setNotice("Conteo físico confirmado y existencias actualizadas.");

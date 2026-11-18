@@ -59,6 +59,7 @@ afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 describe("SalesPanel", () => {
   it("shows a direct action when the user has no open shift", async () => {
@@ -258,6 +259,7 @@ describe("SalesPanel", () => {
   });
 
   it("requires cashier disclosure and binds the acknowledgement to the displayed manual rate", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-17T18:00:00Z"));
     const receipt = {
       id: "sale-manual-1", sale_number: "V-MAN-001", created_at: "2026-11-17T15:00:00Z",
       currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.02",
@@ -295,12 +297,27 @@ describe("SalesPanel", () => {
   });
 
   it("keeps manual contingency unavailable while the commercial AC-6 gate is off", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-17T18:00:00Z"));
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ shift } as never)
       .mockResolvedValueOnce({ warehouses } as never)
       .mockResolvedValueOnce({
         commercial_enabled: false,
         authorization: { id: "auth-1", rate: "104.00000000", expires_at: "2026-11-17T23:00:00Z" },
+      } as never);
+    await render("stale", null);
+    expect(container.textContent).not.toContain("Tasa manual de contingencia (no oficial BCV)");
+    expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
+  });
+
+  it("rejects an expired manual authorization even when commercial contingency is enabled", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-17T18:00:00Z"));
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce({ shift } as never)
+      .mockResolvedValueOnce({ warehouses } as never)
+      .mockResolvedValueOnce({
+        commercial_enabled: true,
+        authorization: { id: "auth-expired", rate: "104.00000000", expires_at: "2026-11-17T17:59:59Z" },
       } as never);
     await render("stale", null);
     expect(container.textContent).not.toContain("Tasa manual de contingencia (no oficial BCV)");

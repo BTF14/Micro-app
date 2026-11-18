@@ -29,3 +29,12 @@
 ## Work log
 - Branch created from the requested base SHA.
 - Owner supplied post-merge main evidence: 14/14 check-runs and 9/9 post-merge workflows successful; this is accepted as the entry gate.
+
+## Progress checkpoint — 2026-11-18
+
+- Draft PR: https://github.com/BTF14/Micro-app/pull/383 (OPEN / Draft; no merge or auto-merge).
+- Latest known HEAD at this checkpoint: `02134e303c52850cf0b32262ca2456108853cb11`.
+- Implemented in branch: additive migration 0027, dual-date columns and trigger guards, shared SQL eligibility selector, updated 0026 sale reconciliation and contingency transition/authorization guards, API checkout/latest/recovery selection, web scheduled/current labels and receipt date snapshots, 0027 SQL assertions, PostgreSQL 18 matrix tests, migration CI/restore scripts.
+- Added explicit checks for exact-date precedence, weekend prepublication, weekday same-day sync, +5 boundary, stale/failed/running/error/uncovered states, positive numeric rates, duplicate candidates in pure selection, immutable completed-sale dates, and migration rollback atomicity.
+- Latest-head Actions validation is still pending; prior successful migration-runner evidence was on an earlier branch HEAD and is not accepted as final-HEAD evidence.
+- Remaining: inspect and repair all latest-HEAD CI failures; verify PostgreSQL integration matrix and full E2E; inspect final diff and PR checks/reviews; update CURRENT_STATE, STATE_JOURNAL and HANDOFF_NEXT_CHAT only after all work closes.

@@ -314,6 +314,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         // Administrative reads are also a server-side expiry/recovery
         // boundary. Serialize BCV -> FX, then commit a durable transition.
         await tx.query("SELECT * FROM public.lock_bcv_sync_state()");
+        // Reuse the same application-side 0027 eligibility resolver as checkout.
+        // The underlying SQL selector is intentionally not executable by runtime.
+        const bcv = await findLatestBcvRate(tx);
         const active = await tx.query<{
           id: string; starts_at: Date | string; expires_at: Date | string;
           authorized_by_user_id: string; authorized_by_role: "owner" | "admin";
@@ -328,17 +331,10 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
             [activeRow.expires_at],
           );
           const expired = expiryCheck.rows[0]?.expired === true;
-          const recovery = expired ? null : await tx.query<{ id: string }>(
-            `WITH operation AS MATERIALIZED (
-               SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date AS operation_date
-             ), selected AS MATERIALIZED (
-               SELECT rate.* FROM operation op
-               CROSS JOIN LATERAL public.select_bcv_rate_for_operation(op.operation_date) rate
-             )
-             SELECT obs.id
+          const recovery = expired || bcv?.status !== "current" ? null : await tx.query<{ id: string }>(
+            `SELECT obs.id
                FROM public.bcv_sync_success_observations obs
                JOIN public.bcv_sync_state state ON state.singleton=true
-               CROSS JOIN selected
               WHERE obs.observed_at > $1::timestamptz
                 AND obs.observed_at >= obs.last_success_at
                 AND obs.last_success_at = state.last_success_at
@@ -349,13 +345,13 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                 AND obs.last_outcome IN ('inserted','unchanged')
                 AND obs.last_error_code IS NULL
                 AND obs.validation_status='valid'
-                AND obs.exchange_rate_id=selected.exchange_rate_id
-                AND obs.last_effective_date=selected.effective_date
-                AND obs.rate_snapshot=selected.rate
+                AND obs.exchange_rate_id=$2::uuid
+                AND obs.last_effective_date=$3::date
+                AND obs.rate_snapshot=$4::numeric
                 AND ((obs.last_outcome='inserted' AND obs.rate_fetched_at > $1::timestamptz)
                   OR obs.last_outcome='unchanged')
               LIMIT 1`,
-            [activeRow.starts_at],
+            [activeRow.starts_at, bcv.id, bcv.effective_date, bcv.rate],
           );
           if (expired || recovery?.rows[0]) {
             await tx.query(
@@ -387,7 +383,6 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                 ORDER BY a.starts_at DESC LIMIT 1`,
           [tenant.organizationId, branchId],
         );
-        const bcv = await findLatestBcvRate(tx);
         return { kind: "ok" as const, authorization: rows.rows[0] ?? null, bcv, commercial_enabled: c.env.FX_CONTINGENCY_ENABLED === "true" };
       }));
       if (result.kind !== "ok") return authFailure(c, result.kind);

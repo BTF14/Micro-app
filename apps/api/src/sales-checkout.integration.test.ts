@@ -1663,11 +1663,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   });
 
   it("allows N parallel checkouts to share the same eligible BCV rate and sync snapshot", async () => {
-    const reopenedShift = await client.query<{id:string}>(
-      "INSERT INTO public.register_shifts(organization_id,branch_id,register_id,cashier_user_id) VALUES($1,$2,$3,$4) RETURNING id",
-      [organizationId,branchId,registerId,userId],
-    );
-    shiftId = reopenedShift.rows[0]!.id;
+    // The closed-shift test above restores shiftId in finally; reuse that
+    // active shift rather than violating the one-open-shift-per-register index.
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
     const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);

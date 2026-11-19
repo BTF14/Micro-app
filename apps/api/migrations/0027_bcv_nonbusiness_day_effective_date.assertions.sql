@@ -67,7 +67,7 @@ BEGIN
    owner_name,(SELECT prosecdef FROM pg_proc WHERE oid=fn),
    strpos(fn_def,'public.select_bcv_rate_for_operation'),
    strpos(fn_def,'FX_BCV_RECOVERY_NOT_ELIGIBLE'),
-   strpos(fn_def,'selected_rate.exchange_rate_id'); END IF;
+   strpos(fn_def,'selected_rate.exchange_rate_id'),substring(fn_def from 3000 for 1400); END IF;
 END;
 $bcv_0027_assertions$;
 ROLLBACK;

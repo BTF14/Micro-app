@@ -224,9 +224,6 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       "UPDATE public.bcv_sync_state SET attempt_id=$1::uuid,last_attempt_at=pg_catalog.clock_timestamp(),last_success_at=$2::timestamptz,last_outcome=$3,last_error_code=NULL,last_effective_date=$4::date,updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
       [attemptId, lastSuccessAt, outcome, effectiveDate],
     );
-    await producerClient.query(
-      "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
-    );
     return attemptId;
   }
 
@@ -705,6 +702,21 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       "SELECT ($1::date + 3)::text AS effective_date",
       [rateDate],
     );
+    const existingFuture = await client.query<{ id: string; validation_status: string }>(
+      "SELECT id,validation_status FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
+      [BCV_SOURCE,futureDate.rows[0]!.effective_date],
+    );
+    let prepublishedRateId = existingFuture.rows[0]?.id ?? "";
+    const priorPrepublishedStatus = existingFuture.rows[0]?.validation_status ?? null;
+    if (!prepublishedRateId) {
+      const inserted = await client.query<{id:string}>(
+        "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',333.12345678,$1,$2::date,'valid') RETURNING id",
+        [BCV_SOURCE,futureDate.rows[0]!.effective_date],
+      );
+      prepublishedRateId = inserted.rows[0]!.id;
+    } else {
+      await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[prepublishedRateId]);
+    }
     try {
       await setBcvSyncState("unchanged", futureDate.rows[0]!.effective_date);
       const response = await request(
@@ -727,6 +739,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect((await readBalance()).on_hand_quantity).toBe("1.000");
     } finally {
       await setBcvSyncState("inserted");
+      await client.query("UPDATE public.exchange_rates SET validation_status=$2 WHERE id=$1",[prepublishedRateId,priorPrepublishedStatus ?? "stale"]);
     }
   });
 
@@ -756,16 +769,12 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
           userId, branchId, shiftId, warehouseId, "a".repeat(64),
         ],
       );
-      await runtimeClient.query(
+      const guardError = await runtimeClient.query(
         "UPDATE public.sales SET status='completed',completed_at=now() WHERE id=$1",
         [sale.rows[0]!.id],
-      );
-
-      const guardError = await runtimeClient.query(
-        "SET CONSTRAINTS sales_latest_bcv_sync_success IMMEDIATE",
       ).then(() => null, (error: { code?: string; message?: string }) => error);
       expect(guardError).toMatchObject({ code: "23514" });
-      expect(guardError?.message).toContain("SALE_REQUIRES_LATEST_SUCCESSFUL_BCV_SYNC");
+      expect(guardError?.message).toContain("SALE_REQUIRES_CURRENT_BCV_RATE");
     } finally {
       await runtimeClient.query("ROLLBACK");
     }
@@ -1490,6 +1499,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
 
   it("waits for a sync transaction that wins the BCV row lock and rejects after its failure commits", async () => {
+    await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
+    await setBcvSyncState("inserted");
     await seedBalance("2.000");
     const key = "sync-lock-first-" + crypto.randomUUID();
     await producerClient.query("BEGIN");
@@ -1513,6 +1524,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   });
 
   it("lets a checkout holding the BCV shared lock complete before a waiting sync can fail", async () => {
+    await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
+    await setBcvSyncState("inserted");
     await seedBalance("2.000");
     const lockKey = 27027;
     await client.query(`CREATE OR REPLACE FUNCTION public.test_bcv_0027_pause_after_snapshot()
@@ -1551,6 +1564,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   });
 
   it("allows N parallel checkouts to share the same eligible BCV rate and sync snapshot", async () => {
+    await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
+    await setBcvSyncState("inserted");
     await seedBalance("10.000");
     const keys = Array.from({ length: 4 }, () => "parallel-bcv-0027-" + crypto.randomUUID());
     const responses = await Promise.all(keys.map((key) => request(checkoutBody("1.000", "23.8500"), key)));

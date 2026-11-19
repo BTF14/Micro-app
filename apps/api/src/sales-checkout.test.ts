@@ -231,6 +231,19 @@ describe("checkout BCV effective-date and last-success selection", () => {
     expect(statements).toHaveLength(2);
   });
 
+  it("switches checkout eligibility at 03:59:59Z/04:00:00Z Caracas midnight", async () => {
+    const friday = mockClient(validState("2026-11-09"), validRate("2026-11-06"));
+    await expect(findApplicableCheckoutRate(friday.client, new Date("2026-11-07T03:59:59.000Z"))).resolves.toMatchObject({
+      effective_date: "2026-11-06", validation_status: "valid",
+    });
+    const saturday = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
+    await expect(findApplicableCheckoutRate(saturday.client, new Date("2026-11-07T04:00:00.000Z"))).resolves.toMatchObject({
+      effective_date: "2026-11-09", validation_status: "valid",
+    });
+    const uncoveredSaturday = mockClient(validState("2026-11-06"), null);
+    await expect(findApplicableCheckoutRate(uncoveredSaturday.client, new Date("2026-11-07T04:00:00.000Z"))).resolves.toBeNull();
+  });
+
   it("accepts a Monday-prepublished rate on Saturday and Sunday with healthy sync evidence", async () => {
     const saturday = mockClient(validState("2026-11-09"), validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(saturday.client, new Date("2026-11-07T12:00:00-04:00"))).resolves.toMatchObject({

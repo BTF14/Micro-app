@@ -1590,10 +1590,21 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         WHERE organization_id=$1 AND id=$3`,
       [organizationId, userId, shiftId],
     );
-    const response = await request(checkoutBody("1.000", "23.8500"), "closed-shift-" + crypto.randomUUID());
-    expect(response.status).toBe(409);
-    expect((await response.json() as { error: string }).error).toBe("OPEN_SHIFT_REQUIRED");
-    expect((await readBalance()).on_hand_quantity).toBe("2.000");
+    try {
+      const response = await request(checkoutBody("1.000", "23.8500"), "closed-shift-" + crypto.randomUUID());
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("OPEN_SHIFT_REQUIRED");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+    } finally {
+      // This suite intentionally closes the original shift above. Restore an
+      // active shift before the following lock-order test so checkout reaches
+      // findApplicableCheckoutRate() instead of returning OPEN_SHIFT_REQUIRED.
+      const reopenedShift = await client.query<{ id: string }>(
+        "INSERT INTO public.register_shifts(organization_id,branch_id,register_id,cashier_user_id) VALUES($1,$2,$3,$4) RETURNING id",
+        [organizationId, branchId, registerId, userId],
+      );
+      shiftId = reopenedShift.rows[0]!.id;
+    }
   });
 
 

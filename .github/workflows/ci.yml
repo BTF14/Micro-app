@@ -87,6 +87,10 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0025_inventory_receipts.assertions.sql
       - name: Verify FX contingency migration 0026 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
+      - name: Verify BCV non-business-day migration 0027 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
+      - name: PostgreSQL 18 BCV 0027 effective-date matrix
+        run: pnpm --filter @micro-app/api test:bcv-0027
       - name: Build and typecheck
         run: pnpm build
       - name: Verify Cloudflare Pages preview isolation

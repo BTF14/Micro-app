@@ -79,28 +79,20 @@ jobs:
         run: bash scripts/tests/test_backup_git_remote.sh
       - name: Test bounded apt retry helper
         run: bash .github/scripts/test-apt-retry.sh
-      - name: Install age and PostgreSQL 18 client
+      - name: Install age and PostgreSQL 18 client wrappers
         shell: bash
         run: |
           set -euo pipefail
           bash scripts/ci/apt-retry.sh update
           bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl --fail --show-error --location \
-            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
-            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list
-          bash scripts/ci/apt-retry.sh update
-          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
+          bash scripts/ci/install-postgresql18-client-wrappers.sh
       - name: Run isolated main paired-intent schema and populated-graph restore
         shell: bash
         run: bash scripts/test_backup_restore_schema.sh
       - name: Prove remote restore target guard fails closed
         shell: bash
         run: bash scripts/db/test_restore_remote_backup_target_guard.sh
-      - name: Preserve historical main and BCV 0023 ACL profiles alongside 0024
+      - name: Preserve historical main and BCV 0023–0027 ACL profiles
         shell: bash
         run: bash scripts/db/test_restore_role_grants_profiles.sh
       - name: Prove backup artifact name and checksum validation
@@ -108,7 +100,7 @@ jobs:
         run: bash scripts/db/test_verify_backup_artifact.sh
 
   restore-smoke:
-    name: Synthetic encrypted restore — BCV projection (0001–0025)
+    name: Synthetic encrypted restore — BCV projection (0001–0027)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -134,21 +126,13 @@ jobs:
         uses: actions/checkout@v7
       - name: Test bounded apt retry helper
         run: bash .github/scripts/test-apt-retry.sh
-      - name: Install age and PostgreSQL 18 client
+      - name: Install age and PostgreSQL 18 client wrappers
         shell: bash
         run: |
           set -euo pipefail
           bash scripts/ci/apt-retry.sh update
           bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl --fail --show-error --location \
-            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
-            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list
-          bash scripts/ci/apt-retry.sh update
-          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
+          bash scripts/ci/install-postgresql18-client-wrappers.sh
       - name: Run full-schema and populated BCV/projection-ledger restore smoke
         shell: bash
         run: bash scripts/dr_drill_simulation.sh
@@ -188,21 +172,13 @@ jobs:
         uses: actions/checkout@v7
       - name: Test bounded apt retry helper
         run: bash .github/scripts/test-apt-retry.sh
-      - name: Install age and PostgreSQL 18 client
+      - name: Install age and PostgreSQL 18 client wrappers
         shell: bash
         run: |
           set -euo pipefail
           bash scripts/ci/apt-retry.sh update
           bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl --fail --show-error --location \
-            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
-            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list
-          bash scripts/ci/apt-retry.sh update
-          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
+          bash scripts/ci/install-postgresql18-client-wrappers.sh
       - name: Run isolated legacy synthetic backup/restore regression
         shell: bash
         run: bash scripts/test_backup_restore.sh

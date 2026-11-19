@@ -16,6 +16,7 @@ import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { lockBranchScopes } from "./branch-context";
 import { resolveOpenCashierRegisterShift } from "./cashier-open-shift";
 import { lockInventoryBalances, lockInventoryWarehouses } from "./inventory-locks";
+import { bcvCaracasDate, selectApplicableBcvRate } from "./bcv-0027";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -56,6 +57,8 @@ type SaleHeader = {
   fx_source: 'bcv_official' | 'manual_contingency';
   fx_authorization_id: string | null;
   manual_fx_acknowledged_at: string | null;
+  operation_date: string | null;
+  exchange_rate_effective_date: string | null;
   created_at: string;
   completed_at: string | null;
 };
@@ -105,46 +108,55 @@ async function findActiveManualFxAuthorization(
 }
 
 /**
- * A new sale requires today's valid BCV row and a successful latest sync.
- * lock_bcv_sync_state() takes FOR SHARE against the producer's UPDATE and holds
+ * A new sale requires the BCV row selected by the 0027 Caracas-date priority
+ * policy and a healthy sync state. lock_bcv_sync_state_with_error() takes FOR SHARE
+ * against the producer's UPDATE and holds
  * it until the checkout transaction commits or rolls back; it is not held
  * while the BCV HTTP fetch runs.
  */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
-  const today = caracasDate(now);
+  const fallbackToday = bcvCaracasDate(now);
   const syncState = await tx.query<{
-    last_success_at: string | null;
+    operation_date: string;
+    last_success_at: string | Date | null;
     last_outcome: string | null;
     last_effective_date: string | null;
     last_error_code: string | null;
   }>(
-    `SELECT last_success_at,
+    `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
+            last_success_at,
             last_outcome,
             last_effective_date::text AS last_effective_date,
             last_error_code
-       FROM public.lock_bcv_sync_state_with_error()`,
+       FROM public.lock_bcv_sync_state_with_error() sync_state
+      WHERE EXISTS (
+        SELECT 1 FROM public.bcv_sync_success_observations obs
+         WHERE obs.last_success_at=sync_state.last_success_at
+           AND obs.last_outcome=sync_state.last_outcome
+           AND obs.last_error_code IS NULL
+           AND obs.last_effective_date=sync_state.last_effective_date
+           AND obs.validation_status='valid'
+           AND obs.exchange_rate_id IS NOT NULL
+           AND obs.rate_snapshot > 0
+           AND obs.observed_at >= obs.last_success_at
+      )`,
   );
   const state = syncState.rows[0];
-  if (
-    !state ||
-    !state.last_success_at ||
-    state.last_error_code != null ||
-    (state.last_outcome !== "inserted" && state.last_outcome !== "unchanged") ||
-    (state.last_effective_date === null || state.last_effective_date < today)
-  ) return null;
-
+  if (!state) return null;
+  const today = state.operation_date ?? fallbackToday;
   const result = await tx.query<RateRow>(
     `SELECT id, rate::text AS rate, effective_date::text AS effective_date, validation_status
        FROM public.exchange_rates
-      WHERE source = $1 AND effective_date = $2::date
-      ORDER BY fetched_at DESC LIMIT 1`,
+      WHERE source = $1
+        AND base_currency = 'USD' AND quote_currency = 'VES' AND rate > 0
+        AND effective_date >= $2::date
+        AND effective_date <= ($2::date + 5)
+      ORDER BY effective_date ASC, fetched_at DESC`,
     [BCV_SOURCE, today],
   );
-  const row = result.rows[0];
-  if (!row || row.validation_status !== "valid" || row.effective_date !== today) return null;
-  return row;
+  const selection = selectApplicableBcvRate(today, state, result.rows);
+  return selection ? selection.row as RateRow : null;
 }
-
 function normalizeDecimal(value: unknown, precision: number, scale: number, positive: boolean): string | null {
   if (typeof value !== "string") return null;
   try {
@@ -328,7 +340,8 @@ async function loadSaleResponse(
   const header = await tx.query<SaleHeader>(
     `SELECT id, sale_number::text, status, settlement_currency,
             subtotal_usd::text, total_usd::text, total_ves_snapshot::text,
-            exchange_rate_snapshot::text, fx_source, fx_authorization_id,\n            manual_fx_acknowledged_at::text, created_at::text, completed_at::text
+            exchange_rate_snapshot::text, fx_source, fx_authorization_id,\n            operation_date::text, exchange_rate_effective_date::text,
+            manual_fx_acknowledged_at::text, created_at::text, completed_at::text
        FROM public.sales
       WHERE organization_id = $1 AND id = $2`,
     [organizationId, saleId],
@@ -364,6 +377,8 @@ async function loadSaleResponse(
     fx_source: sale.fx_source,
     fx_authorization_id: sale.fx_authorization_id,
     manual_fx_acknowledged_at: sale.manual_fx_acknowledged_at,
+    operation_date: sale.operation_date,
+    exchange_rate_effective_date: sale.exchange_rate_effective_date,
     fx_receipt_label: sale.fx_source === 'manual_contingency' ? 'Tasa manual de contingencia (no oficial BCV)' : 'Tasa BCV',
     created_at: sale.created_at,
     completed_at: sale.completed_at,
@@ -763,16 +778,56 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
               const auth = active.rows[0];
               if (!auth) return false;
               const recovery = await tx.query<{ id: string }>(
-                `SELECT obs.id
+                `WITH operation AS (
+                   SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date AS operation_date
+                 )
+                 SELECT obs.id
                    FROM public.bcv_sync_success_observations obs
+                   CROSS JOIN operation op
+                   JOIN public.bcv_sync_state current_state ON current_state.singleton=true
                    JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id
-                  WHERE obs.observed_at > $1::timestamptz
+                  WHERE current_state.last_success_at IS NOT NULL
+                    AND current_state.last_success_at = obs.last_success_at
+                    AND current_state.last_outcome = obs.last_outcome
+                    AND current_state.last_effective_date = obs.last_effective_date
+                    AND obs.observed_at >= obs.last_success_at
+                    AND current_state.last_outcome IN ('inserted','unchanged')
+                    AND current_state.last_error_code IS NULL
+                    AND current_state.last_effective_date >= rate.effective_date
+                    AND obs.observed_at > $1::timestamptz
                     AND obs.last_outcome IN ('inserted','unchanged')
                     AND obs.last_error_code IS NULL
                     AND obs.validation_status='valid'
-                    AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
-                    AND rate.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
                     AND rate.source=$2
+                    AND rate.base_currency='USD' AND rate.quote_currency='VES' AND rate.rate > 0
+                    AND rate.validation_status='valid'
+                    AND rate.effective_date=obs.last_effective_date
+                    AND obs.rate_snapshot=rate.rate
+                    AND rate.effective_date <= op.operation_date + 5
+                    AND (rate.effective_date=op.operation_date OR NOT EXISTS (
+                      SELECT 1 FROM public.exchange_rates exact
+                       WHERE exact.source=$2 AND exact.validation_status='valid'
+                         AND exact.base_currency='USD' AND exact.quote_currency='VES' AND exact.rate > 0
+                         AND exact.effective_date=op.operation_date
+                    ))
+                    AND (
+                      rate.effective_date=op.operation_date
+                      OR (
+                        rate.effective_date > op.operation_date
+                        AND (
+                          EXTRACT(ISODOW FROM op.operation_date) IN (6,7)
+                          OR current_state.last_success_at >= (op.operation_date::timestamp AT TIME ZONE 'America/Caracas')
+                        )
+                      )
+                    )
+                    AND NOT EXISTS (
+                      SELECT 1 FROM public.exchange_rates earlier
+                       WHERE earlier.source=$2 AND earlier.validation_status='valid'
+                         AND earlier.base_currency='USD' AND earlier.quote_currency='VES' AND earlier.rate > 0
+                         AND earlier.effective_date > op.operation_date
+                         AND earlier.effective_date < rate.effective_date
+                         AND earlier.effective_date <= op.operation_date + 5
+                    )
                     AND (obs.last_outcome <> 'inserted' OR obs.rate_fetched_at > $1::timestamptz)
                   LIMIT 1`,
                 [auth.starts_at, BCV_SOURCE],
@@ -797,6 +852,12 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
         return c.json({ error: "FX_RATE_NOT_AVAILABLE", message: "No existe una tasa oficial aplicable ni una autorización manual vigente." }, 409);
       }
       if (code === "23505") return c.json({ error: "IDEMPOTENCY_CONFLICT", message: "La clave de idempotencia ya fue utilizada." }, 409);
+      const databaseMessage = error instanceof Error ? error.message : String(error);
+      if (databaseMessage.includes("SALE_REQUIRES_CURRENT_BCV_RATE") ||
+          databaseMessage.includes("SALE_REQUIRES_LATEST_SUCCESSFUL_BCV_SYNC") ||
+          databaseMessage.includes("SALE_BCV_DATE_SNAPSHOT_INVALID")) {
+        return c.json({ error: "BCV_RATE_NOT_CURRENT", message: "La tasa BCV dejó de ser aplicable a la fecha operativa; vuelve a consultar la tasa." }, 409);
+      }
       if (code === "23503" || code === "23514" || code === "22P02") {
         return c.json({ error: "CHECKOUT_REJECTED", message: "La operación no cumple las reglas de integridad." }, 409);
       }

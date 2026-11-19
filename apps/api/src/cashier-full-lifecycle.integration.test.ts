@@ -260,11 +260,6 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
            FROM public.bcv_sync_state WHERE singleton=true`,
       );
       previousSync = sync.rows[0] ?? null;
-      await admin.query(
-        `UPDATE public.bcv_sync_state SET last_outcome='inserted',last_success_at=now(),
-           last_effective_date=$1::date,last_error_code=NULL,updated_at=now() WHERE singleton=true`,
-        [effectiveDate],
-      );
       const existing = await admin.query<{ id: string; rate: string; validation_status: string; fetched_at: string }>(
         "SELECT id,rate::text,validation_status,fetched_at::text FROM public.exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",
         [effectiveDate],
@@ -276,6 +271,15 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
         `INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status)
          VALUES('USD','VES',250.12345678,'BCV_OFFICIAL_HTML_V1',$1::date,'valid')`,
         [effectiveDate],
+      );
+      // Publish the sync only after the rate row exists: the 0026 append-only
+      // observation trigger snapshots the exact rate on this state transition.
+      await bcv.query(
+        `UPDATE public.bcv_sync_state SET attempt_id=$2::uuid,last_attempt_at=pg_catalog.clock_timestamp(),
+           last_success_at=pg_catalog.clock_timestamp(),last_outcome='inserted',
+           last_effective_date=$1::date,last_error_code=NULL,updated_at=pg_catalog.clock_timestamp()
+         WHERE singleton=true`,
+        [effectiveDate, crypto.randomUUID()],
       );
     });
 

@@ -106,7 +106,9 @@ type BcvRateResponse = {
   effectiveDate: string;
   fetchedAt: string;
   source: string;
-  status: "current" | "stale";
+  status: "current" | "scheduled" | "stale";
+  operationDate?: string;
+  selectionPriority?: "today_exact" | "weekend_prepublished" | "weekday_same_day_sync" | null;
 };
 
 type BcvSyncStateResponse = {
@@ -434,6 +436,7 @@ export default function App() {
       if (document.visibilityState === "visible") refreshBcvRate();
     };
     document.addEventListener("visibilitychange", refreshOnVisibility);
+    window.addEventListener("focus", refreshBcvRate);
     // Keep a periodic refresh for an open dashboard while also handling midnight exactly.
     const interval = window.setInterval(refreshBcvRate, 60 * 60 * 1000);
     return () => {
@@ -442,6 +445,7 @@ export default function App() {
       window.clearInterval(dateInterval);
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", refreshOnVisibility);
+      window.removeEventListener("focus", refreshBcvRate);
     };
   }, [session]);
 
@@ -576,12 +580,12 @@ export default function App() {
               <p className="eyebrow">TIPO DE CAMBIO OFICIAL</p>
               <h2>{bcvRate ? <>1 USD <span>=</span> Bs. {formatBcvRate(bcvRate.rate)}</> : "Tasa BCV no disponible"}</h2>
               <p className="exchange-rate-meta">
-                {bcvRate ? `Fecha valor: ${formatBcvEffectiveDate(bcvRate.effectiveDate)} · Actualizada: ${formatBcvFetchedAt(bcvRate.fetchedAt)}` : "La equivalencia en bolívares aparecerá cuando exista una tasa oficial validada."}
+                {bcvRate ? `Fecha de operación: ${formatBcvEffectiveDate(bcvRate.operationDate ?? caracasCalendarDate())} · Fecha valor BCV: ${formatBcvEffectiveDate(bcvRate.effectiveDate)} · Capturada: ${formatBcvFetchedAt(bcvRate.fetchedAt)}` : "La equivalencia en bolívares aparecerá cuando exista una tasa oficial validada."}
               </p>
               {bcvError && <p className="exchange-rate-error" role="status">{bcvError}</p>}
             </div>
             <span className={`exchange-rate-status ${bcvRate && (bcvError || bcvRate.status === "stale") ? "stale" : !bcvRate ? "unavailable" : ""}`}>
-              {bcvLoading ? "Actualizando…" : bcvError && bcvRate ? "Sin actualizar" : bcvRate?.status === "current" ? "Vigente" : bcvRate?.status === "stale" ? "Desactualizada" : "No disponible"}
+              {bcvLoading ? "Actualizando…" : bcvError && bcvRate ? "Sin actualizar" : bcvRate?.status === "current" ? "Válida para hoy" : bcvRate?.status === "scheduled" ? "Publicada; aún no aplicable" : bcvRate?.status === "stale" ? "Desactualizada" : "No disponible"}
             </span>
             <p className="exchange-rate-source">Fuente: Banco Central de Venezuela (BCV). No se sustituye por tasas de terceros.</p>
           </section>
@@ -601,10 +605,12 @@ export default function App() {
             <InventoryPanel organizationId={organization?.id ?? ""} canManageInventory={organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory"} />
           ) : activeView === "quick-lookup" ? (
             <QuickProductLookup organizationId={organization?.id ?? ""} exchangeRate={bcvRate?.rate ?? null}
-              exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"} />
+              exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
+              exchangeRateEffectiveDate={bcvRate?.effectiveDate ?? null} />
           ) : activeView === "sales" && (organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (
             <SalesPanel organizationId={organization.id} exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
+              exchangeRateEffectiveDate={bcvRate?.effectiveDate ?? null}
               onGoToRegister={() => setActiveView("register-shifts")}
               onRefreshRate={async () => {
                 try { const result = await apiRequest<BcvRateResponse>("/api/exchange-rates/latest"); setBcvRate(result); setBcvError(""); }
@@ -615,6 +621,7 @@ export default function App() {
               organizationId={organization?.id ?? ""}
               exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
+              exchangeRateEffectiveDate={bcvRate?.effectiveDate ?? null}
               canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
           ) : activeView === "fx-contingency" && (organization?.role === "owner" || organization?.role === "admin") ? (

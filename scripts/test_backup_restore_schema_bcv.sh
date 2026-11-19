@@ -218,10 +218,11 @@ MIGRATIONS_DIR="$repo_root/apps/api/migrations" \
 
 pg_restore --exit-on-error --single-transaction --no-owner --no-privileges --dbname="$migration_restore_url" "$tmpdir/schema.restored.dump"
 
-MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv-0026 \
+MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv-0027 \
   bash scripts/db/reapply_restore_role_grants.sh
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0025_inventory_receipts.assertions.sql
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
+psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
@@ -782,7 +783,7 @@ source_fixture_ok="$(fixture_assertions "$schema_source_url")"
 restored_fixture_ok="$(fixture_assertions "$schema_restore_url")"
 if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
   for target in "$schema_source_url" "$schema_restore_url"; do
-    echo "== Diagnostic populated 0025/0026 fixture assertions for $target"
+    echo "== Diagnostic populated 0025-0027 fixture assertions for $target"
     psql "$target" -X -v ON_ERROR_STOP=1 -Atqc "
       SELECT 'receipt|' || (SELECT count(*) FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025')
         || '|receipt_lines|' || (SELECT count(*) FROM public.inventory_receipt_lines WHERE receipt_id=(SELECT id FROM public.inventory_receipts WHERE idempotency_key='synthetic-restore-receipt-0025'))
@@ -817,6 +818,6 @@ echo "PASS: all $expected_migrations numbered migrations applied through scripts
 echo "PASS: encrypted restore preserved schema, ownership, ACLs, RLS/policies, role contract and effective search_path."
 echo "PASS: populated PR #287 BCV/checkout and projection-ledger graph and cross-table relationships survived restore."
 echo "PASS: populated 0025 inventory receipts/lines/purchase movements survived restore with quantity, cost and ledger projection assertions."
-echo "PASS: populated 0026 PIN verifier, revoked delegation/authorization, append-only event and BCV success observation survived restore; no active authorization or manual-contingency sale exists."
+echo "PASS: populated 0026 PIN/contingency and 0027 dual-date BCV contracts survived restore; no active authorization or manual-contingency sale exists."
 echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts preserved their schema while all synthetic source rows were excluded from restore."
 echo "Schema/data round-trip elapsed seconds: $((SECONDS - started_at))."

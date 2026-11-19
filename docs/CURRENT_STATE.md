@@ -3882,3 +3882,26 @@ PR #346 fusionada en main: `c6a9ad611111fbc32da8b13329481458c933ec21`. HEAD exac
 
 
 Nota de continuidad: el SHA anterior indicado es el último HEAD completamente validado (25/25 check-runs SUCCESS). Este commit solo actualiza documentación; verificar el nuevo HEAD vivo y sus checks exactos antes de cualquier merge. PR #350 sigue OPEN/no-Draft y no se debe fusionar.
+
+
+## Estado vigente — PR #383 / BCV 0027 (2026-11-19)
+
+- PR #383: OPEN / Draft, sin merge ni auto-merge. Rama `feat/bcv-0027-nonbusiness-day-effective-date-20261118`.
+- Último SHA de código validado antes de esta reconciliación documental: `af422a0f08dcc9b3a1b4228cd76fbf958b4040e5`.
+- Evidencia exacta de código: 22/22 check-runs completed / success; 13/13 workflows completed / success. CI run `44625145706` terminó success. Build/typecheck, unit tests, matriz PostgreSQL 18 BCV 0027, integración atómica de checkout, FX contingency PG-01..PG-30 y Cashier lifecycle pasaron. Playwright E2E run `44625146088` completó ambos jobs en success.
+- Cloudflare Pages y Workers Builds también aparecen success en los check-runs del SHA de código; corresponden a previews/builds, no a un despliegue productivo autorizado.
+- Se reparó la fuga de estado del turno entre tests: restauración en `finally` y reutilización del turno restaurado en el test paralelo. La primera validación de esa reparación detectó correctamente un segundo INSERT conflictivo; se eliminó y el test de checkout PostgreSQL pasó en el SHA de código validado.
+- La prueba determinista cubre el límite Caracas viernes `03:59:59Z` / sábado `04:00:00Z` en `selectApplicableBcvRate`, `findLatestBcvRate`, checkout y selector PostgreSQL. La comprobación SQL verifica que el trigger toma el bloqueo compartido antes de capturar `clock_timestamp()` y deriva ambas fechas del mismo instante.
+
+### Gates globales vigentes
+
+- AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`.
+- Issue #53 OPEN/P0.
+- Freeze v1.1 activo.
+- Neon `main` en migración 0025; no se abrió conexión ni se realizaron cambios a Neon.
+- `PRODUCTION: NOT READY`.
+- No merge, auto-merge, deploy productivo, cambios manuales Cloudflare, datos reales ni secretos.
+
+### Pendiente inmediato
+
+Los 22/22 anteriores pertenecen únicamente al SHA de código `af422a0f...`. Esta actualización documental y los commits que la siguen cambian el HEAD; ejecutar y verificar nuevamente 22/22 sobre el SHA documental definitivo antes de entregar el cierre para revisión de merge. No inferir checks de un SHA anterior.

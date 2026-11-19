@@ -13,7 +13,7 @@ import "./sales-panel.css";
 
 type Currency = "USD" | "VES";
 type PaymentMethod = "cash" | "card" | "transfer" | "mobile_payment" | "other";
-type ExchangeRateStatus = "current" | "stale" | "unavailable";
+type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
 type Shift = { shift_id?: string; id?: string; branch_id: string; branch_name?: string; register_name?: string; opened_at?: string };
 type Warehouse = { id: string; name: string; code: string; is_active: boolean };
 type FxPanelState = { commercial_enabled: boolean; authorization: { id: string; rate: string; expires_at: string } | null };
@@ -25,13 +25,15 @@ type SaleReceipt = {
   sale_number: string; created_at: string; currency: Currency; subtotal_usd: string;
   total_usd: string; total_ves: string; bcv_rate: string | null; fx_rate: string;
   fx_source: 'bcv_official' | 'manual_contingency'; fx_receipt_label: string;
-  fx_authorization_id: string | null; lines: SaleLineReceipt[]; payments: SalePaymentReceipt[];
+  fx_authorization_id: string | null; operation_date: string | null; exchange_rate_effective_date: string | null;
+  lines: SaleLineReceipt[]; payments: SalePaymentReceipt[];
 };
 
 type SalesPanelProps = {
   organizationId: string;
   exchangeRate: string | null;
   exchangeRateStatus: ExchangeRateStatus;
+  exchangeRateEffectiveDate?: string | null;
   onGoToRegister: () => void;
   onRefreshRate?: () => Promise<void> | void;
 };
@@ -50,6 +52,11 @@ function localized(value: string, precision = 14, scale = 2, minFractionDigits =
 }
 function usd(value: string): string { return `US$ ${localized(value, 14, 4)}`; }
 function ves(value: string): string { return `Bs. ${localized(value, 16, 2)}`; }
+function formatEffectiveDate(value?: string | null): string {
+  if (!value) return "una fecha futura";
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
 function dateTime(value: string): string {
   return new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(new Date(value));
 }
@@ -64,7 +71,7 @@ let paymentLineSequence = 0;
 function nextPaymentLineId(): string { paymentLineSequence += 1; return `payment-${paymentLineSequence}`; }
 
 export default function SalesPanel({
-  organizationId, exchangeRate, exchangeRateStatus, onGoToRegister, onRefreshRate,
+  organizationId, exchangeRate, exchangeRateStatus, exchangeRateEffectiveDate, onGoToRegister, onRefreshRate,
 }: SalesPanelProps) {
   const [shift, setShift] = useState<Shift | null>(null);
   const [shiftLoaded, setShiftLoaded] = useState(false);
@@ -442,7 +449,7 @@ export default function SalesPanel({
 
           {warehouseLoaded && warehouses.length === 0 && <p className="sales-alert warning" role="status">Esta sucursal no tiene almacenes activos. Habilita uno antes de vender.</p>}
           {warehouseLoaded && warehouses.length > 1 && !warehouseId && <p className="sales-alert warning" role="status">Selecciona el almacén que surtirá esta venta.</p>}
-          {!canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
+          {exchangeRateStatus === "scheduled" ? <p className="sales-alert warning" role="status">La tasa BCV fue publicada para {formatEffectiveDate(exchangeRateEffectiveDate)}, pero aún no es aplicable a la operación de hoy. No se habilita el cobro con esa tasa.</p> : !canConvert && <p className="sales-alert warning" role="alert">El cobro se habilita cuando exista una tasa BCV vigente o una contingencia autorizada y habilitada.</p>}
 
           {warehouseId && !receipt && (
             <div className="sales-workspace">
@@ -450,6 +457,7 @@ export default function SalesPanel({
                 organizationId={organizationId}
                 exchangeRate={exchangeRate}
                 exchangeRateStatus={exchangeRateStatus}
+                exchangeRateEffectiveDate={exchangeRateEffectiveDate}
                 lockedBranchId={shift.branch_id}
                 lockedWarehouseId={warehouseId}
                 resetSignal={lookupReset}
@@ -498,6 +506,7 @@ export default function SalesPanel({
         <div className="sales-receipt-head"><div><p className="eyebrow">OPERACIÓN CONFIRMADA</p><h2 id="sales-receipt-title">Comprobante de venta</h2></div><span className="sales-state success">Completada</span></div>
         <div className="sales-receipt-number"><span>Número de venta</span><strong>{receipt.sale_number}</strong></div>
         <p className="sales-receipt-date">{dateTime(receipt.created_at)} · {receipt.fx_receipt_label}: {localized(receipt.fx_rate, 18, 8)} Bs./USD</p>
+        <p className="sales-receipt-date">Fecha de operación Caracas: {receipt.operation_date ?? "—"} · Fecha valor BCV: {receipt.exchange_rate_effective_date ?? "No aplica a tasa manual"}</p>
         {receipt.fx_source === 'manual_contingency' && receipt.fx_authorization_id && (
           <p className="sales-receipt-date">Referencia de autorización: {receipt.fx_authorization_id}</p>
         )}

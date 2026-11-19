@@ -10,6 +10,7 @@ import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { hashFxPin, verifyFxPin } from "./fx-pin";
 import { resolveTenantContext } from "./tenant-context";
 import { isValidClientIp } from "./runtime-write-rate-limit";
+import { findLatestBcvRate } from "./exchange-rates";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY = 8 * 1024;
@@ -313,6 +314,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         // Administrative reads are also a server-side expiry/recovery
         // boundary. Serialize BCV -> FX, then commit a durable transition.
         await tx.query("SELECT * FROM public.lock_bcv_sync_state()");
+        // Reuse the same application-side 0027 eligibility resolver as checkout.
+        // The underlying SQL selector is intentionally not executable by runtime.
+        const bcv = await findLatestBcvRate(tx);
         const active = await tx.query<{
           id: string; starts_at: Date | string; expires_at: Date | string;
           authorized_by_user_id: string; authorized_by_role: "owner" | "admin";
@@ -327,20 +331,27 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
             [activeRow.expires_at],
           );
           const expired = expiryCheck.rows[0]?.expired === true;
-          const recovery = expired ? null : await tx.query<{ id: string }>(
+          const recovery = expired || bcv?.status !== "current" ? null : await tx.query<{ id: string }>(
             `SELECT obs.id
                FROM public.bcv_sync_success_observations obs
-               JOIN public.exchange_rates rate ON rate.id=obs.exchange_rate_id
+               JOIN public.bcv_sync_state state ON state.singleton=true
               WHERE obs.observed_at > $1::timestamptz
+                AND obs.observed_at >= obs.last_success_at
+                AND obs.last_success_at = state.last_success_at
+                AND obs.last_outcome = state.last_outcome
+                AND obs.last_effective_date = state.last_effective_date
+                AND state.last_outcome IN ('inserted','unchanged')
+                AND state.last_error_code IS NULL
                 AND obs.last_outcome IN ('inserted','unchanged')
                 AND obs.last_error_code IS NULL
                 AND obs.validation_status='valid'
-                AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
-                AND rate.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
-                AND rate.source='BCV_OFFICIAL_HTML_V1'
-                AND (obs.last_outcome <> 'inserted' OR obs.rate_fetched_at > $1::timestamptz)
+                AND obs.exchange_rate_id=$2::uuid
+                AND obs.last_effective_date=$3::date
+                AND obs.rate_snapshot=$4::numeric
+                AND ((obs.last_outcome='inserted' AND obs.rate_fetched_at > $1::timestamptz)
+                  OR obs.last_outcome='unchanged')
               LIMIT 1`,
-            [activeRow.starts_at],
+            [activeRow.starts_at, bcv.id, bcv.effective_date, bcv.rate],
           );
           if (expired || recovery?.rows[0]) {
             await tx.query(
@@ -372,17 +383,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                 ORDER BY a.starts_at DESC LIMIT 1`,
           [tenant.organizationId, branchId],
         );
-        const bcv = await tx.query(
-          `SELECT state.last_success_at,state.last_outcome,state.last_effective_date,
-                  rate.id AS exchange_rate_id,rate.rate::text AS rate,rate.validation_status
-             FROM public.bcv_sync_state state
-             LEFT JOIN public.exchange_rates rate
-               ON rate.source='BCV_OFFICIAL_HTML_V1'
-              AND rate.effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
-            WHERE state.singleton=true
-            LIMIT 1`,
-        );
-        return { kind: "ok" as const, authorization: rows.rows[0] ?? null, bcv: bcv.rows[0] ?? null, commercial_enabled: c.env.FX_CONTINGENCY_ENABLED === "true" };
+        return { kind: "ok" as const, authorization: rows.rows[0] ?? null, bcv, commercial_enabled: c.env.FX_CONTINGENCY_ENABLED === "true" };
       }));
       if (result.kind !== "ok") return authFailure(c, result.kind);
       return c.json(result);
@@ -426,13 +427,60 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (renewalId && active.rows[0]?.id !== renewalId) return { kind: "authorization_not_active" as const };
         if (active.rows[0]) {
           const recovery = await tx.query<{ restored: boolean }>(
-            `SELECT EXISTS (
+            `WITH operation AS (
+               SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date AS operation_date
+             )
+             SELECT EXISTS (
                SELECT 1 FROM public.bcv_sync_success_observations obs
-                WHERE obs.observed_at > $1::timestamptz
+               CROSS JOIN operation op
+               JOIN public.bcv_sync_state current_state ON current_state.singleton=true
+                WHERE current_state.last_success_at IS NOT NULL
+                  AND current_state.last_success_at <= pg_catalog.clock_timestamp()
+                  AND current_state.last_success_at = obs.last_success_at
+                  AND current_state.last_outcome = obs.last_outcome
+                  AND current_state.last_effective_date = obs.last_effective_date
+                  AND obs.observed_at >= obs.last_success_at
+                  AND current_state.last_outcome IN ('inserted','unchanged')
+                  AND current_state.last_error_code IS NULL
+                  AND current_state.last_effective_date >= obs.last_effective_date
+                  AND obs.observed_at > $1::timestamptz
                   AND obs.last_outcome IN ('inserted','unchanged')
                   AND obs.last_error_code IS NULL
-                  AND obs.last_effective_date=(pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
                   AND obs.validation_status='valid'
+                  AND obs.exchange_rate_id IS NOT NULL
+                  AND EXISTS (
+                    SELECT 1 FROM public.exchange_rates er
+                     WHERE er.id=obs.exchange_rate_id
+                       AND er.source='BCV_OFFICIAL_HTML_V1'
+                       AND er.validation_status='valid' AND er.base_currency='USD' AND er.quote_currency='VES' AND er.rate > 0
+                       AND er.effective_date=obs.last_effective_date
+                       AND obs.rate_snapshot=er.rate
+                       AND er.effective_date <= op.operation_date + 5
+                       AND (er.effective_date=op.operation_date OR NOT EXISTS (
+                         SELECT 1 FROM public.exchange_rates exact
+                          WHERE exact.source='BCV_OFFICIAL_HTML_V1'
+                            AND exact.validation_status='valid' AND exact.base_currency='USD' AND exact.quote_currency='VES' AND exact.rate > 0
+                            AND exact.effective_date=op.operation_date
+                       ))
+                       AND (
+                         er.effective_date=op.operation_date
+                         OR (
+                           er.effective_date > op.operation_date
+                           AND (
+                             EXTRACT(ISODOW FROM op.operation_date) IN (6,7)
+                             OR current_state.last_success_at >= (op.operation_date::timestamp AT TIME ZONE 'America/Caracas')
+                           )
+                         )
+                       )
+                       AND NOT EXISTS (
+                         SELECT 1 FROM public.exchange_rates earlier
+                          WHERE earlier.source='BCV_OFFICIAL_HTML_V1'
+                            AND earlier.validation_status='valid' AND earlier.base_currency='USD' AND earlier.quote_currency='VES' AND earlier.rate > 0
+                            AND earlier.effective_date > op.operation_date
+                            AND earlier.effective_date < er.effective_date
+                            AND earlier.effective_date <= op.operation_date + 5
+                       )
+                  )
                   AND ((obs.last_outcome='inserted' AND obs.rate_fetched_at > $1::timestamptz)
                     OR obs.last_outcome='unchanged')
              ) AS restored`,
@@ -466,7 +514,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         }
         const reference = await tx.query<{ id: string; rate: string }>(
           `SELECT id,rate::text FROM public.exchange_rates
-            WHERE source='BCV_OFFICIAL_HTML_V1' AND validation_status='valid'
+            WHERE source='BCV_OFFICIAL_HTML_V1' AND base_currency='USD' AND quote_currency='VES' AND rate > 0 AND validation_status='valid'
               AND effective_date <= (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date
             ORDER BY effective_date DESC,fetched_at DESC LIMIT 1`,
         );

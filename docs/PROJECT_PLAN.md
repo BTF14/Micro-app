@@ -1611,3 +1611,19 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 3. Cerrar fixture HTML oficial BCV, calendario bancario SUDEBAN, alertas/identidad real del Worker y revisión legal/contable.
 4. Mantener #255/#269/#287 Draft; no activar Cron ni desplegar hasta cerrar gates P1.
 
+
+
+## BCV 0027 — implementación y validación de código (2026-11-19)
+
+- PR #383 sigue OPEN / Draft; sin merge ni auto-merge.
+- Código validado en el SHA exacto `af422a0f08dcc9b3a1b4228cd76fbf958b4040e5`: 22/22 GitHub check-runs en `completed / success`; 13/13 workflows asociados completados en success.
+- CI `44625145706`: PostgreSQL 18 BCV 0027 effective-date matrix, build/typecheck, unit tests, PostgreSQL atomic sales checkout integration, FX contingency PG-01..PG-30, Cashier lifecycle y runtime-role API integration en success.
+- Playwright E2E `44625146088`: Real full-stack commerce E2E (PostgreSQL 18) y Chromium authentication smoke tests en success.
+- Cloudflare Pages y Workers Builds completaron en success para el SHA de rama; son checks de preview/build, no autorización de producción.
+- Corregido el aislamiento del turno del test: el caso de turno cerrado restaura un turno activo en `finally`; el test de checkouts paralelos reutiliza ese turno para no violar el índice de un turno abierto por caja.
+- Añadida matriz determinista del cruce Caracas `03:59:59Z` / `04:00:00Z` en política TypeScript, checkout, latest-rate y PostgreSQL 18. La prueba SQL inspecciona el orden bloqueo→captura de reloj y el uso del mismo instante para ambas fechas.
+- Siguiente gate: terminar esta reconciliación documental y validar **22/22 check-runs en el SHA documental definitivo**. No reutilizar los checks del SHA de código como evidencia del SHA documental.
+
+**Gates globales sin cambios:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; Neon `main` en 0025 (sin acceso ni cambios durante esta tarea); `PRODUCTION: NOT READY`. No merge, auto-merge, despliegue productivo ni acceso a datos reales.
+
+El SHA documental previo `3cf583d8a156503f88c0468e119934bc8c6202f9` también obtuvo 22/22 check-runs completed / success. Este commit consolida el registro final; exigir nuevamente 22/22 sobre su SHA resultante, no heredar checks previos.

@@ -3,6 +3,7 @@ import { getCookie } from "hono/cookie";
 import { authorizeTenantOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction, type DatabaseClient, type DatabaseClientFactory } from "./database";
 import type { Bindings } from "./bindings";
+import { bcvCaracasDate, selectApplicableBcvRate } from "./bcv-0027";
 
 const BCV_SOURCE_URL = "https://www.bcv.org.ve/";
 export const BCV_SOURCE_ID = "BCV_OFFICIAL_HTML_V1";
@@ -30,7 +31,7 @@ export type BcvOfficialRate = {
 type StoredRateRow = {
   rate: string;
   effective_date: string;
-  validation_status?: "valid" | "stale";
+  validation_status: "valid" | "stale";
 };
 
 function caracasDate(now: Date): string {
@@ -462,7 +463,7 @@ export async function findApplicableBcvRate(
     `SELECT rate::text AS rate, effective_date::text AS effective_date,
             to_char(fetched_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at, validation_status
        FROM public.exchange_rates
-      WHERE source = $1
+      WHERE source = $1 AND base_currency='USD' AND quote_currency='VES' AND rate > 0
         AND effective_date = $2::date
       ORDER BY fetched_at DESC
       LIMIT 1`,
@@ -470,6 +471,56 @@ export async function findApplicableBcvRate(
   );
   const row = result.rows[0];
   return row?.effective_date === today ? row : null;
+}
+
+export async function findLatestBcvRate(
+  client: DatabaseClient,
+  now = new Date(),
+): Promise<(StoredRateRow & { id: string; fetched_at: string; status: "current" | "scheduled" | "stale"; priority: string | null; operation_date: string }) | null> {
+  const stateResult = await client.query<{
+    operation_date: string; last_success_at: string | Date | null; last_outcome: string | null;
+    last_effective_date: string | null; last_error_code: string | null; has_success_observation: boolean;
+  }>(
+    `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
+            last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code,
+            EXISTS (SELECT 1 FROM public.bcv_sync_success_observations obs
+              WHERE state.last_success_at <= pg_catalog.clock_timestamp()
+                AND obs.last_success_at=state.last_success_at AND obs.last_outcome=state.last_outcome
+                AND obs.last_error_code IS NULL AND obs.last_effective_date=state.last_effective_date
+                AND obs.validation_status='valid' AND obs.exchange_rate_id IS NOT NULL
+                AND obs.rate_snapshot > 0 AND obs.observed_at >= obs.last_success_at) AS has_success_observation
+       FROM public.bcv_sync_state state WHERE singleton = true`,
+  );
+  const state = stateResult.rows[0] ?? null;
+  const operationDate = state?.operation_date ?? bcvCaracasDate(now);
+  const rowsResult = await client.query<StoredRateRow & { id: string; fetched_at: string }>(
+    `SELECT id,rate::text AS rate,effective_date::text AS effective_date,
+            to_char(fetched_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS fetched_at,
+            validation_status
+       FROM public.exchange_rates
+      WHERE source=$1 AND base_currency='USD' AND quote_currency='VES' AND rate > 0 AND effective_date >= ($2::date - 10) AND effective_date <= ($2::date + 5)
+      ORDER BY effective_date DESC,fetched_at DESC`,
+    [BCV_SOURCE_ID,operationDate],
+  );
+  const rows = rowsResult.rows;
+  if (!rows.length) return null;
+  const policyState = state?.has_success_observation ? state : null;
+  const selected = selectApplicableBcvRate(operationDate,policyState,rows);
+  if (selected) return { ...selected.row, fetched_at: selected.row.fetched_at ?? "", status: "current", priority: selected.priority, operation_date: operationDate };
+  const hasValidExact = rows.some((row) => row.validation_status === "valid" && row.effective_date === operationDate);
+  const futureCandidates = rows.filter((row) => row.validation_status === "valid" && row.effective_date > operationDate && row.effective_date <= new Date(Date.parse(`${operationDate}T00:00:00.000Z`) + 5*86_400_000).toISOString().slice(0,10))
+    .sort((a,b) => a.effective_date.localeCompare(b.effective_date));
+  const nearestFutureDate = futureCandidates[0]?.effective_date;
+  const nearestFutureRows = nearestFutureDate ? futureCandidates.filter((row) => row.effective_date === nearestFutureDate) : [];
+  const future = nearestFutureRows.length === 1 ? nearestFutureRows[0] : undefined;
+  if (!hasValidExact && future && state?.has_success_observation && state.last_success_at !== null &&
+      (state.last_outcome === "inserted" || state.last_outcome === "unchanged") &&
+      state.last_error_code === null && state.last_effective_date !== null &&
+      state.last_effective_date >= future.effective_date) {
+    return { ...future, status: "scheduled", priority: null, operation_date: operationDate };
+  }
+  const fallback = rows[0]!;
+  return { ...fallback, status: "stale", priority: null, operation_date: operationDate };
 }
 
 export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): void {
@@ -599,22 +650,22 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
   app.get("/api/exchange-rates/latest", async (c) => {
     try {
       const row = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
-        findApplicableBcvRate(client),
+        findLatestBcvRate(client),
       );
-      if (!row) {
-        return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "Todavía no hay una tasa BCV validada." }, 503);
-      }
-      const isStale = row.validation_status === "stale" || row.effective_date < caracasDate(new Date());
-      // Applicability can change at Caracas midnight without a new database row.
       c.header("Cache-Control", "no-store");
+      if (!row) {
+        return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "No existe una tasa BCV publicada disponible." }, 503);
+      }
       return c.json({
         baseCurrency: "USD",
         quoteCurrency: "VES",
         rate: row.rate,
         effectiveDate: row.effective_date,
+        operationDate: row.operation_date,
         fetchedAt: row.fetched_at,
         source: BCV_SOURCE_ID,
-        status: isStale ? "stale" : "current",
+        status: row.status,
+        selectionPriority: row.priority,
       });
     } catch {
       return c.json({ error: "BCV_RATE_LOOKUP_FAILED", message: "No se pudo consultar la tasa BCV." }, 503);

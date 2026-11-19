@@ -491,17 +491,16 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     } finally { await admin.query("ROLLBACK"); }
   });
 
-  it("PG-26 inserted BCV success is observed after authorization even if a later failed attempt overwrites state", async () => {
+  it("PG-26 inserted BCV success after authorization restores contingency while latest sync remains successful", async () => {
     const branch = await createBranch("PG26");
     const authId = await createAuthorization(branch, "101.00000000");
     const auth = await admin.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
     await admin.query("UPDATE public.exchange_rates SET validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [currentRateId]);
     const oldSuccess = new Date(auth.rows[0]!.starts_at.getTime() - 1000);
-    await updateSync("inserted", today, oldSuccess);
-    await updateSync("failed", today, oldSuccess);
+    const attemptId = await updateSync("inserted", today, oldSuccess);
     const observation = await admin.query<{ observed_at: Date; last_success_at: Date; rate_fetched_at: Date }>(
       "SELECT observed_at,last_success_at,rate_fetched_at FROM public.bcv_sync_success_observations WHERE attempt_id=$1",
-      [attemptIds[attemptIds.length - 2]],
+      [attemptId],
     );
     expect(observation.rows[0]!.observed_at.getTime()).toBeGreaterThan(auth.rows[0]!.starts_at.getTime());
     expect(observation.rows[0]!.last_success_at.getTime()).toBeLessThan(auth.rows[0]!.starts_at.getTime());
@@ -527,7 +526,6 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     expect(observation.rows[0]!.observed_at.getTime()).toBeGreaterThan(auth.rows[0]!.starts_at.getTime());
     expect(observation.rows[0]!.last_success_at.getTime()).toBeLessThan(auth.rows[0]!.starts_at.getTime());
     expect(observation.rows[0]!.rate_fetched_at.getTime()).toBe(fetchedBefore.rows[0]!.fetched_at.getTime());
-    await updateSync("failed", today, oldSuccess);
     await runtime.query("SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,'owner','BCV unchanged recovery test')", [organizationId, branch, authId, ownerId]);
     const state = await admin.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
     expect(state.rows[0].status).toBe("bcv_restored");
@@ -552,12 +550,29 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
       );
       futureRateIds.push(future.rows[0]!.id); futureRateCreated = true;
     }
-    const attemptId = await updateSync("inserted", tomorrow, new Date(Date.now() - 1000));
+    const auth = await admin.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
+    const oldSuccess = new Date(auth.rows[0]!.starts_at.getTime() - 24 * 60 * 60 * 1000);
+    const attemptId = await updateSync("inserted", tomorrow, oldSuccess);
     const observation = await admin.query("SELECT observed_at,last_effective_date,validation_status FROM public.bcv_sync_success_observations WHERE attempt_id=$1", [attemptId]);
     expect(observation.rows[0].last_effective_date.toISOString?.() ?? String(observation.rows[0].last_effective_date)).toContain(tomorrow);
-    await expect(runtime.query("SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,'owner','future rate must not restore')", [organizationId, branch, authId, ownerId])).rejects.toMatchObject({ code: "23514" });
+    await expect(runtime.query("SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,'owner','future rate must not restore')", [organizationId, branch, authId, ownerId]))
+      .rejects.toThrow(/FX_BCV_RECOVERY_NOT_ELIGIBLE/);
     const stillActive = await admin.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
     expect(stillActive.rows[0].status).toBe("active");
+  });
+
+  it("PG-30 a later failed sync revokes an earlier inserted recovery observation", async () => {
+    const branch = await createBranch("PG30");
+    const authId = await createAuthorization(branch, "101.00000000");
+    const auth = await admin.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
+    await admin.query("UPDATE public.exchange_rates SET validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [currentRateId]);
+    const oldSuccess = new Date(auth.rows[0]!.starts_at.getTime() - 1000);
+    await updateSync("inserted", today, oldSuccess);
+    await updateSync("failed", today, oldSuccess);
+    await expect(runtime.query("SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,'owner','BCV superseded success test')", [organizationId, branch, authId, ownerId]))
+      .rejects.toThrow(/FX_BCV_RECOVERY_NOT_ELIGIBLE/);
+    const state = await admin.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
+    expect(state.rows[0].status).toBe("active");
   });
 
   it("PG-29 concurrent authorization attempts serialize through the unique active-branch index", async () => {

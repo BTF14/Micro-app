@@ -58,7 +58,30 @@ jobs:
           test "$issuer" = "CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB"
           openssl x509 -in "$cert" -noout -ext basicConstraints | grep -Fq "CA:TRUE, pathlen:0"
           openssl x509 -in "$cert" -noout -ext extendedKeyUsage | grep -Fq "TLS Web Server Authentication"
+
+          # BCV renewed its leaf on 2026-11-13 and now serves an OV R36
+          # intermediate. Keep the previously pinned DV R36 for transition,
+          # but verify and trust only these two explicit Sectigo intermediates.
+          ov_cert="apps/api/certs/sectigo-public-server-authentication-ca-ov-r36.crt"
+          test -s "$ov_cert"
+          openssl x509 -in "$ov_cert" -noout -checkend 0
+          ov_fingerprint="$(openssl x509 -in "$ov_cert" -noout -fingerprint -sha256 | sed 's/.*=//' | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          test "$ov_fingerprint" = "6542D176BED50F193C0CE297AE44ECD8A0A86BEC2EDE682769344059B4E78530"
+          ov_subject="$(openssl x509 -in "$ov_cert" -noout -subject -nameopt RFC2253 | sed 's/^subject=//')"
+          ov_issuer="$(openssl x509 -in "$ov_cert" -noout -issuer -nameopt RFC2253 | sed 's/^issuer=//')"
+          test "$ov_subject" = "CN=Sectigo Public Server Authentication CA OV R36,O=Sectigo Limited,C=GB"
+          test "$ov_issuer" = "CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB"
+          openssl x509 -in "$ov_cert" -noout -ext basicConstraints | grep -Fq "CA:TRUE, pathlen:0"
+          openssl x509 -in "$ov_cert" -noout -ext extendedKeyUsage | grep -Fq "TLS Web Server Authentication"
+      - name: Build narrowly pinned BCV intermediate bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat apps/api/certs/sectigo-public-server-authentication-ca-dv-r36.crt \
+              apps/api/certs/sectigo-public-server-authentication-ca-ov-r36.crt \
+              > "$RUNNER_TEMP/bcv-sectigo-intermediates.pem"
+          test "$(grep -c 'BEGIN CERTIFICATE' "$RUNNER_TEMP/bcv-sectigo-intermediates.pem")" -eq 2
       - name: Verify BCV HTTPS response and production parser (no Neon, no secrets; strict TLS)
         env:
-          NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/apps/api/certs/sectigo-public-server-authentication-ca-dv-r36.crt
+          NODE_EXTRA_CA_CERTS: ${{ runner.temp }}/bcv-sectigo-intermediates.pem
         run: pnpm --filter @micro-app/api exec vitest run src/bcv-connectivity.manual.test.ts

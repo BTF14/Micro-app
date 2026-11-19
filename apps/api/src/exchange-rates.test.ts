@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import officialBcvHomepageHtml from "./fixtures/bcv-homepage-dom-2026-11-09.html?raw";
-import { fetchBcvOfficialRate, findApplicableBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, syncBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
+import { fetchBcvOfficialRate, findApplicableBcvRate, findLatestBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, syncBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
 
 const NOW = new Date("2026-11-05T12:00:00-04:00");
@@ -603,4 +603,39 @@ describe("BCV synchronization failure and cleanup semantics", () => {
     }
   });
 
+});
+
+
+describe("BCV latest-rate Caracas midnight boundary", () => {
+  function latestClient(operationDate: string, candidates: Array<{
+    id: string; rate: string; effective_date: string; validation_status: "valid" | "stale"; fetched_at: string;
+  }>) {
+    let call = 0;
+    const client = {
+      query: async <Row = unknown>() => {
+        call += 1;
+        if (call === 1) return { rows: [{
+          operation_date: operationDate,
+          last_success_at: "2026-11-06T18:00:00.000Z",
+          last_outcome: "inserted",
+          last_effective_date: "2026-11-09",
+          last_error_code: null,
+          has_success_observation: true,
+        }] as Row[] };
+        return { rows: candidates as Row[] };
+      },
+    } as unknown as DatabaseClient;
+    return client;
+  }
+
+  const fridayRate = { id: "friday", rate: "895.10000000", effective_date: "2026-11-06", validation_status: "valid" as const, fetched_at: "2026-11-06T18:00:00.000Z" };
+  const mondayRate = { id: "monday", rate: "896.10000000", effective_date: "2026-11-09", validation_status: "valid" as const, fetched_at: "2026-11-06T18:00:00.000Z" };
+
+  it("reports Friday's exact rate immediately before midnight and Monday scheduled rate immediately after", async () => {
+    await expect(findLatestBcvRate(latestClient("2026-11-06", [fridayRate, mondayRate]), new Date("2026-11-07T03:59:59.000Z")))
+      .resolves.toMatchObject({ status: "current", priority: "today_exact", operation_date: "2026-11-06", effective_date: "2026-11-06" });
+    await expect(findLatestBcvRate(latestClient("2026-11-07", [mondayRate]), new Date("2026-11-07T04:00:00.000Z")))
+      .resolves.toMatchObject({ status: "current", priority: "weekend_prepublished", operation_date: "2026-11-07", effective_date: "2026-11-09" });
+    await expect(findLatestBcvRate(latestClient("2026-11-07", []), new Date("2026-11-07T04:00:00.000Z"))).resolves.toBeNull();
+  });
 });

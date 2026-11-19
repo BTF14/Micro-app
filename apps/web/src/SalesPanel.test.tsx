@@ -324,4 +324,27 @@ describe("SalesPanel", () => {
     expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
   });
 
+
+  it("renders immutable Caracas operation date separately from BCV value date on the receipt", async () => {
+    const receipt = {
+      id: "sale-bcv-0027", sale_number: "V-0027-001", created_at: "2026-11-07T04:05:00Z",
+      currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01",
+      bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official",
+      fx_receipt_label: "Tasa BCV oficial", fx_authorization_id: null,
+      operation_date: "2026-11-07", exchange_rate_effective_date: "2026-11-09",
+      lines: [{ product_name_snapshot: "Producto A", sku_snapshot: "A-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" }],
+      payments: [{ method: "cash", currency: "USD", amount: "0.0002", reference: null }],
+    };
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce({ shift } as never)
+      .mockResolvedValueOnce({ warehouses } as never)
+      .mockResolvedValueOnce(receipt as never);
+    await render("current", "36.50000000");
+    await act(async () => { click("Agregar producto A"); });
+    await act(async () => { click("Monto exacto"); });
+    await act(async () => { click("Cobrar venta"); await new Promise((resolve) => setTimeout(resolve, 0)); });
+    expect(container.textContent).toContain("Fecha de operación Caracas: 2026-11-07");
+    expect(container.textContent).toContain("Fecha valor BCV: 2026-11-09");
+  });
+
 });

@@ -5,7 +5,7 @@ import { apiRequest } from "./auth";
 import ProductForm from "./ProductForm";
 import "./catalog.css";
 
-type ExchangeRateStatus = "current" | "stale" | "unavailable";
+type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
 
 type CatalogProduct = {
   id: string;
@@ -29,8 +29,15 @@ type CatalogPanelProps = {
   organizationId: string;
   exchangeRate: string | null;
   exchangeRateStatus: ExchangeRateStatus;
+  exchangeRateEffectiveDate?: string | null;
   canManage: boolean;
 };
+
+function formatEffectiveDate(value?: string | null): string {
+  if (!value) return "una fecha futura";
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
 
 function formatUsd(value: string): string {
   try {
@@ -52,6 +59,7 @@ export default function CatalogPanel({
   organizationId,
   exchangeRate,
   exchangeRateStatus,
+  exchangeRateEffectiveDate,
   canManage,
 }: CatalogPanelProps) {
   const [items, setItems] = useState<CatalogProduct[]>([]);
@@ -129,6 +137,9 @@ export default function CatalogPanel({
         <p className="catalog-rate-warning" role="status">
           La última tasa BCV está desactualizada. La conversión a VES está suspendida hasta validar una tasa vigente.
         </p>
+      )}
+      {exchangeRateStatus === "scheduled" && (
+        <p className="catalog-rate-warning" role="status">La tasa BCV está publicada para {formatEffectiveDate(exchangeRateEffectiveDate)}, pero aún no aplica a la operación de hoy. No se muestran equivalencias en VES.</p>
       )}
       {exchangeRateStatus === "unavailable" && (
         <p className="catalog-rate-warning" role="status">

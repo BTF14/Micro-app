@@ -473,7 +473,7 @@ export async function findApplicableBcvRate(
   return row?.effective_date === today ? row : null;
 }
 
-async function findLatestBcvRate(
+export async function findLatestBcvRate(
   client: DatabaseClient,
   now = new Date(),
 ): Promise<(StoredRateRow & { fetched_at: string; status: "current" | "scheduled" | "stale"; priority: string | null; operation_date: string }) | null> {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectApplicableBcvRate, type BcvCandidate, type BcvSyncSnapshot } from "./bcv-0027";
+import { bcvCaracasDate, selectApplicableBcvRate, type BcvCandidate, type BcvSyncSnapshot } from "./bcv-0027";
 const row=(date:string,status:"valid"|"stale"="valid"):BcvCandidate=>({id:date,rate:"500.12345678",effective_date:date,validation_status:status});
 const state=(date:string,at="2026-11-06T12:00:00-04:00",outcome="inserted",error:null|string=null):BcvSyncSnapshot=>({last_success_at:at,last_outcome:outcome,last_effective_date:date,last_error_code:error});
 describe("BCV 0027 effective-date policy",()=>{
@@ -35,4 +35,15 @@ describe("BCV 0027 effective-date policy",()=>{
  it("rejects ambiguous nearest future candidates",()=>{
   expect(selectApplicableBcvRate("2026-11-07",state("2026-11-09"),[row("2026-11-09"),row("2026-11-09")])).toBeNull();
  });
+ it("switches eligibility at the exact Caracas midnight boundary independent of host timezone",()=>{
+  const fridayInstant=new Date("2026-11-07T03:59:59.000Z");
+  const saturdayInstant=new Date("2026-11-07T04:00:00.000Z");
+  expect(bcvCaracasDate(fridayInstant)).toBe("2026-11-06");
+  expect(bcvCaracasDate(saturdayInstant)).toBe("2026-11-07");
+  const published=state("2026-11-09","2026-11-06T18:00:00.000Z");
+  expect(selectApplicableBcvRate(bcvCaracasDate(fridayInstant),published,[row("2026-11-06"),row("2026-11-09")]))?.priority).toBe("today_exact");
+  expect(selectApplicableBcvRate(bcvCaracasDate(saturdayInstant),published,[row("2026-11-09")]))?.priority).toBe("weekend_prepublished");
+  expect(selectApplicableBcvRate(bcvCaracasDate(saturdayInstant),published,[])).toBeNull();
+ });
+
 });

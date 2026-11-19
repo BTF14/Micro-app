@@ -71,7 +71,7 @@ let paymentLineSequence = 0;
 function nextPaymentLineId(): string { paymentLineSequence += 1; return `payment-${paymentLineSequence}`; }
 
 export default function SalesPanel({
-  organizationId, exchangeRate, exchangeRateStatus, onGoToRegister, onRefreshRate,
+  organizationId, exchangeRate, exchangeRateStatus, exchangeRateEffectiveDate, onGoToRegister, onRefreshRate,
 }: SalesPanelProps) {
   const [shift, setShift] = useState<Shift | null>(null);
   const [shiftLoaded, setShiftLoaded] = useState(false);
@@ -457,6 +457,7 @@ export default function SalesPanel({
                 organizationId={organizationId}
                 exchangeRate={exchangeRate}
                 exchangeRateStatus={exchangeRateStatus}
+                exchangeRateEffectiveDate={exchangeRateEffectiveDate}
                 lockedBranchId={shift.branch_id}
                 lockedWarehouseId={warehouseId}
                 resetSignal={lookupReset}

@@ -50,7 +50,7 @@
 - Additional check-runs include Cloudflare Pages and Workers Builds, both completed / success. These are preview/build checks, not production deployment authorization.
 - Fixed the residual closed-shift fixture by reopening an active shift in `finally` and reusing that same shift in the subsequent parallel-checkout test; do not insert a second open shift for the same register.
 - Added deterministic Caracas midnight tests for `03:59:59Z` (Friday 23:59:59 VET) and `04:00:00Z` (Saturday 00:00:00 VET) in TypeScript policy, checkout, latest-rate status and PostgreSQL 18 selection. PostgreSQL test also verifies the trigger's shared-lock-before-clock ordering and that both snapshots derive from the same captured `operation_at`.
-- All successful evidence above is for the exact code SHA only. Documentation changes now require a new exact-final-SHA check-run validation before this task can be handed off as complete.
+- All successful evidence above is for the exact code SHA only. Documentation parent SHA `3cf583d8a156503f88c0468e119934bc8c6202f9` was independently validated at 22/22 completed / success. This final reconciliation commit must itself pass 22/22 on its resulting SHA before handoff.
 
 ### Gates retained (not closed by CI)
 

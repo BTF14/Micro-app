@@ -4367,4 +4367,4 @@ La reconciliación documental tiene sus propios commits y, por tanto, su propio 
 
 ### Próximo paso único
 
-Consultar el HEAD vivo de PR #383, esperar que terminen los workflows disparados por el último commit documental, consultar Check Runs API para ese SHA, confirmar 22/22 completed / success y revisar que PR siga OPEN / Draft. Si algún check falla, corregir únicamente en esta rama, volver a validar y repetir la verificación sobre el nuevo SHA. No cerrar gates ni fusionar; entregar el informe para revisión humana.
+El SHA documental padre `3cf583d8a156503f88c0468e119934bc8c6202f9` se verificó 22/22 completed / success. Este commit es la reconciliación documental final: consultar el HEAD vivo de PR #383, esperar todos los workflows y comprobar 22/22 sobre el SHA resultante de este commit. Si algún check falla, corregir únicamente en esta rama y revalidar el nuevo SHA. No cerrar gates ni fusionar; entregar el informe para revisión humana.

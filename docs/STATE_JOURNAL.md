@@ -3700,3 +3700,12 @@ Nota de continuidad: el SHA anterior indicado es el último HEAD completamente v
 - Se reconcilian ODD task, PROJECT_PLAN, CURRENT_STATE, HANDOFF_NEXT_CHAT y STATE_JOURNAL después de cumplir 22/22 sobre el SHA de código. Los commits documentales generan un SHA distinto que debe validarse otra vez con 22/22; no reutilizar la evidencia anterior.
 - PR #383 sigue OPEN / Draft; no merge ni auto-merge.
 - Gates retenidos: AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; Neon `main` en 0025 (sin acceso/cambios); `PRODUCTION: NOT READY`.
+
+
+## 2026-11-19 — Validación del SHA documental previo y reconciliación final
+
+- El SHA documental previo `3cf583d8a156503f88c0468e119934bc8c6202f9` completó 22/22 GitHub check-runs (`completed / success`) y 13/13 workflows (`completed / success`), incluidos CI, PostgreSQL, Playwright E2E, Cloudflare Pages y Workers Builds.
+- CI run `44625741344` terminó SUCCESS; build/typecheck, unit tests, PostgreSQL atomic sales checkout integration, FX contingency PG-01..PG-30 y runtime-role API integration SUCCESS.
+- Playwright E2E run `44625740976` terminó SUCCESS en ambos jobs.
+- Esta última reconciliación documental produce un nuevo HEAD; su SHA debe verificarse de forma independiente con 22/22 check-runs completed / success. No reutilizar el resultado del padre.
+- PR #383 continúa OPEN / Draft, sin merge ni auto-merge. Issue #53 OPEN/P0. AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; freeze v1.1; Neon `main` en 0025 sin acceso/cambios; `PRODUCTION: NOT READY`.

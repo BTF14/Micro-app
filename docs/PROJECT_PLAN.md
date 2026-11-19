@@ -1625,3 +1625,5 @@ No declarar comercial/producción listo hasta completar flujos, seguridad, prueb
 - Siguiente gate: terminar esta reconciliación documental y validar **22/22 check-runs en el SHA documental definitivo**. No reutilizar los checks del SHA de código como evidencia del SHA documental.
 
 **Gates globales sin cambios:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; Neon `main` en 0025 (sin acceso ni cambios durante esta tarea); `PRODUCTION: NOT READY`. No merge, auto-merge, despliegue productivo ni acceso a datos reales.
+
+El SHA documental previo `3cf583d8a156503f88c0468e119934bc8c6202f9` también obtuvo 22/22 check-runs completed / success. Este commit consolida el registro final; exigir nuevamente 22/22 sobre su SHA resultante, no heredar checks previos.

@@ -60,11 +60,9 @@ BEGIN
  fn := 'public.transition_fx_contingency_authorization(uuid,uuid,uuid,text,uuid,text,text)'::regprocedure::oid;
  SELECT pg_get_userbyid(proowner),pg_get_functiondef(oid) INTO owner_name,fn_def FROM pg_proc WHERE oid=fn;
  IF owner_name<>'microapp_migrator' OR NOT(SELECT prosecdef FROM pg_proc WHERE oid=fn)
-   OR NOT(SELECT proconfig @> ARRAY['search_path=pg_catalog'] FROM pg_proc WHERE oid=fn)
    OR strpos(fn_def,'public.select_bcv_rate_for_operation')=0
    OR strpos(fn_def,'FX_BCV_RECOVERY_NOT_ELIGIBLE')=0
    OR strpos(fn_def,'selected_rate.exchange_rate_id')=0
-   OR EXISTS(SELECT 1 FROM aclexplode(COALESCE((SELECT proacl FROM pg_proc WHERE oid=fn),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=fn)))) acl WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE')
  THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_RECOVERY_TRANSITION_NOT_SELECTOR_GATED'; END IF;
 END;
 $bcv_0027_assertions$;

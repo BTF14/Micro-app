@@ -338,7 +338,6 @@ describe("SalesPanel", () => {
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ shift } as never)
       .mockResolvedValueOnce({ warehouses } as never)
-      .mockResolvedValueOnce({ commercial_enabled: false, authorization: null } as never)
       .mockResolvedValueOnce(receipt as never);
     await render("current", "36.50000000");
     await act(async () => { click("Agregar producto A"); });

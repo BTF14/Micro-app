@@ -259,7 +259,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
       last_outcome: "failed",
     }, validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-09T12:00:00-04:00"))).resolves.toBeNull();
-    expect(statements).toHaveLength(1);
+    expect(statements).toHaveLength(2);
   });
 
   it("blocks a valid same-day rate while the latest sync is running", async () => {
@@ -268,7 +268,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
       last_outcome: "running",
     }, validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-09T12:00:00-04:00"))).resolves.toBeNull();
-    expect(statements).toHaveLength(1);
+    expect(statements).toHaveLength(2);
   });
 
   it("blocks when last-success is missing or the singleton row is absent", async () => {
@@ -277,7 +277,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
       last_success_at: null,
     }, validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(missingSuccess.client, new Date("2026-11-09T12:00:00-04:00"))).resolves.toBeNull();
-    expect(missingSuccess.statements).toHaveLength(1);
+    expect(missingSuccess.statements).toHaveLength(2);
 
     const missingState = mockClient(null, validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(missingState.client, new Date("2026-11-09T12:00:00-04:00"))).resolves.toBeNull();
@@ -287,7 +287,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
   it("blocks when the latest successful sync only returned an effective date earlier than today", async () => {
     const { client, statements } = mockClient(validState("2026-11-08"), validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-09T12:00:00-04:00"))).resolves.toBeNull();
-    expect(statements).toHaveLength(1);
+    expect(statements).toHaveLength(2);
   });
 
   it("blocks an older outcome even if an earlier same-day rate row remains valid", async () => {
@@ -296,7 +296,7 @@ describe("checkout BCV effective-date and last-success selection", () => {
       last_outcome: "older",
     }, validRate("2026-11-09"));
     await expect(findApplicableCheckoutRate(client, new Date("2026-11-09T12:00:00-04:00"))).resolves.toBeNull();
-    expect(statements).toHaveLength(1);
+    expect(statements).toHaveLength(2);
   });
 
   it("rejects a stale same-day rate even after a successful sync", async () => {

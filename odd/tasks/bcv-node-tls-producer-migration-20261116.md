@@ -8,6 +8,14 @@
 - Closed: 2026-11-16
 - Risk: critical (operational monitoring remains open)
 
+## Addendum — current BCV intermediate rotation (2026-11-19)
+
+- The live BCV endpoint now presents Sectigo Public Server Authentication CA **OV R36**, replacing the DV R36 intermediate described in the original 2026-11-16 implementation record.
+- The current `.github/workflows/bcv-sync.yml` producer validates `apps/api/certs/sectigo-public-server-authentication-ca-ov-r36.crt` before Node starts: SHA-256 `6542D176BED50F193C0CE297AE44ECD8A0A86BEC2EDE682769344059B4E78530`; subject `CN=Sectigo Public Server Authentication CA OV R36,O=Sectigo Limited,C=GB`; issuer `CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB`; `CA:TRUE, pathlen:0`; EKU `TLS Web Server Authentication`; and current validity.
+- `NODE_EXTRA_CA_CERTS` is scoped to the isolated Node runner and points to this OV R36 PEM. Normal Node TLS chain, hostname and validity verification remains enabled; no TLS bypass is permitted.
+- The original DV R36 references below are historical implementation evidence, not the current certificate pin for `bcv-sync.yml`. The independent strict-connectivity workflow retains its separately validated DV+OV transition bundle.
+- Global gates are unchanged: AC-6 OPEN, `FX_CONTINGENCY_ENABLED=false`, Issue #53 OPEN/P0, freeze v1.1, and Worker `BCV_SYNC_ENABLED=false`.
+
 ## Objective and authorization
 
 Move BCV ingestion from the Cloudflare Worker runtime to a dedicated GitHub Actions Node 24.22.2 runner using the pinned Sectigo DV R36 intermediate without disabling TLS verification, preserving the checkout fail-closed contract.

@@ -162,7 +162,7 @@ describe("Micro app authentication flow", () => {
     const panel = container.querySelector(".exchange-rate-panel");
     expect(panel?.textContent).toContain("894,88760000");
     expect(panel?.textContent).toContain("noviembre de 2026");
-    expect(panel?.textContent).toContain("Vigente");
+    expect(panel?.textContent).toContain("Válida para hoy");
     expect(panel?.textContent).toContain("Banco Central de Venezuela");
     expect(container.querySelector(".bcv-admin-panel")?.textContent).toContain("Sincronización BCV");
     expect(container.querySelector(".bcv-admin-panel")?.textContent).toContain("Sincronización exitosa");
@@ -207,7 +207,7 @@ describe("Micro app authentication flow", () => {
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(4);
     expect(vi.mocked(fetch).mock.calls[3]?.[1]?.cache).toBe("no-store");
     expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("9 de noviembre");
-    expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("Vigente");
+    expect(container.querySelector(".exchange-rate-panel")?.textContent).toContain("Válida para hoy");
   });
 
   it("passes the current official BCV rate into the catalog conversion", async () => {

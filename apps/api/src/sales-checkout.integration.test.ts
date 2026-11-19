@@ -1506,6 +1506,61 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(status.rows[0].status).toBe("active");
   });
 
+  it("completes a 0027 weekday same-day-sync sale with a future effective BCV snapshot and preserves it", async () => {
+    if (!fxFutureRateId) throw new Error("0027 future-effective BCV fixture was not prepared by the preceding test");
+    const tomorrowResult = await client.query<{ tomorrow: string }>(
+      "SELECT ($1::date + 1)::text AS tomorrow", [rateDate],
+    );
+    const tomorrow = tomorrowResult.rows[0]!.tomorrow;
+    const futureRate = await client.query<{ rate: string; validation_status: string }>(
+      "SELECT rate::text,validation_status FROM public.exchange_rates WHERE id=$1",
+      [fxFutureRateId],
+    );
+    expect(futureRate.rows[0]).toMatchObject({ rate: "300.00000000", validation_status: "valid" });
+
+    await setBcvSyncState("inserted", tomorrow, true);
+    await seedBalance("2.000");
+    const response = await request(checkoutBody("1.000", "23.8500"), "0027-positive-" + crypto.randomUUID());
+    expect(response.status, await response.clone().text()).toBe(201);
+    const sale = await response.json() as {
+      id: string; status: string; operation_date: string; exchange_rate_effective_date: string; bcv_rate: string;
+    };
+    expect(sale).toMatchObject({
+      status: "completed",
+      operation_date: rateDate,
+      exchange_rate_effective_date: tomorrow,
+      bcv_rate: "300.00000000",
+    });
+
+    const reconciliation = await client.query(
+      `SELECT
+         (SELECT count(*)::int FROM public.sale_items WHERE organization_id=$1 AND sale_id=$2) AS lines,
+         (SELECT count(*)::int FROM public.payments WHERE organization_id=$1 AND sale_id=$2) AS payments,
+         (SELECT count(*)::int FROM public.warehouse_inventory_movements WHERE organization_id=$1 AND reference_type='sale' AND reference_id=$2) AS movements,
+         (SELECT count(*)::int FROM public.audit_logs WHERE organization_id=$1 AND action='sale.completed' AND entity_id=$2::text) AS audits
+      `,
+      [organizationId, sale.id],
+    );
+    expect(reconciliation.rows[0]).toEqual({ lines: 1, payments: 1, movements: 1, audits: 1 });
+
+    await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [fxFutureRateId]);
+    await expect(client.query(
+      "UPDATE public.sales SET operation_date=operation_date + 1 WHERE id=$1", [sale.id],
+    )).rejects.toThrow(/SALE_BCV_DATE_SNAPSHOT_IMMUTABLE/);
+    await expect(client.query(
+      "UPDATE public.sales SET exchange_rate_effective_date=exchange_rate_effective_date + 1 WHERE id=$1", [sale.id],
+    )).rejects.toThrow(/SALE_BCV_DATE_SNAPSHOT_IMMUTABLE/);
+    const preserved = await client.query(
+      "SELECT operation_date::text,exchange_rate_effective_date::text,exchange_rate_snapshot::text FROM public.sales WHERE id=$1",
+      [sale.id],
+    );
+    expect(preserved.rows[0]).toEqual({
+      operation_date: rateDate,
+      exchange_rate_effective_date: tomorrow,
+      exchange_rate_snapshot: "300.00000000",
+    });
+  });
+
   it("rejects a closed operator shift", async () => {
     await seedBalance("2.000");
     await client.query(

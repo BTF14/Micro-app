@@ -435,6 +435,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                CROSS JOIN operation op
                JOIN public.bcv_sync_state current_state ON current_state.singleton=true
                 WHERE current_state.last_success_at IS NOT NULL
+                  AND current_state.last_success_at <= pg_catalog.clock_timestamp()
                   AND current_state.last_success_at = obs.last_success_at
                   AND current_state.last_outcome = obs.last_outcome
                   AND current_state.last_effective_date = obs.last_effective_date

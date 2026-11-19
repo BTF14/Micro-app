@@ -770,11 +770,12 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     }
   });
 
-  it("blocks a new sale while the latest BCV sync attempt is running", async () => {
+  it("blocks a new sale while a stale BCV sync attempt remains running", async () => {
     await seedBalance("2.000");
-    const key = "sync-running-" + crypto.randomUUID();
+    const key = "sync-stale-running-" + crypto.randomUUID();
     try {
       await setBcvSyncState("running");
+      await client.query("UPDATE public.bcv_sync_state SET last_attempt_at=pg_catalog.clock_timestamp()-interval '2 hours' WHERE singleton=true");
       const response = await request(checkoutBody("1.000", "23.8500"), key);
       expect(response.status).toBe(409);
       expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
@@ -1406,5 +1407,136 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect((await readBalance()).on_hand_quantity).toBe("2.000");
   });
 
+
+
+  it("waits for a sync transaction that wins the BCV row lock and rejects after its failure commits", async () => {
+    await seedBalance("2.000");
+    const key = "sync-lock-first-" + crypto.randomUUID();
+    await producerClient.query("BEGIN");
+    try {
+      await producerClient.query(
+        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+      );
+      let settled = false;
+      const pending = request(checkoutBody("1.000", "23.8500"), key).finally(() => { settled = true; });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(settled).toBe(false);
+      await producerClient.query("COMMIT");
+      const response = await pending;
+      expect(response.status).toBe(409);
+      expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+    } finally {
+      await producerClient.query("ROLLBACK").catch(() => undefined);
+      await setBcvSyncState("inserted");
+    }
+  });
+
+  it("lets a checkout holding the BCV shared lock complete before a waiting sync can fail", async () => {
+    await seedBalance("2.000");
+    const lockKey = 27027;
+    await client.query(`CREATE OR REPLACE FUNCTION public.test_bcv_0027_pause_after_snapshot()
+      RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        PERFORM pg_catalog.pg_advisory_xact_lock(20261119, ${lockKey});
+        RETURN NEW;
+      END;
+      $$`);
+    await client.query("CREATE TRIGGER sales_02_test_bcv_0027_pause AFTER INSERT ON public.sales FOR EACH ROW EXECUTE FUNCTION public.test_bcv_0027_pause_after_snapshot()");
+    await client.query("SELECT pg_catalog.pg_advisory_lock(20261119,$1)", [lockKey]);
+    let syncSettled = false;
+    try {
+      const checkout = request(checkoutBody("1.000", "23.8500"), "checkout-lock-first-" + crypto.randomUUID());
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const sync = producerClient.query(
+        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+      ).finally(() => { syncSettled = true; });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(syncSettled).toBe(false);
+      await client.query("SELECT pg_catalog.pg_advisory_unlock(20261119,$1)", [lockKey]);
+      const response = await checkout;
+      expect(response.status).toBe(201);
+      await sync;
+      expect(syncSettled).toBe(true);
+      expect((await readBalance()).on_hand_quantity).toBe("1.000");
+    } finally {
+      await client.query("SELECT pg_catalog.pg_advisory_unlock(20261119,$1)", [lockKey]).catch(() => undefined);
+      await client.query("DROP TRIGGER IF EXISTS sales_02_test_bcv_0027_pause ON public.sales");
+      await client.query("DROP FUNCTION IF EXISTS public.test_bcv_0027_pause_after_snapshot()");
+      await setBcvSyncState("inserted");
+    }
+  });
+
+  it("allows N parallel checkouts to share the same eligible BCV rate and sync snapshot", async () => {
+    await seedBalance("10.000");
+    const keys = Array.from({ length: 4 }, () => "parallel-bcv-0027-" + crypto.randomUUID());
+    const responses = await Promise.all(keys.map((key) => request(checkoutBody("1.000", "23.8500"), key)));
+    expect(responses.map((response) => response.status)).toEqual([201, 201, 201, 201]);
+    const sales = await client.query(
+      "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=ANY($2::text[]) AND status='completed'",
+      [organizationId, keys],
+    );
+    expect(sales.rows[0].count).toBe(4);
+    expect((await readBalance()).on_hand_quantity).toBe("6.000");
+  });
+
+  it("rolls back every direct runtime write when BCV becomes ineligible before sale completion", async () => {
+    await seedBalance("10.000");
+    const key = "direct-runtime-rollback-" + crypto.randomUUID();
+    await producerClient.query(
+      "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+    );
+    await runtimeClient.query("BEGIN");
+    let saleId = "";
+    try {
+      const inserted = await runtimeClient.query<{ id: string }>(
+        `INSERT INTO public.sales (
+           organization_id,idempotency_key,status,subtotal_usd,total_usd,
+           exchange_rate_id,exchange_rate_snapshot,total_ves_snapshot,created_by,
+           branch_id,register_shift_id,warehouse_id,settlement_currency,request_hash,fx_source
+         ) VALUES ($1,$2,'draft',1.0000,1.0000,$3,$4::numeric,$5::numeric,$6,$7,$8,$9,'USD',$10,'bcv_official')
+         RETURNING id`,
+        [organizationId,key,rateId,"250.12345678",convertUsdToVes("1.0000","250.12345678"),userId,branchId,shiftId,warehouseId,"a".repeat(64)],
+      );
+      saleId = inserted.rows[0]!.id;
+      await runtimeClient.query(
+        `INSERT INTO public.sale_items
+          (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
+         VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
+        [organizationId,saleId,productId,convertUsdToVes("1.0000","250.12345678")],
+      );
+      await runtimeClient.query(
+        `INSERT INTO public.warehouse_inventory_movements
+          (organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,reason,reference_type,reference_id,actor_user_id)
+         VALUES ($1,$2,$3,$4,'sale',-1.000,0.5000,'Direct 0027 rollback','sale',$5,$6)`,
+        [organizationId,branchId,warehouseId,productId,saleId,userId],
+      );
+      await runtimeClient.query(
+        `INSERT INTO public.payments
+          (organization_id,sale_id,method,currency,amount,usd_equivalent_snapshot,exchange_rate_snapshot,reference,received_by,allocation_position)
+         VALUES ($1,$2,'cash','USD',1.0000,1.0000,250.12345678,NULL,$3,1)`,
+        [organizationId,saleId,userId],
+      );
+      await runtimeClient.query(
+        "INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata) VALUES($1,$2,'sale.completed','sale',$3,'{}'::jsonb)",
+        [organizationId,userId,saleId],
+      );
+      await expect(runtimeClient.query("UPDATE public.sales SET status='completed',completed_at=pg_catalog.clock_timestamp() WHERE id=$1",[saleId]))
+        .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+    } finally {
+      await runtimeClient.query("ROLLBACK");
+      await setBcvSyncState("inserted");
+    }
+    const counts = await client.query(
+      `SELECT
+         (SELECT count(*)::int FROM public.sales WHERE organization_id=$1 AND idempotency_key=$2 AND status='completed') AS completed_sales,
+         (SELECT count(*)::int FROM public.payments WHERE organization_id=$1 AND sale_id=$3) AS payments,
+         (SELECT count(*)::int FROM public.warehouse_inventory_movements WHERE organization_id=$1 AND reference_type='sale' AND reference_id=$3) AS movements,
+         (SELECT count(*)::int FROM public.audit_logs WHERE organization_id=$1 AND action='sale.completed' AND entity_id=$3::text) AS audits`,
+      [organizationId,key,saleId],
+    );
+    expect(counts.rows[0]).toEqual({ completed_sales: 0, payments: 0, movements: 0, audits: 0 });
+    expect((await readBalance()).on_hand_quantity).toBe("10.000");
+  });
 
 });

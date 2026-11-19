@@ -13,6 +13,8 @@ BEGIN
  IF trigger_count<>3 THEN RAISE EXCEPTION 'BCV_0027_ENABLE_ALWAYS_TRIGGERS_MISSING'; END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.sales'::regclass AND tgname='sales_99_assert_bcv_0027_snapshot' AND strpos(pg_get_triggerdef(oid),'INSERT')>0)
  THEN RAISE EXCEPTION 'BCV_0027_DIRECT_INSERT_ASSERTION_TRIGGER_MISSING'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.sales'::regclass AND tgname='sales_00_capture_bcv_0027_snapshot' AND strpos(pg_get_triggerdef(oid),'BEFORE INSERT OR UPDATE OF status')>0)
+ THEN RAISE EXCEPTION 'BCV_0027_CAPTURE_TRIGGER_MUST_COVER_DIRECT_INSERT_AND_STATUS_UPDATE'; END IF;
  FOREACH fn IN ARRAY ARRAY[
  'public.select_bcv_rate_for_operation(date)'::regprocedure::oid,
  'public.capture_sales_bcv_0027_snapshot()'::regprocedure::oid,

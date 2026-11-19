@@ -17,12 +17,13 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
   for(const date of rows){
    const existing=await db.query("SELECT id FROM public.exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[date]);
    if(!existing.rows.length)await db.query("INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES','500.12345678','BCV_OFFICIAL_HTML_V1',$1::date,$2)",[date,validationStatus]);
+   else await db.query("UPDATE public.exchange_rates SET validation_status=$2 WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[date,validationStatus]);
   }
   const previous=await db.query<{last_success_at:string|null}>("SELECT last_success_at::text FROM public.bcv_sync_state WHERE singleton=true");
   const nextSuccessAt=(outcome === "inserted" || outcome === "unchanged") ? new Date(Date.parse(successAt)+(++syncSequence)*1000).toISOString() : previous.rows[0]?.last_success_at ?? null;
   await db.query("UPDATE public.bcv_sync_state SET last_success_at=$1::timestamptz,last_outcome=$2,last_error_code=$3,last_effective_date=$4::date,updated_at=clock_timestamp() WHERE singleton=true",[nextSuccessAt,outcome,error,syncDate]);
  }
- async function clearRates(){await db.query("DELETE FROM public.exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date BETWEEN $1::date AND $2::date",[friday,addDays(saturday,6)])}
+ async function resetRates(){await db.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date BETWEEN $1::date AND $2::date",[friday,addDays(saturday,6)])}
  async function select(date:string){const r=await db.query("SELECT exchange_rate_id::text,rate::text,effective_date::text,priority FROM public.select_bcv_rate_for_operation($1::date)",[date]);return r.rows[0]??null}
  it("Friday exact row wins over Monday prepublication",async()=>{await prepare([friday,monday],monday,friday+"T16:00:00Z");expect(await select(friday)).toMatchObject({effective_date:friday,priority:"today_exact"})});
  it("Saturday and Sunday use nearest future published row with healthy prior sync",async()=>{await prepare([monday],monday,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:monday,priority:"weekend_prepublished"});await prepare([monday],monday,friday+"T16:00:00Z","unchanged");expect(await select(sunday)).toMatchObject({effective_date:monday,priority:"weekend_prepublished"})});
@@ -34,11 +35,11 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
  });
  it("rejects failed, running, errored, uncovered, stale and beyond-five-day candidates",async()=>{
   await prepare([monday],monday,friday+"T16:00:00Z","failed");expect(await select(saturday)).toBeNull();
-  await clearRates();await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();
-  await clearRates();await prepare([monday],monday,new Date(Date.now()+60_000).toISOString());expect(await select(saturday)).toBeNull();
-  await clearRates();await prepare([monday],friday,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
-  await clearRates();const boundary=addDays(saturday,5);await prepare([boundary],boundary,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:boundary,priority:"weekend_prepublished"});
-  await clearRates();const outside=addDays(saturday,6);await prepare([outside],outside,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
-  await clearRates();const staleDate=addDays(saturday,4);await prepare([staleDate],staleDate,friday+"T16:00:00Z","inserted",null,"stale");expect(await select(saturday)).toBeNull();
+  await resetRates();await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();
+  await resetRates();await prepare([monday],monday,new Date(Date.now()+60_000).toISOString());expect(await select(saturday)).toBeNull();
+  await resetRates();await prepare([monday],friday,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
+  await resetRates();const boundary=addDays(saturday,5);await prepare([boundary],boundary,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:boundary,priority:"weekend_prepublished"});
+  await resetRates();const outside=addDays(saturday,6);await prepare([outside],outside,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
+  await resetRates();const staleDate=addDays(saturday,4);await prepare([staleDate],staleDate,friday+"T16:00:00Z","inserted",null,"stale");expect(await select(saturday)).toBeNull();
  });
 });

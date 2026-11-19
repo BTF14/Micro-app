@@ -795,7 +795,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     const createdCandidateIds: string[] = [];
     for (const effectiveDate of [dates.rows[0]!.past, dates.rows[0]!.future]) {
       const existing = await client.query<{ id: string; rate: string }>(
-        "SELECT id,rate::text AS rate FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date AND validation_status='valid' LIMIT 1",
+        "SELECT id,rate::text AS rate FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date LIMIT 1",
         [BCV_SOURCE,effectiveDate],
       );
       if (existing.rows[0]) candidates.push(existing.rows[0]);

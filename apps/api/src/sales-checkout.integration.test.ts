@@ -792,6 +792,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       [rateDate],
     );
     const candidates: Array<{ id: string; rate: string }> = [];
+    const createdCandidateIds: string[] = [];
     for (const effectiveDate of [dates.rows[0]!.past, dates.rows[0]!.future]) {
       const existing = await client.query<{ id: string; rate: string }>(
         "SELECT id,rate::text AS rate FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date AND validation_status='valid' LIMIT 1",
@@ -804,6 +805,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
           [BCV_SOURCE,effectiveDate],
         );
         candidates.push(inserted.rows[0]!);
+        createdCandidateIds.push(inserted.rows[0]!.id);
       }
     }
     const directInsert = (candidate: {id:string;rate:string}, key: string) => runtimeClient.query(
@@ -832,6 +834,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
     } finally {
       await setBcvSyncState("inserted");
+      for (const id of createdCandidateIds) await client.query("DELETE FROM public.exchange_rates WHERE id=$1",[id]);
     }
   });
 

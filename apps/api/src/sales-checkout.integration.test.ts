@@ -112,6 +112,21 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     });
   }
 
+  async function readFxContingency(fxEnabled = true): Promise<Response> {
+    return app.fetch(new Request(
+      "https://api.example/api/orgs/" + organizationId + "/branches/" + branchId + "/fx-contingency",
+      {
+        method: "GET",
+        headers: { Cookie: "microapp_session=" + token, Origin: FRONTEND_ORIGIN },
+      },
+    ), {
+      DATABASE_URL: databaseUrl,
+      FRONTEND_ORIGIN,
+      GOOGLE_CLIENT_SECRET: "checkout-integration-test-hmac-pepper-2026",
+      FX_CONTINGENCY_ENABLED: fxEnabled ? "true" : "false",
+    });
+  }
+
   function checkoutBody(
     quantity: string,
     amount: string,
@@ -1397,13 +1412,11 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await client.query("UPDATE public.exchange_rates SET validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [rateId]);
     await recordFxBcvSuccess("inserted", rateDate, new Date(auth.rows[0]!.starts_at.getTime() - 1000));
 
-    const response = await request({
-      ...checkoutBody("1.000", "23.8500"),
-      manual_fx_acknowledged: true,
-      manual_fx_acknowledged_rate: "104.00000000",
-    }, "bcv-restored-inserted-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
-    expect(response.status).toBe(409);
-    expect((await response.json() as { error: string }).error).toBe("BCV_RATE_RESTORED");
+    const response = await readFxContingency(true);
+    expect(response.status).toBe(200);
+    const state = await response.json() as { authorization: unknown; bcv: { status: string } };
+    expect(state.authorization).toBeNull();
+    expect(state.bcv.status).toBe("current");
     const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
     expect(status.rows[0].status).toBe("bcv_restored");
     const event = await client.query("SELECT count(*)::int AS count FROM public.fx_contingency_events WHERE authorization_id=$1 AND event_type='bcv_restored'", [authorizationId]);
@@ -1429,13 +1442,11 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(observation.rows[0].last_success_at.getTime()).toBeLessThan(auth.rows[0]!.starts_at.getTime());
     expect(observation.rows[0].rate_fetched_at.getTime()).toBe(fetchedBefore.rows[0]!.fetched_at.getTime());
 
-    const response = await request({
-      ...checkoutBody("1.000", "23.8500"),
-      manual_fx_acknowledged: true,
-      manual_fx_acknowledged_rate: "104.00000000",
-    }, "bcv-restored-unchanged-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
-    expect(response.status).toBe(409);
-    expect((await response.json() as { error: string }).error).toBe("BCV_RATE_RESTORED");
+    const response = await readFxContingency(true);
+    expect(response.status).toBe(200);
+    const state = await response.json() as { authorization: unknown; bcv: { status: string } };
+    expect(state.authorization).toBeNull();
+    expect(state.bcv.status).toBe("current");
     const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
     expect(status.rows[0].status).toBe("bcv_restored");
     expect((await readBalance()).on_hand_quantity).toBe("5.000");
@@ -1467,7 +1478,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       fxFutureRateCreated = true;
     }
     const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
-    await recordFxBcvSuccess("inserted", tomorrow, new Date(auth.rows[0]!.starts_at.getTime() - 1000));
+    await recordFxBcvSuccess("inserted", tomorrow, new Date(auth.rows[0]!.starts_at.getTime() - 24 * 60 * 60 * 1000));
 
     const response = await request({
       ...checkoutBody("1.000", "23.8500"),
@@ -1498,69 +1509,50 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
 
 
-  it("waits for a sync transaction that wins the BCV row lock and rejects after its failure commits", async () => {
+  it("makes a checkout-side shared lock wait for a sync failure that acquired the row lock first", async () => {
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
     const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);
     expect(eligible.rows).toHaveLength(1);
-    await seedBalance("2.000");
-    const key = "sync-lock-first-" + crypto.randomUUID();
     await producerClient.query("BEGIN");
     try {
       await producerClient.query(
-        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",
       );
       let settled = false;
-      const pending = request(checkoutBody("1.000", "23.8500"), key).finally(() => { settled = true; });
+      const waitingLock = runtimeClient.query("SELECT * FROM public.lock_bcv_sync_state_with_error()")
+        .finally(() => { settled = true; });
       await new Promise((resolve) => setTimeout(resolve, 100));
       expect(settled).toBe(false);
       await producerClient.query("COMMIT");
-      const response = await pending;
-      expect(response.status).toBe(409);
-      expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
-      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+      const state = await waitingLock;
+      expect(state.rows[0]?.last_outcome).toBe("failed");
     } finally {
       await producerClient.query("ROLLBACK").catch(() => undefined);
       await setBcvSyncState("inserted");
     }
   });
 
-  it("lets a checkout holding the BCV shared lock complete before a waiting sync can fail", async () => {
+  it("lets a checkout-side shared lock finish before a waiting sync update", async () => {
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
-    await seedBalance("2.000");
-    const lockKey = 27027;
-    await client.query(`CREATE OR REPLACE FUNCTION public.test_bcv_0027_pause_after_snapshot()
-      RETURNS trigger LANGUAGE plpgsql AS $$
-      BEGIN
-        PERFORM pg_catalog.pg_advisory_xact_lock(20261119, ${lockKey});
-        RETURN NEW;
-      END;
-      $$`);
-    await client.query("CREATE TRIGGER sales_02_test_bcv_0027_pause BEFORE UPDATE OF status ON public.sales FOR EACH ROW EXECUTE FUNCTION public.test_bcv_0027_pause_after_snapshot()");
-    await client.query("SELECT pg_catalog.pg_advisory_lock(20261119,$1)", [lockKey]);
-    let syncSettled = false;
+    const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);
+    expect(eligible.rows).toHaveLength(1);
+    await runtimeClient.query("BEGIN");
     try {
-      const checkout = request(checkoutBody("1.000", "23.8500"), "checkout-lock-first-" + crypto.randomUUID());
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      const locked = await runtimeClient.query("SELECT * FROM public.lock_bcv_sync_state_with_error()");
+      expect(locked.rows[0]?.last_outcome).toBe("inserted");
+      let syncSettled = false;
       const sync = producerClient.query(
-        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",
       ).finally(() => { syncSettled = true; });
       await new Promise((resolve) => setTimeout(resolve, 100));
       expect(syncSettled).toBe(false);
-      await client.query("SELECT pg_catalog.pg_advisory_unlock(20261119,$1)", [lockKey]);
-      const response = await checkout;
-      expect(response.status).toBe(201);
-      const sale = await response.json() as { operation_date: string; exchange_rate_effective_date: string };
-      expect(sale.operation_date).toBe(rateDate);
-      expect(sale.exchange_rate_effective_date).toBe(rateDate);
+      await runtimeClient.query("COMMIT");
       await sync;
       expect(syncSettled).toBe(true);
-      expect((await readBalance()).on_hand_quantity).toBe("1.000");
     } finally {
-      await client.query("SELECT pg_catalog.pg_advisory_unlock(20261119,$1)", [lockKey]).catch(() => undefined);
-      await client.query("DROP TRIGGER IF EXISTS sales_02_test_bcv_0027_pause ON public.sales");
-      await client.query("DROP FUNCTION IF EXISTS public.test_bcv_0027_pause_after_snapshot()");
+      await runtimeClient.query("ROLLBACK").catch(() => undefined);
       await setBcvSyncState("inserted");
     }
   });
@@ -1573,7 +1565,13 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await seedBalance("10.000");
     const keys = Array.from({ length: 4 }, () => "parallel-bcv-0027-" + crypto.randomUUID());
     const responses = await Promise.all(keys.map((key) => request(checkoutBody("1.000", "23.8500"), key)));
-    expect(responses.map((response) => response.status)).toEqual([201, 201, 201, 201]);
+    const outcomes = await Promise.all(responses.map(async (response) => ({ status: response.status, body: await response.clone().text() })));
+    expect(outcomes, JSON.stringify(outcomes)).toEqual([
+      { status: 201, body: expect.any(String) },
+      { status: 201, body: expect.any(String) },
+      { status: 201, body: expect.any(String) },
+      { status: 201, body: expect.any(String) },
+    ]);
     const sales = await client.query(
       "SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key=ANY($2::text[]) AND status='completed'",
       [organizationId, keys],

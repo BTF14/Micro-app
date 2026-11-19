@@ -26,6 +26,32 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
  async function resetRates(){await db.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date BETWEEN $1::date AND $2::date",[friday,addDays(saturday,6)])}
  async function select(date:string){const r=await db.query("SELECT exchange_rate_id::text,rate::text,effective_date::text,priority FROM public.select_bcv_rate_for_operation($1::date)",[date]);return r.rows[0]??null}
  it("Friday exact row wins over Monday prepublication",async()=>{await prepare([friday,monday],monday,friday+"T16:00:00Z");expect(await select(friday)).toMatchObject({effective_date:friday,priority:"today_exact"})});
+ it("switches PostgreSQL eligibility at the exact Caracas midnight boundary and keeps snapshot capture atomic",async()=>{
+  await prepare([friday,monday],monday,friday+"T16:00:00Z");
+  const boundary=await db.query<{before_date:string;after_date:string}>(
+   "SELECT ($1::timestamptz AT TIME ZONE 'America/Caracas')::date::text AS before_date,($2::timestamptz AT TIME ZONE 'America/Caracas')::date::text AS after_date",
+   [saturday+"T03:59:59.000Z",saturday+"T04:00:00.000Z"],
+  );
+  expect(boundary.rows[0]).toEqual({before_date:friday,after_date:saturday});
+  expect(await select(friday)).toMatchObject({effective_date:friday,priority:"today_exact"});
+  expect(await select(saturday)).toMatchObject({effective_date:monday,priority:"weekend_prepublished"});
+  await resetRates();
+  expect(await select(saturday)).toBeNull();
+
+  const capture=await db.query<{definition:string}>(
+   "SELECT pg_get_functiondef('public.capture_sales_bcv_0027_snapshot()'::regprocedure) AS definition",
+  );
+  const definition=capture.rows[0]!.definition;
+  const lockPosition=definition.indexOf("FOR SHARE");
+  const clockPosition=definition.indexOf("clock_timestamp()");
+  expect(lockPosition).toBeGreaterThanOrEqual(0);
+  expect(clockPosition).toBeGreaterThan(lockPosition);
+  expect(definition).toContain("operation_at := pg_catalog.clock_timestamp()");
+  expect(definition).toContain("operation_day := (operation_at AT TIME ZONE 'America/Caracas')::date");
+  expect(definition).toContain("NEW.operation_date := operation_day");
+  expect(definition).toContain("NEW.exchange_rate_effective_date := selected.effective_date");
+ });
+
  it("Saturday and Sunday use nearest future published row with healthy prior sync",async()=>{await prepare([monday],monday,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:monday,priority:"weekend_prepublished"});await prepare([monday],monday,friday+"T16:00:00Z","unchanged");expect(await select(sunday)).toMatchObject({effective_date:monday,priority:"weekend_prepublished"})});
  it("weekday holiday requires a successful sync on that Caracas day",async()=>{await prepare([tuesday],tuesday,monday+"T05:00:00Z","unchanged");expect(await select(monday)).toMatchObject({effective_date:tuesday,priority:"weekday_same_day_sync"});await prepare([tuesday],tuesday,friday+"T16:00:00Z");expect(await select(monday)).toBeNull()});
  it("requires an append-only observation matching the current sync snapshot",async()=>{

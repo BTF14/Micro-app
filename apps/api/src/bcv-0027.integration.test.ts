@@ -36,6 +36,7 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
  it("rejects failed, running, errored, uncovered, stale and beyond-five-day candidates",async()=>{
   await prepare([monday],monday,friday+"T16:00:00Z","failed");expect(await select(saturday)).toBeNull();
   await resetRates();await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();
+  await resetRates();await prepare([monday],monday,friday+"T16:00:00Z","errored","BCV_SYNC_UNKNOWN");expect(await select(saturday)).toBeNull();
   await resetRates();await prepare([monday],monday,new Date(Date.now()+60_000).toISOString());expect(await select(saturday)).toBeNull();
   await resetRates();await prepare([monday],friday,friday+"T16:00:00Z");expect(await select(saturday)).toBeNull();
   await resetRates();const boundary=addDays(saturday,5);await prepare([boundary],boundary,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:boundary,priority:"weekend_prepublished"});

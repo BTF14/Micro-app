@@ -1442,7 +1442,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         RETURN NEW;
       END;
       $$`);
-    await client.query("CREATE TRIGGER sales_02_test_bcv_0027_pause AFTER INSERT ON public.sales FOR EACH ROW EXECUTE FUNCTION public.test_bcv_0027_pause_after_snapshot()");
+    await client.query("CREATE TRIGGER sales_02_test_bcv_0027_pause BEFORE UPDATE OF status ON public.sales FOR EACH ROW EXECUTE FUNCTION public.test_bcv_0027_pause_after_snapshot()");
     await client.query("SELECT pg_catalog.pg_advisory_lock(20261119,$1)", [lockKey]);
     let syncSettled = false;
     try {

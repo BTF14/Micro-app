@@ -226,7 +226,7 @@ ALTER FUNCTION public.assert_sales_bcv_0027_snapshot() OWNER TO microapp_migrato
 REVOKE ALL ON FUNCTION public.assert_sales_bcv_0027_snapshot() FROM PUBLIC,microapp_runtime,microapp_bcv_sync;
 
 CREATE TRIGGER sales_00_capture_bcv_0027_snapshot
-BEFORE UPDATE OF status ON public.sales
+BEFORE INSERT OR UPDATE OF status ON public.sales
 FOR EACH ROW EXECUTE FUNCTION public.capture_sales_bcv_0027_snapshot();
 CREATE TRIGGER sales_01_guard_bcv_0027_snapshot_immutable
 BEFORE UPDATE ON public.sales

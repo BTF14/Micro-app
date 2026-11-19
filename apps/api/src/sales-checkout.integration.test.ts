@@ -481,7 +481,6 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         await client.query("DELETE FROM public.auth_sessions WHERE user_id=$1",[fxOwnerId]);
         await client.query("DELETE FROM public.branch_memberships WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",[organizationId,branchId,fxOwnerId]);
         await client.query("DELETE FROM public.organization_members WHERE organization_id=$1 AND user_id=$2", [organizationId, fxOwnerId]);
-        await client.query("DELETE FROM public.app_users WHERE id=$1", [fxOwnerId]);
       }
       if (fxFutureRateId) {
         if (fxFutureRateCreated) await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [fxFutureRateId]);
@@ -1427,7 +1426,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await recordFxBcvSuccess("inserted", rateDate, new Date(auth.rows[0]!.starts_at.getTime() - 1000));
 
     const response = await readFxContingency(true);
-    expect(response.status).toBe(200);
+    expect(response.status, await response.clone().text()).toBe(200);
     const state = await response.json() as { authorization: unknown; bcv: { status: string } };
     expect(state.authorization).toBeNull();
     expect(state.bcv.status).toBe("current");

@@ -1501,6 +1501,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   it("waits for a sync transaction that wins the BCV row lock and rejects after its failure commits", async () => {
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
+    const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);
+    expect(eligible.rows).toHaveLength(1);
     await seedBalance("2.000");
     const key = "sync-lock-first-" + crypto.randomUUID();
     await producerClient.query("BEGIN");
@@ -1566,6 +1568,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   it("allows N parallel checkouts to share the same eligible BCV rate and sync snapshot", async () => {
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
+    const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);
+    expect(eligible.rows).toHaveLength(1);
     await seedBalance("10.000");
     const keys = Array.from({ length: 4 }, () => "parallel-bcv-0027-" + crypto.randomUUID());
     const responses = await Promise.all(keys.map((key) => request(checkoutBody("1.000", "23.8500"), key)));

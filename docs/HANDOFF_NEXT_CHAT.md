@@ -4324,3 +4324,47 @@ No pedir nuevamente Build IDs, capturas, terminal, CLI, TinyFish, reconexiones n
 
 
 Nota de continuidad: el SHA anterior indicado es el último HEAD completamente validado (25/25 check-runs SUCCESS). Este commit solo actualiza documentación; verificar el nuevo HEAD vivo y sus checks exactos antes de cualquier merge. PR #350 sigue OPEN/no-Draft y no se debe fusionar.
+
+
+## Handoff vigente — PR #383 BCV 0027 (2026-11-19)
+
+### Punto de continuación
+
+Continuar exclusivamente en PR #383, rama `feat/bcv-0027-nonbusiness-day-effective-date-20261118`. Mantenerla OPEN / Draft, sin merge ni auto-merge. No volver a pedir información ya documentada ni repetir capturas/Build IDs/terminal/CLI/TinyFish/reconexiones.
+
+### Código implementado y evidencia
+
+Último SHA de código validado antes de la documentación: `af422a0f08dcc9b3a1b4228cd76fbf958b4040e5`.
+
+- GitHub Check Runs API: 22/22 completed / success para ese SHA.
+- Associated workflow runs: 13/13 completed / success.
+- CI run `44625145706`, job `verify`: SUCCESS. Pasaron PostgreSQL 18 BCV 0027 matrix, build/typecheck, unit tests, PostgreSQL atomic sales checkout integration, FX contingency PG-01..PG-30, Cashier full lifecycle y runtime-role API integration.
+- Playwright E2E run `44625146088`: Real full-stack commerce E2E (PostgreSQL 18) y Chromium authentication smoke tests SUCCESS.
+- Cloudflare Pages y Workers Builds: SUCCESS como previews/builds de rama; no equivalen a deploy productivo.
+- También SUCCESS: PostgreSQL migration validation, PostgreSQL migration runner, backup restore smoke, Semgrep, Trivy/security, secret-history, dependency review, BCV source connectivity y ODD docs.
+- Test de turno cerrado: reabre el turno en `finally` y asigna el nuevo `shiftId`. El test paralelo reutiliza el turno restaurado; no insertar un segundo turno abierto para la misma caja.
+- Pruebas de medianoche: `2026-11-07T03:59:59.000Z` = viernes 23:59:59 VET; `2026-11-07T04:00:00.000Z` = sábado 00:00:00 VET. Cubierto en BCV policy, checkout, latest-rate y PostgreSQL 18 selector. La integración SQL inspecciona bloqueo compartido antes de captura de reloj y ambas fechas derivadas del mismo `operation_at`.
+
+### Documentación reconciliada
+
+En este bloque se actualizan:
+- `odd/tasks/bcv-0027-nonbusiness-day-effective-date.md`
+- `docs/PROJECT_PLAN.md`
+- `docs/CURRENT_STATE.md`
+- `docs/HANDOFF_NEXT_CHAT.md`
+- `docs/STATE_JOURNAL.md`
+
+La reconciliación documental tiene sus propios commits y, por tanto, su propio SHA final. **No usar los 22/22 del SHA de código como evidencia del SHA documental.** Esperar el HEAD final de PR y verificar 22/22 check-runs completed / success sobre ese SHA exacto antes de entregar informe final.
+
+### Límites y gates que no se negocian
+
+- AC-6 permanece OPEN; `FX_CONTINGENCY_ENABLED=false`.
+- Issue #53 permanece OPEN/P0.
+- Freeze v1.1 sigue activo.
+- Neon `main` permanece en 0025; no se accedió ni se modificó.
+- `PRODUCTION: NOT READY`.
+- No merge/auto-merge, no producción, no datos reales, no secretos, no cambios manuales Cloudflare.
+
+### Próximo paso único
+
+Consultar el HEAD vivo de PR #383, esperar que terminen los workflows disparados por el último commit documental, consultar Check Runs API para ese SHA, confirmar 22/22 completed / success y revisar que PR siga OPEN / Draft. Si algún check falla, corregir únicamente en esta rama, volver a validar y repetir la verificación sobre el nuevo SHA. No cerrar gates ni fusionar; entregar el informe para revisión humana.

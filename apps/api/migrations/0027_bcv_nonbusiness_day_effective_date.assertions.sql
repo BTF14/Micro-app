@@ -63,11 +63,7 @@ BEGIN
    OR strpos(fn_def,'public.select_bcv_rate_for_operation')=0
    OR strpos(fn_def,'FX_BCV_RECOVERY_NOT_ELIGIBLE')=0
    OR strpos(fn_def,'selected_rate.exchange_rate_id')=0
- THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_RECOVERY_TRANSITION_NOT_SELECTOR_GATED owner=% definer=% selector=% recovery=% selected=% body=%',
-   owner_name,(SELECT prosecdef FROM pg_proc WHERE oid=fn),
-   strpos(fn_def,'public.select_bcv_rate_for_operation'),
-   strpos(fn_def,'FX_BCV_RECOVERY_NOT_ELIGIBLE'),
-   strpos(fn_def,'selected_rate.exchange_rate_id'),substring(fn_def from 3000 for 1400); END IF;
+ THEN RAISE EXCEPTION 'BCV_0027_CONTINGENCY_RECOVERY_TRANSITION_NOT_SELECTOR_GATED'; END IF;
 END;
 $bcv_0027_assertions$;
 ROLLBACK;

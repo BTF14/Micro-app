@@ -713,6 +713,18 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       );
       expect(response.status).toBe(201);
       expect((await readBalance()).on_hand_quantity).toBe("1.000");
+
+      // A later failed producer attempt revokes eligibility for subsequent
+      // checkouts even though the prepublished row and prior success remain.
+      await producerClient.query(
+        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+      );
+      const revoked = await request(
+        checkoutBody("1.000", "23.8500"),
+        "future-prepublication-revoked-" + crypto.randomUUID(),
+      );
+      expect(revoked.status).toBe(409);
+      expect((await readBalance()).on_hand_quantity).toBe("1.000");
     } finally {
       await setBcvSyncState("inserted");
     }

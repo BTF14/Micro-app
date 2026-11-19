@@ -36,17 +36,17 @@ jobs:
           version: 10.34.9
       - name: Install locked workspace dependencies
         run: pnpm install --frozen-lockfile
-      - name: Validate pinned Sectigo DV R36 certificate
+      - name: Validate pinned Sectigo OV R36 certificate
         shell: bash
         run: |
           set -euo pipefail
-          cert="apps/api/certs/sectigo-public-server-authentication-ca-dv-r36.crt"
+          cert="apps/api/certs/sectigo-public-server-authentication-ca-ov-r36.crt"
           test -s "$cert"
           fingerprint="$(openssl x509 -in "$cert" -noout -fingerprint -sha256 | sed 's/.*=//; s/://g' | tr '[:lower:]' '[:upper:]')"
-          test "$fingerprint" = "8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0"
+          test "$fingerprint" = "6542D176BED50F193C0CE297AE44ECD8A0A86BEC2EDE682769344059B4E78530"
           subject="$(openssl x509 -in "$cert" -noout -subject -nameopt RFC2253 | sed 's/^subject=//')"
           issuer="$(openssl x509 -in "$cert" -noout -issuer -nameopt RFC2253 | sed 's/^issuer=//')"
-          test "$subject" = "CN=Sectigo Public Server Authentication CA DV R36,O=Sectigo Limited,C=GB"
+          test "$subject" = "CN=Sectigo Public Server Authentication CA OV R36,O=Sectigo Limited,C=GB"
           test "$issuer" = "CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB"
           basic="$(openssl x509 -in "$cert" -noout -ext basicConstraints)"
           printf '%s' "$basic" | grep -Fq "CA:TRUE, pathlen:0"
@@ -55,12 +55,12 @@ jobs:
           openssl x509 -in "$cert" -checkend 0 -noout
           not_before="$(openssl x509 -in "$cert" -startdate -noout | cut -d= -f2-)"
           test "$(date -u -d "$not_before" +%s)" -le "$(date -u +%s)"
-          echo "Pinned Sectigo DV R36 certificate identity, CA/EKU and validity verified."
+          echo "Pinned Sectigo OV R36 certificate identity, CA/EKU and validity verified."
       - name: Run isolated BCV sync with strict Node TLS
         env:
           DATABASE_URL_BCV_SYNC: ${{ secrets.DATABASE_URL_BCV_SYNC }}
           BCV_FORCE_SYNC: ${{ github.event_name == 'workflow_dispatch' && inputs.force_sync || false }}
-          NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/apps/api/certs/sectigo-public-server-authentication-ca-dv-r36.crt
+          NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/apps/api/certs/sectigo-public-server-authentication-ca-ov-r36.crt
         run: |
           set -euo pipefail
           if [ -z "${DATABASE_URL_BCV_SYNC:-}" ]; then

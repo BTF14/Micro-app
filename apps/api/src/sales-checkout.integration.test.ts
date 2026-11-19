@@ -553,6 +553,21 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       "UPDATE public.sales SET operation_date=operation_date + 1 WHERE id=$1",
       [sale.id],
     )).rejects.toThrow(/SALE_BCV_DATE_SNAPSHOT_IMMUTABLE/);
+    await expect(client.query(
+      "UPDATE public.sales SET exchange_rate_effective_date=exchange_rate_effective_date + 1 WHERE id=$1",
+      [sale.id],
+    )).rejects.toThrow(/SALE_BCV_DATE_SNAPSHOT_IMMUTABLE/);
+    await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1",[rateId]);
+    const immutableSnapshot = await client.query(
+      "SELECT operation_date::text,exchange_rate_effective_date::text,exchange_rate_snapshot::text FROM public.sales WHERE id=$1",
+      [sale.id],
+    );
+    expect(immutableSnapshot.rows[0]).toEqual({
+      operation_date: rateDate,
+      exchange_rate_effective_date: rateDate,
+      exchange_rate_snapshot: "250.12345678",
+    });
+    await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     const operator = await client.query(
       "SELECT created_by,register_shift_id FROM public.sales WHERE id=$1",
       [sale.id],
@@ -767,6 +782,56 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect(sales.rows[0].count).toBe(0);
     } finally {
       await setBcvSyncState("unchanged");
+    }
+  });
+
+
+  it("rejects direct runtime completion with past/future rates and with failed or running sync state", async () => {
+    const dates = await client.query<{ past: string; future: string }>(
+      "SELECT ($1::date-1)::text AS past,($1::date+2)::text AS future",
+      [rateDate],
+    );
+    const candidates: Array<{ id: string; rate: string }> = [];
+    for (const effectiveDate of [dates.rows[0]!.past, dates.rows[0]!.future]) {
+      const existing = await client.query<{ id: string; rate: string }>(
+        "SELECT id,rate::text AS rate FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date AND validation_status='valid' LIMIT 1",
+        [BCV_SOURCE,effectiveDate],
+      );
+      if (existing.rows[0]) candidates.push(existing.rows[0]);
+      else {
+        const inserted = await client.query<{ id: string; rate: string }>(
+          "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',333.12345678,$1,$2::date,'valid') RETURNING id,rate::text AS rate",
+          [BCV_SOURCE,effectiveDate],
+        );
+        candidates.push(inserted.rows[0]!);
+      }
+    }
+    const directInsert = (candidate: {id:string;rate:string}, key: string) => runtimeClient.query(
+      `INSERT INTO public.sales (
+         organization_id,idempotency_key,status,subtotal_usd,total_usd,exchange_rate_id,
+         exchange_rate_snapshot,total_ves_snapshot,created_by,branch_id,register_shift_id,
+         warehouse_id,settlement_currency,request_hash,fx_source,completed_at
+       ) VALUES ($1,$2,'completed',1.0000,1.0000,$3,$4::numeric,1.00,$5,$6,$7,$8,'USD',$9,'bcv_official',pg_catalog.clock_timestamp())`,
+      [organizationId,key,candidate.id,candidate.rate,userId,branchId,shiftId,warehouseId,"b".repeat(64)],
+    );
+    try {
+      await setBcvSyncState("inserted",rateDate,true);
+      for (const candidate of candidates) {
+        await expect(directInsert(candidate,"direct-invalid-rate-"+crypto.randomUUID()))
+          .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+      }
+      await producerClient.query(
+        "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+      );
+      await expect(directInsert({id:rateId,rate:"250.12345678"},"direct-failed-sync-"+crypto.randomUUID()))
+        .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+      await producerClient.query(
+        "UPDATE public.bcv_sync_state SET last_outcome='running',last_error_code=NULL,updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
+      );
+      await expect(directInsert({id:rateId,rate:"250.12345678"},"direct-running-sync-"+crypto.randomUUID()))
+        .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+    } finally {
+      await setBcvSyncState("inserted");
     }
   });
 

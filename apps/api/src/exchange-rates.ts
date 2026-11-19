@@ -484,7 +484,8 @@ export async function findLatestBcvRate(
     `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
             last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code,
             EXISTS (SELECT 1 FROM public.bcv_sync_success_observations obs
-              WHERE obs.last_success_at=state.last_success_at AND obs.last_outcome=state.last_outcome
+              WHERE state.last_success_at <= pg_catalog.clock_timestamp()
+                AND obs.last_success_at=state.last_success_at AND obs.last_outcome=state.last_outcome
                 AND obs.last_error_code IS NULL AND obs.last_effective_date=state.last_effective_date
                 AND obs.validation_status='valid' AND obs.exchange_rate_id IS NOT NULL
                 AND obs.rate_snapshot > 0 AND obs.observed_at >= obs.last_success_at) AS has_success_observation

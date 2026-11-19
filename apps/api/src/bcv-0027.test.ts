@@ -41,8 +41,8 @@ describe("BCV 0027 effective-date policy",()=>{
   expect(bcvCaracasDate(fridayInstant)).toBe("2026-11-06");
   expect(bcvCaracasDate(saturdayInstant)).toBe("2026-11-07");
   const published=state("2026-11-09","2026-11-06T18:00:00.000Z");
-  expect(selectApplicableBcvRate(bcvCaracasDate(fridayInstant),published,[row("2026-11-06"),row("2026-11-09")]))?.priority).toBe("today_exact");
-  expect(selectApplicableBcvRate(bcvCaracasDate(saturdayInstant),published,[row("2026-11-09")]))?.priority).toBe("weekend_prepublished");
+  expect(selectApplicableBcvRate(bcvCaracasDate(fridayInstant),published,[row("2026-11-06"),row("2026-11-09")])?.priority).toBe("today_exact");
+  expect(selectApplicableBcvRate(bcvCaracasDate(saturdayInstant),published,[row("2026-11-09")])?.priority).toBe("weekend_prepublished");
   expect(selectApplicableBcvRate(bcvCaracasDate(saturdayInstant),published,[])).toBeNull();
  });
 

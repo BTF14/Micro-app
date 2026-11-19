@@ -1507,11 +1507,32 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   });
 
   it("completes a 0027 weekday same-day-sync sale with a future effective BCV snapshot and preserves it", async () => {
-    if (!fxFutureRateId) throw new Error("0027 future-effective BCV fixture was not prepared by the preceding test");
     const tomorrowResult = await client.query<{ tomorrow: string }>(
       "SELECT ($1::date + 1)::text AS tomorrow", [rateDate],
     );
     const tomorrow = tomorrowResult.rows[0]!.tomorrow;
+    if (!fxFutureRateId) {
+      const existingFuture = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
+        "SELECT id,rate::text,validation_status,fetched_at FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
+        [BCV_SOURCE, tomorrow],
+      );
+      if (existingFuture.rows[0]) {
+        fxFutureRateId = existingFuture.rows[0].id;
+        previousFxFutureRate = existingFuture.rows[0];
+      } else {
+        const insertedFuture = await client.query<{ id: string }>(
+          "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
+          [BCV_SOURCE, tomorrow],
+        );
+        fxFutureRateId = insertedFuture.rows[0]!.id;
+        fxFutureRateCreated = true;
+      }
+    }
+    await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
+    await client.query(
+      "UPDATE public.exchange_rates SET rate=300.00000000,validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1",
+      [fxFutureRateId],
+    );
     const futureRate = await client.query<{ rate: string; validation_status: string }>(
       "SELECT rate::text,validation_status FROM public.exchange_rates WHERE id=$1",
       [fxFutureRateId],

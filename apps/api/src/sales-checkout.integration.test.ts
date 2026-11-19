@@ -75,6 +75,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   let createdRate = false;
   let suffix = "";
   let fxOwnerId = "";
+  let fxOwnerToken = "";
   let fxReferenceRateId = "";
   let fxReferenceRateCreated = false;
   let fxFutureRateId = "";
@@ -117,7 +118,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       "https://api.example/api/orgs/" + organizationId + "/branches/" + branchId + "/fx-contingency",
       {
         method: "GET",
-        headers: { Cookie: "microapp_session=" + token, Origin: FRONTEND_ORIGIN },
+        headers: { Cookie: "microapp_session=" + (fxOwnerToken || token), Origin: FRONTEND_ORIGIN },
       },
     ), {
       DATABASE_URL: databaseUrl,
@@ -1289,6 +1290,13 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       "INSERT INTO public.organization_members(organization_id,user_id,role) VALUES($1,$2,'owner')",
       [organizationId, fxOwnerId],
     );
+    fxOwnerToken = "fx-owner-session-" + crypto.randomUUID();
+    const fxOwnerDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(fxOwnerToken));
+    const fxOwnerTokenHash = Array.from(new Uint8Array(fxOwnerDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    await client.query(
+      "INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",
+      [fxOwnerId,fxOwnerTokenHash],
+    );
 
     const yesterdayResult = await client.query<{ effective_date: string }>(
       "SELECT ((pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date - 1)::text AS effective_date",
@@ -1558,6 +1566,11 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
   });
 
   it("allows N parallel checkouts to share the same eligible BCV rate and sync snapshot", async () => {
+    const reopenedShift = await client.query<{id:string}>(
+      "INSERT INTO public.register_shifts(organization_id,branch_id,register_id,cashier_user_id) VALUES($1,$2,$3,$4) RETURNING id",
+      [organizationId,branchId,registerId,userId],
+    );
+    shiftId = reopenedShift.rows[0]!.id;
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
     const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);

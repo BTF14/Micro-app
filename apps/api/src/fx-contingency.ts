@@ -10,6 +10,7 @@ import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { hashFxPin, verifyFxPin } from "./fx-pin";
 import { resolveTenantContext } from "./tenant-context";
 import { isValidClientIp } from "./runtime-write-rate-limit";
+import { findLatestBcvRate } from "./exchange-rates";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY = 8 * 1024;
@@ -386,24 +387,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
                 ORDER BY a.starts_at DESC LIMIT 1`,
           [tenant.organizationId, branchId],
         );
-        const bcv = await tx.query(
-          `WITH operation AS MATERIALIZED (
-             SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date AS operation_date
-           )
-           SELECT state.last_success_at,state.last_outcome,state.last_effective_date,
-                  operation.operation_date,
-                  selected.exchange_rate_id,selected.rate::text AS rate,
-                  selected.effective_date,selected.priority,
-                  CASE WHEN selected.exchange_rate_id IS NULL THEN 'unavailable'
-                       WHEN selected.effective_date > operation.operation_date THEN 'scheduled'
-                       ELSE 'current' END AS status
-             FROM public.bcv_sync_state state
-             CROSS JOIN operation
-             LEFT JOIN LATERAL public.select_bcv_rate_for_operation(operation.operation_date) selected ON true
-            WHERE state.singleton=true
-            LIMIT 1`,
-        );
-        return { kind: "ok" as const, authorization: rows.rows[0] ?? null, bcv: bcv.rows[0] ?? null, commercial_enabled: c.env.FX_CONTINGENCY_ENABLED === "true" };
+        const bcv = await findLatestBcvRate(tx);
+        return { kind: "ok" as const, authorization: rows.rows[0] ?? null, bcv, commercial_enabled: c.env.FX_CONTINGENCY_ENABLED === "true" };
       }));
       if (result.kind !== "ok") return authFailure(c, result.kind);
       return c.json(result);

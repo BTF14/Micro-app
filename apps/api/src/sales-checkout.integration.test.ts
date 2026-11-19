@@ -478,6 +478,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       // Register shifts are append-only by design. This test database is ephemeral,
       // so retain the closed shift and its scope rows rather than bypass lifecycle guards.
       if (fxOwnerId) {
+        await client.query("DELETE FROM public.auth_sessions WHERE user_id=$1",[fxOwnerId]);
+        await client.query("DELETE FROM public.branch_memberships WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",[organizationId,branchId,fxOwnerId]);
         await client.query("DELETE FROM public.organization_members WHERE organization_id=$1 AND user_id=$2", [organizationId, fxOwnerId]);
         await client.query("DELETE FROM public.app_users WHERE id=$1", [fxOwnerId]);
       }
@@ -1289,6 +1291,10 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await client.query(
       "INSERT INTO public.organization_members(organization_id,user_id,role) VALUES($1,$2,'owner')",
       [organizationId, fxOwnerId],
+    );
+    await client.query(
+      "INSERT INTO public.branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",
+      [organizationId,branchId,fxOwnerId],
     );
     fxOwnerToken = "fx-owner-session-" + crypto.randomUUID();
     const fxOwnerDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(fxOwnerToken));

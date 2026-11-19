@@ -24,6 +24,14 @@ El preflight usa exclusivamente las columnas autorizadas por migración 0022 y e
 **Fase 2:** iniciar el cierre de AC-6 legal/contable y AC-7 seguridad para Contingencia Manual BCV como Prioridad #1, según `ADR-20261114-v11-product-scope-and-roadmap.md`. Esto no levanta el freeze ni el estado NOT READY.
 - **Relacionado:** [PR #374](https://github.com/BTF14/Micro-app/pull/374); ODD task `odd/tasks/bcv-node-tls-producer-migration-20261116.md`.
 
+## Rotación posterior del intermedio BCV — Sectigo OV R36 (2026-11-19)
+
+El endpoint `www.bcv.org.ve` pasó a presentar el intermedio **Sectigo Public Server Authentication CA OV R36**. El certificado público ya está versionado en `apps/api/certs/sectigo-public-server-authentication-ca-ov-r36.crt`. El productor Node aislado de `.github/workflows/bcv-sync.yml` valida y confía ahora en ese OV R36, sustituyendo el pin DV R36 anterior para esta ruta de producción CI.
+
+Antes de iniciar Node, el workflow comprueba el fingerprint SHA-256 `6542D176BED50F193C0CE297AE44ECD8A0A86BEC2EDE682769344059B4E78530`, subject `CN=Sectigo Public Server Authentication CA OV R36,O=Sectigo Limited,C=GB`, issuer `CN=Sectigo Public Server Authentication Root R46,O=Sectigo Limited,C=GB`, `CA:TRUE, pathlen:0`, EKU `TLS Web Server Authentication` y vigencia. `NODE_EXTRA_CA_CERTS` apunta exclusivamente a ese PEM dentro del job aislado. Node mantiene la validación TLS normal de cadena, hostname y fechas; no se introduce ningún bypass. El workflow de conectividad estricta mantiene su validación propia y su bundle de transición DV+OV.
+
+Esta rotación no habilita el Worker: `BCV_SYNC_ENABLED=false` permanece sin cambios. Tampoco modifica AC-6, `FX_CONTINGENCY_ENABLED=false`, Issue #53 OPEN/P0 ni freeze v1.1.
+
 ## Contexto y problema
 
 The manual BCV connectivity test runs under Node.js and correctly fails with `UNABLE_TO_VERIFY_LEAF_SIGNATURE` because the BCV HTTPS endpoint omits the intermediate certificate in its TLS chain. Certificate Transparency records for the active `*.bcv.org.ve` certificate identify its issuer as Sectigo Public Server Authentication CA DV R36. Sectigo identifies that intermediate as issued by Sectigo Public Server Authentication Root R46. The issue is a server-supplied chain omission, not a reason to disable TLS verification.

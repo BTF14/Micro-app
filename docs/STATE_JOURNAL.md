@@ -3686,3 +3686,17 @@ Nota de continuidad: el SHA anterior indicado es el último HEAD completamente v
 - Se reconcilian `BANKING_CALENDAR_VERSIONING.md`, `SALES_CHECKOUT_MODEL.md`, `PROJECT_PLAN.md` y `CURRENT_STATE.md`; no se borra historia del calendario ni reglas históricas. El ADR-20261117 prevalece para elegibilidad checkout.
 - Límites: documentación únicamente; sin migración 0027, `apps/**`, `.sql`, workflows, dependencias, Neon, Cloudflare manual, secretos, datos reales, billing o deploy. AC-6 sigue abierto/flag apagado; freeze v1.1; Issue #53 OPEN/P0; PRODUCTION NOT READY.
 - PR Draft y checks exact-SHA pendientes al registrar esta entrada; no merge/auto-merge.
+
+
+## 2026-11-19 — PR #383 BCV 0027: corrección de concurrencia y validación de código
+
+- Se corrigió el estado residual del test PostgreSQL de checkout: el test de turno cerrado restaura un turno activo en `finally`, actualizando `shiftId`. El test posterior de checkouts paralelos reutiliza ese turno, evitando un segundo INSERT que violaba `register_shifts_one_open_per_register_uq`.
+- Se añadieron pruebas deterministas de frontera Caracas: `2026-11-07T03:59:59.000Z` (viernes 23:59:59 VET) y `2026-11-07T04:00:00.000Z` (sábado 00:00:00 VET). Cubren `selectApplicableBcvRate`, `findLatestBcvRate`, checkout y `select_bcv_rate_for_operation`; el caso sábado usa la prepublicación del lunes y sin cobertura falla cerrado.
+- La prueba PostgreSQL también comprueba que el trigger `capture_sales_bcv_0027_snapshot()` adquiere `FOR SHARE` antes de `clock_timestamp()` y deriva `operation_date` y `exchange_rate_effective_date` del mismo instante capturado. Es inspección de la definición real del trigger junto a prueba de selector; no se presenta como reloj PostgreSQL inyectable.
+- SHA de código validado: `af422a0f08dcc9b3a1b4228cd76fbf958b4040e5`.
+- Check Runs API exacta para ese SHA: 22/22 `completed / success`. Workflows asociados: 13/13 `completed / success`.
+- CI run `44625145706` terminó SUCCESS; build/typecheck, unit tests, PostgreSQL 18 BCV 0027 matrix, checkout PostgreSQL integration, FX contingency PG-01..PG-30 y Cashier lifecycle SUCCESS.
+- Playwright E2E run `44625146088`: ambos jobs SUCCESS. Cloudflare Pages y Workers Builds SUCCESS como checks de preview/build.
+- Se reconcilian ODD task, PROJECT_PLAN, CURRENT_STATE, HANDOFF_NEXT_CHAT y STATE_JOURNAL después de cumplir 22/22 sobre el SHA de código. Los commits documentales generan un SHA distinto que debe validarse otra vez con 22/22; no reutilizar la evidencia anterior.
+- PR #383 sigue OPEN / Draft; no merge ni auto-merge.
+- Gates retenidos: AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; Neon `main` en 0025 (sin acceso/cambios); `PRODUCTION: NOT READY`.

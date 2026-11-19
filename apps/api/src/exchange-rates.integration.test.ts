@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
-import { findApplicableBcvRate, persistBcvOfficialRate } from "./exchange-rates";
+import { findApplicableBcvRate, persistBcvOfficialRate, syncBcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
 import app from "./index";
 
@@ -301,6 +301,22 @@ const source = "BCV_OFFICIAL_HTML_V1";
       rate: "894.88760000",
       effectiveDate: today,
     })).resolves.toBe("unchanged");
+
+    // Persisting rows directly is not evidence of a successful sync. Run the
+    // producer path so the latest-success state and append-only 0026 observation
+    // certify the exact same-day row before exercising the latest-rate endpoint.
+    const [year, month, day] = today.split("-");
+    const monthName = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"][Number(month)-1]!;
+    const html = `<html><body><p>USD</p><p>894,88760000</p><p>Fecha Valor: ${Number(day)} de ${monthName} de ${year}</p></body></html>`;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(html, {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    })));
+    try {
+      await expect(syncBcvOfficialRate(producerDatabaseUrl)).resolves.toBe("unchanged");
+    } finally {
+      vi.unstubAllGlobals();
+    }
 
     const stored = await cleanupClient!.query<{ effective_date: string; rate: string }>(
       "SELECT effective_date::text, rate::text FROM public.exchange_rates WHERE source = $1 ORDER BY effective_date DESC",

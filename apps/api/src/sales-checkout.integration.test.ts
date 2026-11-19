@@ -1524,6 +1524,9 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       await client.query("SELECT pg_catalog.pg_advisory_unlock(20261119,$1)", [lockKey]);
       const response = await checkout;
       expect(response.status).toBe(201);
+      const sale = await response.json() as { operation_date: string; exchange_rate_effective_date: string };
+      expect(sale.operation_date).toBe(rateDate);
+      expect(sale.exchange_rate_effective_date).toBe(rateDate);
       await sync;
       expect(syncSettled).toBe(true);
       expect((await readBalance()).on_hand_quantity).toBe("1.000");

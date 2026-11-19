@@ -497,10 +497,10 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     const auth = await admin.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
     await admin.query("UPDATE public.exchange_rates SET validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [currentRateId]);
     const oldSuccess = new Date(auth.rows[0]!.starts_at.getTime() - 1000);
-    await updateSync("inserted", today, oldSuccess);
+    const attemptId = await updateSync("inserted", today, oldSuccess);
     const observation = await admin.query<{ observed_at: Date; last_success_at: Date; rate_fetched_at: Date }>(
       "SELECT observed_at,last_success_at,rate_fetched_at FROM public.bcv_sync_success_observations WHERE attempt_id=$1",
-      [attemptIds[attemptIds.length - 2]],
+      [attemptId],
     );
     expect(observation.rows[0]!.observed_at.getTime()).toBeGreaterThan(auth.rows[0]!.starts_at.getTime());
     expect(observation.rows[0]!.last_success_at.getTime()).toBeLessThan(auth.rows[0]!.starts_at.getTime());

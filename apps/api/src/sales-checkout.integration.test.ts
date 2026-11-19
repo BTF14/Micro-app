@@ -1522,26 +1522,31 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
 
 
-  it("makes a checkout-side shared lock wait for a sync failure that acquired the row lock first", async () => {
+  it("checkout waits for a sync failure that locked BCV first and then rejects with 409", async () => {
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
     const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);
     expect(eligible.rows).toHaveLength(1);
+    await seedBalance("2.000");
     await producerClient.query("BEGIN");
+    let responsePromise: Promise<Response> | null = null;
     try {
       await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",
       );
       let settled = false;
-      const waitingLock = runtimeClient.query("SELECT * FROM public.lock_bcv_sync_state_with_error()")
+      responsePromise = request(checkoutBody("1.000","23.8500"),"sync-fails-first-"+crypto.randomUUID())
         .finally(() => { settled = true; });
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve,100));
       expect(settled).toBe(false);
       await producerClient.query("COMMIT");
-      const state = await waitingLock;
-      expect(state.rows[0]?.last_outcome).toBe("failed");
+      const response = await responsePromise;
+      expect(response.status).toBe(409);
+      expect((await response.json() as {error:string}).error).toBe("BCV_RATE_NOT_CURRENT");
+      expect((await readBalance()).on_hand_quantity).toBe("2.000");
     } finally {
       await producerClient.query("ROLLBACK").catch(() => undefined);
+      if(responsePromise) await responsePromise.catch(() => undefined);
       await setBcvSyncState("inserted");
     }
   });

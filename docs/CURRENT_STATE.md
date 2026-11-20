@@ -3,7 +3,7 @@
 - **Base main verificada:** c2fa2fe453af0c3dbb7dd95e8b79a59eed828234, posterior a PR #390 (0028), PR #391 (Hardening 6A), PR #385 y PR #386; 0 PRs antiguas pendientes en esta base.
 - **Neon main:** el propietario confirmó migración a 0028; el propietario verificó HTTP 200 en /health y /api/exchange-rates/latest. Esta ejecución no accedió ni modificó Neon.
 - **Paso 5 — Carril B1 / 0028:** CERRADO Y MIGRADO. PR #390 MERGED.
-- **Paso 6 — Hardening B1 + 0027:** alcance técnico cubierto por PR #391 (6A, MERGED) y PR #392 (6B, OPEN / Draft); la integración de 6B queda sujeta a CI exact-SHA y revisión/merge humano.
+- **Paso 6 — Hardening B1 + 0027: CERRADO** entre PR #391 (6A, MERGED) y esta PR #392 (6B, OPEN / Draft), desbloqueando el Paso 7. PR #392 permanece Draft, sin merge ni auto-merge, hasta completar CI exact-SHA y revisión humana.
 - **Siguiente paso:** Paso 7 — PR 2: Importador CSV, una vez integrada la PR #392.
 - **Gates globales invariables:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
 - **Límites:** seis archivos autorizados; sin código productivo, migraciones, Neon, secretos, DNS, Cloudflare, despliegues ni cambios de gates. No se afirman pruebas locales.

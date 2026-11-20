@@ -194,7 +194,7 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
         const branch = auth.context;
         const productIds = input.lines.map((line) => line.product_id);
         const products = await tx.query<{ id: string; quantity_mode: "integer" | "fractional" }>(
-          `SELECT id, quantity_mode FROM public.products WHERE organization_id = $1 AND id = ANY($2::uuid[]) FOR SHARE`,
+          `SELECT id, quantity_mode FROM public.products WHERE organization_id = $1 AND id = ANY($2::uuid[]) ORDER BY id ASC`,
           [branch.organizationId, productIds],
         );
         if (products.rows.length !== productIds.length) return { kind: "invalid_products" as const };
@@ -226,7 +226,10 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
         return c.json({ error: "INVALID_PRODUCTS", message: "Uno o más productos no pertenecen a esta organización." }, 400);
       }
       if (code === "42501") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para recibir mercancía en esta sucursal." }, 403);
-      if (code === "22023" || (code === "23514" && message.includes("INTEGER_PRODUCT_RECEIPT_QUANTITY_MUST_BE_WHOLE"))) return c.json({ error: "INVALID_RECEIPT", message: "El motivo o las líneas de recepción no son válidos; los productos de unidad entera requieren cantidades enteras." }, 400);
+      if (code === "23514" && message.includes("INTEGER_PRODUCT_RECEIPT_QUANTITY_MUST_BE_WHOLE")) {
+        return c.json({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE", message: "Los productos de unidad entera solo admiten cantidades enteras en la recepción." }, 400);
+      }
+      if (code === "22023") return c.json({ error: "INVALID_RECEIPT", message: "El motivo o las líneas de recepción no son válidos." }, 400);
       if (code && ["42P01", "42883", "42703"].includes(code)) {
         return c.json({ error: "INVENTORY_RECEIPTS_NOT_ENABLED", message: "El registro de recepciones todavía no está habilitado en esta base de datos." }, 503);
       }

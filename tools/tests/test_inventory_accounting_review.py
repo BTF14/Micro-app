@@ -15,6 +15,9 @@ class InventoryAccountingReviewTests(unittest.TestCase):
         for v,p,s in [("100000000000.000",14,3),("1.0001",14,3),("1.00001",14,4),("10000000000.0000",14,4),("1.001",16,2),("1.000000001",18,8)]:
             with self.subTest(value=v),self.assertRaises(ValueError): exact(v,p,s)
         with self.assertRaises(TypeError): exact(0.1,14,4)
+        for malformed in ("1e3", " 1.0000", "1.0000 ", "+1.0000", "01.0000"):
+            with self.subTest(malformed=malformed), self.assertRaises(ValueError):
+                exact(malformed,14,4)
 
     def test_ties_round_away_from_zero(self):
         self.assertEqual(Decimal("1.2345"),rounded(Decimal("1.23445"),4))

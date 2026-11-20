@@ -3,6 +3,7 @@ import { convertUsdToVes } from "@micro-app/money";
 import { formatLocalizedDecimal } from "./decimal";
 import { apiRequest } from "./auth";
 import ProductForm from "./ProductForm";
+import CatalogCsvImportPanel from "./CatalogCsvImportPanel";
 import "./catalog.css";
 
 type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
@@ -70,6 +71,7 @@ export default function CatalogPanel({
   const [searchText, setSearchText] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showImportPanel, setShowImportPanel] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(null);
   const requestSequence = useRef(0);
 
@@ -124,9 +126,14 @@ export default function CatalogPanel({
         </div>
         <div className="catalog-heading-actions">
           {canManage && (
-            <button className="catalog-create" type="button" onClick={() => { setEditingProduct(null); setShowCreateForm(true); }}>
-              Nuevo producto
-            </button>
+            <>
+              <button className="catalog-create" type="button" onClick={() => { setEditingProduct(null); setShowCreateForm(true); }}>
+                Nuevo producto
+              </button>
+              <button className="catalog-create catalog-import-open" type="button" onClick={() => { setShowCreateForm(false); setEditingProduct(null); setShowImportPanel(true); }}>
+                Importar CSV
+              </button>
+            </>
           )}
           <button className="catalog-refresh" type="button" onClick={() => void fetchPage(undefined, false, activeSearch)} disabled={loading}>
             {loading ? "Actualizando…" : "Actualizar"}
@@ -148,6 +155,17 @@ export default function CatalogPanel({
         </p>
       )}
       {error && <p className="catalog-error" role="alert">{error}</p>}
+
+      {canManage && showImportPanel && (
+        <CatalogCsvImportPanel
+          organizationId={organizationId}
+          onCancel={() => setShowImportPanel(false)}
+          onImported={() => {
+            setShowImportPanel(false);
+            void fetchPage(undefined, false, activeSearch);
+          }}
+        />
+      )}
 
       {canManage && (showCreateForm || editingProduct) && (
         <ProductForm

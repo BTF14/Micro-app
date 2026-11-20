@@ -7,7 +7,7 @@ const API_BASE_URL = __MICRO_APP_API_BASE_URL__;
 const IS_PAGES_PREVIEW = __MICRO_APP_IS_PREVIEW__;
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(message: string, readonly status: number, readonly data?: unknown) {
     super(message);
     this.name = "ApiError";
   }
@@ -51,13 +51,17 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
     if (!response.ok) {
       let message = "No se pudo completar la solicitud. Inténtalo de nuevo.";
+      let payload: unknown;
       try {
-        const payload = await response.json() as ApiErrorPayload;
-        if (typeof payload.message === "string" && payload.message.trim()) message = payload.message;
+        payload = await response.json();
+        if (payload && typeof payload === "object" && "message" in payload) {
+          const candidate = (payload as ApiErrorPayload).message;
+          if (typeof candidate === "string" && candidate.trim()) message = candidate;
+        }
       } catch {
         // Keep a generic message if the API response is not JSON.
       }
-      throw new ApiError(message, response.status);
+      throw new ApiError(message, response.status, payload);
     }
 
     if (response.status === 204) return undefined as T;

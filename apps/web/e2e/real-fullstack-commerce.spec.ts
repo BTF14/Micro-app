@@ -409,3 +409,49 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   expect([...requestPaths].some((path) => path.startsWith("/api/"))).toBe(true);
   expect([...requestOrigins]).toEqual([new URL(baseURL).origin]);
 });
+
+
+test("real CSV catalog import persists through PostgreSQL 18 on mobile", async ({ page, context, baseURL }) => {
+  test.setTimeout(90_000);
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await context.addCookies([{
+    name: "microapp_session", value: fixture.ownerSessionToken, url: baseURL,
+    httpOnly: true, secure: false, sameSite: "Lax",
+  }]);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: `Hola, ${fixture.ownerDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await navigateByKeyboard(page, "Productos");
+  await expect(page.getByRole("heading", { name: "Catálogo" })).toBeVisible();
+  await page.getByRole("button", { name: "Importar CSV", exact: true }).click();
+
+  const sku = `CSV-E2E-001-${crypto.randomUUID().slice(0, 8)}`;
+  const csv = `sku,name,price_usd\n${sku},Producto CSV E2E,12.5000\n`;
+  await page.locator('.catalog-import input[type="file"]').setInputFiles({
+    name: "catalogo-e2e.csv", mimeType: "text/csv", buffer: Buffer.from(csv, "utf8"),
+  });
+  const previewPromise = page.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith("/catalog/imports/preview") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Previsualizar importación", exact: true }).click();
+  const previewResponse = await previewPromise;
+  expect(previewResponse.status()).toBe(200);
+  await expect(page.getByText("Resumen de la revisión", { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page, "mobile CSV preview");
+
+  const applyPromise = page.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith("/catalog/imports/apply") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Confirmar importación", exact: true }).click();
+  const applyResponse = await applyPromise;
+  expect(applyResponse.status()).toBe(200);
+  expect(applyResponse.request().headers()["idempotency-key"]).toMatch(/^csv-/);
+  await expect(page.getByRole("status")).toContainText("Importación completada");
+  await expectNoHorizontalOverflow(page, "mobile CSV applied");
+
+  await page.reload();
+  await navigateByKeyboard(page, "Productos");
+  await page.getByLabel("Buscar productos", { exact: true }).fill(sku);
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  await expect(page.getByText("Producto CSV E2E", { exact: true })).toBeVisible();
+  await expect(page.locator(".catalog-product-meta")).toContainText(sku);
+  await expectNoHorizontalOverflow(page, "mobile persisted CSV product");
+});

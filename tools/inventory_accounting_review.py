@@ -10,8 +10,12 @@ class InvariantViolation(AssertionError):
 def exact(value: str, precision: int, scale: int) -> Decimal:
     if not isinstance(value, str):
         raise TypeError("decimal inputs must be strings; binary float is forbidden")
-    if re.fullmatch(r"-?(0|[1-9][0-9]*)(?:\.[0-9]+)?", value) is None:
+    match = re.fullmatch(r"-?(0|[1-9][0-9]*)(?:\\.([0-9]+))?", value)
+    if match is None:
         raise ValueError("decimal must be a plain base-10 string without whitespace or exponent")
+    fraction = match.group(1) or ""
+    if len(fraction) > scale:
+        raise ValueError("decimal scale exceeded")
     try:
         number = Decimal(value)
     except InvalidOperation as exc:

@@ -1,3 +1,17 @@
+# Corte vigente — post-PR #394 + roadmap CSV 7B y Tour Visual E2E — 2026-11-20
+
+- **main verificado:** `e87385141943195e1d884f31233f84a87eae8dac` (merge commit de PR #394); comparación GitHub `main...`idéntica a este SHA.
+- **PR #392 — MERGED** (`019997f797c0e7357f05a11d3d8043899f8d5244`): cierre del Paso 6 / Micro-PR 6B, cobertura de `GET /sales/:saleId` y sincronización documental.
+- **PR #393 — MERGED** (`e0801e29e093a17bcc9e4c7116e8081a8d12c41b`): Paso 7 / Micro-PR 7A; SDD CSV reconciliado, ODD `odd/tasks/catalog-csv-importer.md`, parser puro `catalog-csv.ts` y 31 unit tests.
+- **PR #394 — MERGED** (`e87385141943195e1d884f31233f84a87eae8dac`): hotfix UI de `FxContingencyPanel`; lectura de contrato BCV 0027 (`status`, `effective_date`, `rate`), copy comercial sin exponer `AC-6` ni permisos internos, y alineación/tamaño del checkbox.
+- **Neon main:** migración 0028 reportada por el propietario. Esta tarea no accede ni escribe Neon.
+- **Gates globales intactos:** `AC-6 OPEN`; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 `OPEN/P0`; freeze v1.1; **PRODUCTION: NOT READY**; presupuesto objetivo USD 0.
+- **Siguiente trabajo:** Paso 7B — migración aditiva 0029 para importaciones CSV. Después 7C, 7D, PR 3 Scanner/Carril B2, PR 4 Cierres/Reportes/Exportación y Tour Visual E2E preproducción.
+- **Alcance de esta actualización:** solo `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md` y `docs/PROJECT_PLAN.md`; no modificar código, migraciones, workflows, SDD, ODD, infraestructura ni gates.
+- **Validación local:** no hay checkout local/terminal en esta ejecución; no se afirma ejecución de `python3 tools/validate-agent-docs.py`. Validar los checks reales de GitHub Actions sobre el SHA documental final exacto.
+
+---
+
 # Corte vigente — Cierre Paso 6 Hardening B1 + 0027 — 2026-11-20
 
 - **Base main verificada:** c2fa2fe453af0c3dbb7dd95e8b79a59eed828234, posterior a PR #390 (0028), PR #391 (Hardening 6A), PR #385 y PR #386; 0 PRs antiguas pendientes en esta base.

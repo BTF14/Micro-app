@@ -18,11 +18,14 @@ DO $$
 BEGIN
  IF round(1.23445::numeric,4)<>1.2345 OR round(-1.23445::numeric,4)<>-1.2345 THEN RAISE EXCEPTION 'tie rounding mismatch'; END IF;
  IF round(1.23444::numeric,4)<>1.2344 THEN RAISE EXCEPTION 'below-tie rounding mismatch'; END IF;
- BEGIN
-  PERFORM 100000000000.000::numeric(14,3);
-  RAISE EXCEPTION 'NUMERIC(14,3) overflow not rejected';
- EXCEPTION WHEN numeric_value_out_of_range THEN NULL;
- END;
+ PERFORM 99999999999.999::numeric(14,3);
+ PERFORM 9999999999.9999::numeric(14,4);
+ PERFORM 99999999999999.99::numeric(16,2);
+ PERFORM 9999999999.99999999::numeric(18,8);
+ BEGIN PERFORM 100000000000.000::numeric(14,3); RAISE EXCEPTION 'NUMERIC(14,3) overflow not rejected'; EXCEPTION WHEN numeric_value_out_of_range THEN NULL; END;
+ BEGIN PERFORM 10000000000.0000::numeric(14,4); RAISE EXCEPTION 'NUMERIC(14,4) overflow not rejected'; EXCEPTION WHEN numeric_value_out_of_range THEN NULL; END;
+ BEGIN PERFORM 100000000000000.00::numeric(16,2); RAISE EXCEPTION 'NUMERIC(16,2) overflow not rejected'; EXCEPTION WHEN numeric_value_out_of_range THEN NULL; END;
+ BEGIN PERFORM 10000000000.00000000::numeric(18,8); RAISE EXCEPTION 'NUMERIC(18,8) overflow not rejected'; EXCEPTION WHEN numeric_value_out_of_range THEN NULL; END;
 END $$;
 
 INSERT INTO iar_movements VALUES ('org-a','branch-a','wh-a','product-a','m-1',2.000),('org-a','branch-a','wh-a','product-a','m-2',-0.500);

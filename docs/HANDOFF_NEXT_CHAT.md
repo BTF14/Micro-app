@@ -1,3 +1,45 @@
+# Handoff vigente — post-PR #394 / siguiente Paso 7B + Tour Visual E2E — 2026-11-20
+
+## Punto de partida verificado
+
+- Repositorio: `BTF14/Micro-app`.
+- `main` exacto: `e87385141943195e1d884f31233f84a87eae8dac` (merge de PR #394; GitHub compara `main` y este SHA como idénticos).
+- PR #392 MERGED: `019997f797c0e7357f05a11d3d8043899f8d5244` — cierre Paso 6 / Micro-PR 6B, cobertura `GET /sales/:saleId` y docs.
+- PR #393 MERGED: `e0801e29e093a17bcc9e4c7116e8081a8d12c41b` — Paso 7 / Micro-PR 7A, SDD CSV, ODD `odd/tasks/catalog-csv-importer.md`, parser puro `catalog-csv.ts` y 31 unit tests.
+- PR #394 MERGED: `e87385141943195e1d884f31233f84a87eae8dac` — panel UI FX/BCV 0027, lenguaje comercial, estado/fecha/tasa y checkbox.
+- Neon main en migración 0028 según reporte del propietario. No consultar ni escribir Neon.
+- Gates invariables: AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
+
+## Orden obligatorio de continuidad
+
+1. **Paso 7 — Importador CSV (en curso).**
+   - **7A completada:** PR #393 MERGED. Parser CSV puro y seguro, SDD reconciliado, ODD task registrada y 31 unit tests.
+   - **7B — SIGUIENTE:** migración aditiva `0029` para `catalog_import_batches`, con assertions PostgreSQL y scripts/workflows de migración y backup/restore. No reescribir migraciones históricas ni ejecutar migraciones remotas en Neon main.
+   - **7C:** endpoints API `preview`/`apply`; pruebas PostgreSQL 18 efímeras, concurrencia e idempotencia.
+   - **7D:** UI en `CatalogPanel.tsx`, Playwright E2E y cierre ODD.
+2. **PR 3 — Scanner móvil / Carril B2:** pendiente después del importador CSV.
+3. **PR 4 — Cierres / Reportes / Exportación:** pendiente después de estabilizar los flujos anteriores.
+4. **Tour Visual E2E — auditoría UI/UX preproducción, costo $0.**
+   - Ejecutarlo **solo después de completar todas las pantallas** de CSV 7D, PR 3 Scanner y PR 4 Reportes/Cierres; hacerlo **antes** de Pre-prod Audit, `ve-fx-compliance-review` e Issue #53.
+   - Reutilizar `.github/workflows/playwright-e2e.yml` existente; no añadir servicios pagos ni credenciales reales.
+   - Añadir spec dedicada bajo `apps/web/e2e/`, ejecutada en Chromium con PostgreSQL 18 efímero + API Hono + build real de Vite.
+   - Recorrer las nueve secciones visibles: **Resumen, Productos/CSV, Inventario, Consultar precio, Caja y turnos, Ventas, Estructura, Gestión cambiaria y Reportes**.
+   - Ejecutar la matriz de viewport móvil **390×844** y desktop **1280×800** para cada pantalla/sección.
+   - Añadir aserciones anti-regresión de copy que prohíban mostrar al cliente `AC-6`, `Issue #`, `fx.contingency.`, `undefined` o `NaN`; comprobar ausencia de overflow horizontal en móvil y accesibilidad de controles (nombre/label, rol, foco y operación por teclado).
+   - Guardar screenshot `fullPage: true` por pantalla/viewport como Artifact temporal de GitHub Actions, con `retention-days: 7`, para inspección visual humana/IA antes de declarar listo el producto.
+5. **Pre-prod Audit + `ve-fx-compliance-review` + AC-6 + cierre de Issue #53.** Son gates posteriores al Tour; no se cierran por CI verde ni por esta tarea documental.
+
+## Reglas de ejecución para el siguiente chat
+
+- Leer primero `AGENTS.md`, `WORK_CHECKPOINT.md`, `docs/CONSTITUTION.md`, `docs/CURRENT_STATE.md`, `docs/HANDOFF_NEXT_CHAT.md`, `docs/PROJECT_PLAN.md`, `docs/STATE_JOURNAL.md` y `docs/SECURITY_ROADMAP.md`.
+- Revalidar el HEAD vivo de `main` en GitHub antes de crear una rama; no asumir que el SHA aquí citado sigue siendo actual en un chat futuro.
+- Trabajar en una PR acotada por paso, Draft y sin merge/auto-merge salvo autorización explícita posterior. No reutilizar CI de otro SHA.
+- Si no hay checkout/terminal, usar integración GitHub; no afirmar tests locales. Esperar y reportar el 100 % de check-runs y workflows reales sobre el SHA final exacto.
+- No volver a pedir datos ya documentados ni solicitar terminal, CLI, capturas o reconexiones si no son imprescindibles. No acceder ni escribir Neon main; no usar credenciales/datos reales.
+- Mantener intactos AC-6, flags, Issue #53, freeze v1.1 y estado PRODUCTION: NOT READY.
+
+---
+
 # Handoff vigente — Cierre Paso 6 Hardening B1 + 0027 — 2026-11-20
 
 ## Punto de partida verificado

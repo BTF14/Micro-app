@@ -1151,14 +1151,27 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const countRead = await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}/counts`);
     expect(countRead.status).toBe(403);
   });
-  it("rejects fractional counts in integer mode and accepts fractional mode", async () => {
-    await client.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
-    const rejected = await request(root() + "/counts/physical", { reason: "Integer mode rejects halves", lines: [{ product_id: productId, counted_quantity: "0.500" }] });
-    expect(rejected.status).toBe(400);
-    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
-    await client.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
-    const accepted = await request(root() + "/counts/physical", { reason: "Fractional mode accepts grams", lines: [{ product_id: productId, counted_quantity: "1.250" }] });
-    expect(accepted.status).toBe(201);
+  it("maps the database integer-quantity constraint to the public 400 error", async () => {
+    await client.query(`CREATE OR REPLACE FUNCTION public.fail_integer_count_quantity_test() RETURNS trigger
+      LANGUAGE plpgsql AS $
+      BEGIN
+        RAISE EXCEPTION 'INTEGER_PRODUCT_COUNT_QUANTITY_MUST_BE_WHOLE' USING ERRCODE = '23514';
+      END $`);
+    await client.query("CREATE TRIGGER fail_integer_count_quantity_test BEFORE INSERT ON public.inventory_count_lines FOR EACH ROW EXECUTE FUNCTION public.fail_integer_count_quantity_test()");
+    try {
+      const response = await request(root() + "/counts/physical", {
+        reason: "Exercise concurrent integer-mode constraint mapping",
+        lines: [{ product_id: productId, counted_quantity: "1.000" }],
+      });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE",
+        message: "Los productos de unidad entera solo admiten cantidades enteras en el conteo.",
+      });
+    } finally {
+      await client.query("DROP TRIGGER IF EXISTS fail_integer_count_quantity_test ON public.inventory_count_lines");
+      await client.query("DROP FUNCTION IF EXISTS public.fail_integer_count_quantity_test()");
+    }
   });
 
   it("rejects fractional counts in integer mode and accepts fractional mode", async () => {
@@ -1170,6 +1183,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const accepted = await request(root() + "/counts/physical", { reason: "Fractional mode accepts grams", lines: [{ product_id: productId, counted_quantity: "1.250" }] });
     expect(accepted.status).toBe(201);
   });
+
+
 
   it("blocks fractional-to-integer mode changes while any warehouse balance is fractional", async () => {
     await seedInventoryBalanceFor(productId, "1.500");

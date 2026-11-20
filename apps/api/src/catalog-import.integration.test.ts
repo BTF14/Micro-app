@@ -29,7 +29,7 @@ const csv = (rows: string[][], headers = ["sku", "name", "price_usd"]) =>
   [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
 
 describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 18", () => {
-  let client: Client;
+  let client: Client | undefined;
   let organizationA = "";
   let organizationB = "";
   let branchId = "";
@@ -43,7 +43,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
 
   async function createOrganization(label: string): Promise<string> {
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-    const result = await client.query<{ id: string }>(
+    const result = await client!.query<{ id: string }>(
       "INSERT INTO organizations (name, slug) VALUES ($1,$2) RETURNING id",
       [label + " " + suffix, "catalog-import-" + suffix],
     );
@@ -53,20 +53,20 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
 
   async function createMember(organizationId: string, role: "owner" | "inventory" | "cashier"): Promise<Fixture> {
     const suffix = crypto.randomUUID();
-    const user = await client.query<{ id: string }>(
+    const user = await client!.query<{ id: string }>(
       "INSERT INTO app_users (email, display_name) VALUES ($1,$2) RETURNING id",
       ["catalog-import-" + suffix + "@example.test", "Catalog Import " + role],
     );
     const userId = user.rows[0]!.id;
     userIds.push(userId);
-    await client.query(
+    await client!.query(
       "INSERT INTO organization_members (organization_id,user_id,role) VALUES ($1,$2,$3)",
       [organizationId, userId, role],
     );
     const token = "catalog-import-session-" + suffix;
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
     const tokenHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-    await client.query(
+    await client!.query(
       "INSERT INTO auth_sessions (user_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '1 day')",
       [userId, tokenHash],
     );
@@ -111,32 +111,32 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     fixtures.inventory = await createMember(organizationA, "inventory");
     fixtures.cashier = await createMember(organizationA, "cashier");
 
-    const existing = await client.query<{ id: string }>(
+    const existing = await client!.query<{ id: string }>(
       `INSERT INTO products (organization_id,sku,barcode,name,price_usd,cost_usd,minimum_stock,unit,quantity_mode)
        VALUES ($1,'IMPORT-EXISTING','BARCODE-EXISTING','Existing product',10,0,0,'unidad','integer') RETURNING id`,
       [organizationA],
     );
     existingProductId = existing.rows[0]!.id;
-    const updateProduct = await client.query<{ id: string }>(
+    const updateProduct = await client!.query<{ id: string }>(
       `INSERT INTO products (organization_id,sku,name,price_usd,cost_usd,minimum_stock,unit,quantity_mode)
        VALUES ($1,'IMPORT-UPDATE','Old name',5,0,0,'unidad','integer') RETURNING id`,
       [organizationA],
     );
     updateProductId = updateProduct.rows[0]!.id;
 
-    const fractional = await client.query<{ id: string }>(
+    const fractional = await client!.query<{ id: string }>(
       `INSERT INTO products (organization_id,sku,name,price_usd,cost_usd,minimum_stock,unit,quantity_mode)
        VALUES ($1,'IMPORT-FRACTIONAL','Fractional product',10,0,0,'kg','fractional') RETURNING id`,
       [organizationA],
     );
     fractionalProductId = fractional.rows[0]!.id;
 
-    const branch = await client.query<{ id: string }>(
+    const branch = await client!.query<{ id: string }>(
       "INSERT INTO branches (organization_id,name,slug) VALUES ($1,'Import Test Branch',$2) RETURNING id",
       [organizationA, "import-" + crypto.randomUUID().slice(0, 8)],
     );
     branchId = branch.rows[0]!.id;
-    const warehouse = await client.query<{ id: string }>(
+    const warehouse = await client!.query<{ id: string }>(
       "INSERT INTO warehouses (organization_id,branch_id,code,name) VALUES ($1,$2,$3,'Import Test Warehouse') RETURNING id",
       [organizationA, branchId, "imp-" + crypto.randomUUID().slice(0, 8)],
     );
@@ -144,13 +144,13 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
 
     // A fractional draft count is a live 0028 guard fixture. It is intentionally
     // read-only from the catalog import API and remains scoped to this tenant.
-    const count = await client.query<{ id: string }>(
+    const count = await client!.query<{ id: string }>(
       `INSERT INTO inventory_counts
         (organization_id,branch_id,warehouse_id,count_type,reason,created_by)
        VALUES ($1,$2,$3,'physical','Catalog import fractional guard', $4) RETURNING id`,
       [organizationA, branchId, warehouseId, fixtures.ownerA.userId],
     );
-    await client.query(
+    await client!.query(
       `INSERT INTO inventory_count_lines
         (organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,
          expected_on_hand_quantity,expected_balance_version)
@@ -162,38 +162,38 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
   afterAll(async () => {
     if (!client) return;
     if (organizationIds.length) {
-      await client.query("BEGIN");
+      await client!.query("BEGIN");
       try {
-        await client.query("ALTER TABLE catalog_import_batches DISABLE TRIGGER USER");
-        await client.query("ALTER TABLE audit_logs DISABLE TRIGGER USER");
-        await client.query("ALTER TABLE inventory_count_lines DISABLE TRIGGER USER");
-        await client.query("ALTER TABLE inventory_counts DISABLE TRIGGER USER");
-        await client.query("DELETE FROM catalog_import_batches WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-        await client.query("DELETE FROM audit_logs WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-        await client.query("DELETE FROM inventory_count_lines WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-        await client.query("DELETE FROM inventory_counts WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-        await client.query("ALTER TABLE catalog_import_batches ENABLE TRIGGER USER");
-        await client.query("ALTER TABLE audit_logs ENABLE TRIGGER USER");
-        await client.query("ALTER TABLE inventory_count_lines ENABLE TRIGGER USER");
-        await client.query("ALTER TABLE inventory_counts ENABLE TRIGGER USER");
-        await client.query("COMMIT");
+        await client!.query("ALTER TABLE catalog_import_batches DISABLE TRIGGER USER");
+        await client!.query("ALTER TABLE audit_logs DISABLE TRIGGER USER");
+        await client!.query("ALTER TABLE inventory_count_lines DISABLE TRIGGER USER");
+        await client!.query("ALTER TABLE inventory_counts DISABLE TRIGGER USER");
+        await client!.query("DELETE FROM catalog_import_batches WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client!.query("DELETE FROM audit_logs WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client!.query("DELETE FROM inventory_count_lines WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client!.query("DELETE FROM inventory_counts WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+        await client!.query("ALTER TABLE catalog_import_batches ENABLE TRIGGER USER");
+        await client!.query("ALTER TABLE audit_logs ENABLE TRIGGER USER");
+        await client!.query("ALTER TABLE inventory_count_lines ENABLE TRIGGER USER");
+        await client!.query("ALTER TABLE inventory_counts ENABLE TRIGGER USER");
+        await client!.query("COMMIT");
       } catch (error) {
-        await client.query("ROLLBACK");
+        await client!.query("ROLLBACK");
         throw error;
       }
-      await client.query("DELETE FROM products WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-      await client.query("DELETE FROM warehouses WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-      await client.query("DELETE FROM branches WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-      await client.query("DELETE FROM auth_sessions WHERE user_id = ANY($1::uuid[])", [userIds]);
-      await client.query("DELETE FROM organization_members WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
-      await client.query("DELETE FROM organizations WHERE id = ANY($1::uuid[])", [organizationIds]);
-      await client.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [userIds]);
+      await client!.query("DELETE FROM products WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+      await client!.query("DELETE FROM warehouses WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+      await client!.query("DELETE FROM branches WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+      await client!.query("DELETE FROM auth_sessions WHERE user_id = ANY($1::uuid[])", [userIds]);
+      await client!.query("DELETE FROM organization_members WHERE organization_id = ANY($1::uuid[])", [organizationIds]);
+      await client!.query("DELETE FROM organizations WHERE id = ANY($1::uuid[])", [organizationIds]);
+      await client!.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [userIds]);
     }
-    await client.end();
+    await client!.end();
   });
 
   it("preview is read-only and classifies create, update, decimal unchanged, and missing create fields", async () => {
-    const before = await client.query<{ products: string; batches: string; audits: string }>(
+    const before = await client!.query<{ products: string; batches: string; audits: string }>(
       `SELECT
         (SELECT count(*) FROM products WHERE organization_id=$1)::text AS products,
         (SELECT count(*) FROM catalog_import_batches WHERE organization_id=$1)::text AS batches,
@@ -220,7 +220,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     expect(body.summary.updates).toBe(1);
     expect(body.summary.unchanged).toBe(1);
     expect(body.errors.some((error) => error.code === "MISSING_REQUIRED_FIELD")).toBe(true);
-    const after = await client.query<{ products: string; batches: string; audits: string }>(
+    const after = await client!.query<{ products: string; batches: string; audits: string }>(
       `SELECT
         (SELECT count(*) FROM products WHERE organization_id=$1)::text AS products,
         (SELECT count(*) FROM catalog_import_batches WHERE organization_id=$1)::text AS batches,
@@ -236,7 +236,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const rows: string[][] = [["IMPORT-EXISTING", "Updated by import", "12"]];
     for (let index = 0; index < 104; index += 1) rows.push([`IMPORT-BULK-${index}`, `Bulk ${index}`, "2.50"]);
     const source = csv(rows);
-    const beforeInventory = await client.query<{ balances: string; movements: string }>(
+    const beforeInventory = await client!.query<{ balances: string; movements: string }>(
       `SELECT
         (SELECT count(*) FROM inventory_balances WHERE organization_id=$1)::text AS balances,
         (SELECT count(*) FROM warehouse_inventory_movements WHERE organization_id=$1)::text AS movements`,
@@ -247,7 +247,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const body = await response.json() as { replayed: boolean; summary: { total_rows: number; creates: number; updates: number } };
     expect(body.replayed).toBe(false);
     expect(body.summary).toMatchObject({ total_rows: 105, creates: 104, updates: 1 });
-    const persisted = await client.query<{ batches: string; audits: string; products: string }>(
+    const persisted = await client!.query<{ batches: string; audits: string; products: string }>(
       `SELECT
         (SELECT count(*) FROM catalog_import_batches WHERE organization_id=$1 AND idempotency_key='bulk-import-105')::text AS batches,
         (SELECT count(*) FROM audit_logs WHERE organization_id=$1 AND action='catalog.import.applied' AND entity_id=(SELECT id::text FROM catalog_import_batches WHERE organization_id=$1 AND idempotency_key='bulk-import-105'))::text AS audits,
@@ -255,7 +255,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
       [organizationA],
     );
     expect(persisted.rows[0]).toEqual({ batches: "1", audits: "1", products: "104" });
-    const afterInventory = await client.query<{ balances: string; movements: string }>(
+    const afterInventory = await client!.query<{ balances: string; movements: string }>(
       `SELECT
         (SELECT count(*) FROM inventory_balances WHERE organization_id=$1)::text AS balances,
         (SELECT count(*) FROM warehouse_inventory_movements WHERE organization_id=$1)::text AS movements`,
@@ -268,7 +268,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const source = csv([["IMPORT-IDEMPOTENT", "Idempotent", "3"]]);
     const first = await request(fixtures.ownerA, organizationA, "apply", source, "same-import-key");
     expect(first.status).toBe(200);
-    const before = await client.query<{ products: string; audits: string }>(
+    const before = await client!.query<{ products: string; audits: string }>(
       `SELECT
         (SELECT count(*) FROM products WHERE organization_id=$1 AND sku='IMPORT-IDEMPOTENT')::text AS products,
         (SELECT count(*) FROM audit_logs WHERE organization_id=$1 AND action='catalog.import.applied')::text AS audits`,
@@ -277,7 +277,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const replay = await request(fixtures.ownerA, organizationA, "apply", source, "same-import-key");
     expect(replay.status).toBe(200);
     await expect(replay.json()).resolves.toMatchObject({ replayed: true });
-    const after = await client.query<{ products: string; audits: string }>(
+    const after = await client!.query<{ products: string; audits: string }>(
       `SELECT
         (SELECT count(*) FROM products WHERE organization_id=$1 AND sku='IMPORT-IDEMPOTENT')::text AS products,
         (SELECT count(*) FROM audit_logs WHERE organization_id=$1 AND action='catalog.import.applied')::text AS audits`,
@@ -299,7 +299,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const bodies = await Promise.all(responses.map((response) => response.json() as Promise<{ replayed: boolean }>));
     expect(bodies.filter((body) => body.replayed === false)).toHaveLength(1);
     expect(bodies.filter((body) => body.replayed === true)).toHaveLength(1);
-    const count = await client.query<{ products: string; audits: string }>(
+    const count = await client!.query<{ products: string; audits: string }>(
       `SELECT
         (SELECT count(*) FROM products WHERE organization_id=$1 AND sku='IMPORT-CONCURRENT')::text AS products,
         (SELECT count(*) FROM audit_logs WHERE organization_id=$1 AND action='catalog.import.applied' AND entity_id=(SELECT id::text FROM catalog_import_batches WHERE organization_id=$1 AND idempotency_key='concurrent-import-key'))::text AS audits`,
@@ -309,7 +309,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
   });
 
   it("rejects barcode collisions without leaving earlier rows behind", async () => {
-    const before = await client.query<{ count: string }>(
+    const before = await client!.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM products WHERE organization_id=$1",
       [organizationA],
     );
@@ -320,7 +320,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const response = await request(fixtures.ownerA, organizationA, "apply", source, "rollback-import-key");
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({ error: "PRODUCT_CONFLICT" });
-    const after = await client.query<{ count: string; first: string }>(
+    const after = await client!.query<{ count: string; first: string }>(
       `SELECT count(*)::text AS count,
         (SELECT count(*) FROM products WHERE organization_id=$1 AND sku='IMPORT-ROLLBACK-FIRST')::text AS first
        FROM products WHERE organization_id=$1`,
@@ -340,7 +340,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const apply = await request(fixtures.ownerA, organizationA, "apply", source, "fractional-import-key");
     expect(apply.status).toBe(409);
     await expect(apply.json()).resolves.toMatchObject({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT" });
-    const stored = await client.query<{ quantity_mode: string }>(
+    const stored = await client!.query<{ quantity_mode: string }>(
       "SELECT quantity_mode FROM products WHERE organization_id=$1 AND id=$2",
       [organizationA, fractionalProductId],
     );

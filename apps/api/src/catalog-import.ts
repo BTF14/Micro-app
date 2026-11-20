@@ -175,6 +175,9 @@ async function buildPlan(
       values.barcode = row.barcode ?? null;
       values.description = row.description ?? null;
       values.is_active = row.is_active ?? true;
+      if ((values.quantity_mode === "integer") && parseNumeric(String(values.minimum_stock), 14, 3) % 1000n !== 0n) {
+        addError(rowErrors, rowNumber, "minimum_stock", "FRACTIONAL_MINIMUM_STOCK_CONFLICT", "minimum_stock debe ser entero cuando quantity_mode es integer.");
+      }
       if (rowErrors.length === 0) action = "create";
     } else {
       const comparisons: Array<[keyof CatalogCsvRow, keyof Product, string]> = [
@@ -383,6 +386,12 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
             }
 
             const plan = await buildPlan(tx, tenant.organizationId, parsed.headers, parsed.rows, parsed.errors, true);
+            if (plan.errors.some((error) => error.code === "FRACTIONAL_INVENTORY_BALANCE_CONFLICT" || error.code === "FRACTIONAL_MINIMUM_STOCK_CONFLICT")) {
+              return { kind: "fractional_conflict" as const, errors: plan.errors };
+            }
+            if (plan.errors.some((error) => error.code === "BARCODE_CONFLICT")) {
+              return { kind: "product_conflict" as const, errors: plan.errors };
+            }
             if (plan.errors.length > 0) return { kind: "validation_failed" as const, errors: plan.errors };
             for (let offset = 0; offset < plan.items.length; offset += CHUNK_SIZE) {
               const chunk = plan.items.slice(offset, offset + CHUNK_SIZE);
@@ -469,6 +478,8 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
         if (result.kind === "hash_mismatch") return c.json({ error: "HASH_MISMATCH", message: "El CSV no coincide con la vista previa confirmada." }, 409);
         if (result.kind === "idempotency_conflict") return c.json({ error: "IDEMPOTENCY_KEY_CONFLICT", message: "La clave de idempotencia ya fue utilizada con otro contenido." }, 409);
         if (result.kind === "validation_failed") return c.json({ error: "CSV_VALIDATION_FAILED", errors: result.errors }, 400);
+        if (result.kind === "fractional_conflict") return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", errors: result.errors }, 409);
+        if (result.kind === "product_conflict") return c.json({ error: "PRODUCT_CONFLICT", errors: result.errors }, 409);
         if (result.kind === "preview") return c.json({
           delimiter: result.delimiter, headers: result.headers, canonical_hash: result.canonicalHash,
           can_apply: result.canApply, summary: result.summary, items: result.items, errors: result.errors,

@@ -104,6 +104,10 @@ BEGIN
   IF NEW.quantity_mode = 'integer'
      AND (TG_OP = 'INSERT' OR OLD.quantity_mode IS DISTINCT FROM 'integer') THEN
     IF NEW.minimum_stock <> pg_catalog.trunc(NEW.minimum_stock) THEN
+      IF TG_OP = 'UPDATE' AND OLD.quantity_mode = 'fractional' THEN
+        RAISE EXCEPTION 'INTEGER_PRODUCT_HAS_FRACTIONAL_MINIMUM_STOCK'
+          USING ERRCODE = '23514';
+      END IF;
       RAISE EXCEPTION 'INTEGER_PRODUCT_MINIMUM_STOCK_MUST_BE_WHOLE'
         USING ERRCODE = '23514';
     END IF;

@@ -87,7 +87,8 @@ BEGIN
   IF pg_catalog.strpos(def,'inventory_count_lines')=0
      OR pg_catalog.strpos(def,'inventory_counts')=0
      OR pg_catalog.strpos(def,'INTEGER_PRODUCT_HAS_FRACTIONAL_PENDING_COUNT')=0
-  THEN RAISE EXCEPTION 'PRODUCT_MODE_TRANSITION_PENDING_COUNT_GUARD_MISSING'; END IF;
+     OR pg_catalog.strpos(def,'INTEGER_PRODUCT_HAS_FRACTIONAL_MINIMUM_STOCK')=0
+  THEN RAISE EXCEPTION 'PRODUCT_MODE_TRANSITION_GUARD_MISSING'; END IF;
 
   SELECT pg_catalog.pg_get_functiondef('public.guard_integer_inventory_count_line()'::regprocedure)
     INTO def;

@@ -361,10 +361,11 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
 
           const nextMode = patch.quantityMode ?? previous.quantity_mode;
           const nextMinimumStock = patch.minimumStock ?? previous.minimum_stock;
+          const transitioningToInteger = previous.quantity_mode === "fractional" && nextMode === "integer";
           if (nextMode === "integer" && parseNumeric(nextMinimumStock, 14, 3) % 1000n !== 0n) {
-            return { kind: "invalid_quantity_mode" as const };
+            return { kind: transitioningToInteger ? "fractional_minimum_conflict" as const : "invalid_quantity_mode" as const };
           }
-          if (previous.quantity_mode === "fractional" && nextMode === "integer") {
+          if (transitioningToInteger) {
             const fractionalBalances = await transaction.query<{ has_fractional: boolean }>(
               `SELECT (
                 EXISTS (SELECT 1 FROM public.inventory_balances
@@ -451,10 +452,11 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para editar productos." }, 403);
       if (result.kind === "not_found") return c.json({ error: "PRODUCT_NOT_FOUND", message: "No se encontró el producto." }, 404);
       if (result.kind === "invalid_quantity_mode") return c.json({ error: "INTEGER_PRODUCT_MINIMUM_STOCK_MUST_BE_WHOLE", message: "El stock mínimo debe ser un número entero para productos de unidad entera." }, 400);
+      if (result.kind === "fractional_minimum_conflict") return c.json({ error: "FRACTIONAL_MINIMUM_STOCK_CONFLICT", message: "No se puede cambiar a unidad entera mientras el stock mínimo tenga decimales." }, 409);
       if (result.kind === "fractional_balance_conflict") return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo fraccionario en algún almacén." }, 409);
       return c.json(result.product, 200);
     } catch (error) {
-      if (postgresCode(error) === "23514" && postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE")) {
+      if (postgresCode(error) === "23514" && (postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE") || postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_MINIMUM_STOCK"))) {
         return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo fraccionario en algún almacén." }, 409);
       }
       if (postgresCode(error) === "23505") {

@@ -181,16 +181,16 @@ if [[ "$ledger_profile" == "main" ]]; then
 else
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0023_register_shift_runtime_operations.assertions.sql"
-  if [[ "$ledger_profile" == "bcv-0024" || "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
+  if [[ "$ledger_profile" == "bcv-0024" || "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0024_organization_structure_admin_operations.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
+  if [[ "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0025_inventory_receipts.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
+  if [[ "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0026_fx_contingency_management.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
+  if [[ "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0027_bcv_nonbusiness_day_effective_date.assertions.sql"
   fi
   if [[ "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ]]; then

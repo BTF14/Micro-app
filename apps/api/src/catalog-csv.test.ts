@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   CSV_MAX_BYTES,
   CSV_MAX_DATA_ROWS,
-  CatalogCsvError,
   computeCanonicalCsvHash,
   formatSafeCsvCell,
   neutralizeCsvFormula,

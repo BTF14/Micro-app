@@ -1,0 +1,66 @@
+name: Inventory accounting review harness
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/agents/inventory-accounting-review.agent.md'
+      - '.agents/skills/micro-app-inventory-accounting-review/SKILL.md'
+      - 'odd/tasks/inventory-accounting-review.md'
+      - 'tools/inventory_accounting_review.py'
+      - 'tools/tests/test_inventory_accounting_review.py'
+      - 'tools/inventory-accounting-review.sql'
+      - 'scripts/test-inventory-accounting-review-postgres.sh'
+      - 'apps/api/migrations/**'
+      - 'packages/money/**'
+      - 'apps/api/src/inventory-*.ts'
+      - 'apps/api/src/sales-checkout*.ts'
+      - 'apps/api/src/register-shifts*.ts'
+  push:
+    branches: [main]
+    paths:
+      - '.github/agents/inventory-accounting-review.agent.md'
+      - '.agents/skills/micro-app-inventory-accounting-review/SKILL.md'
+      - 'odd/tasks/inventory-accounting-review.md'
+      - 'tools/inventory_accounting_review.py'
+      - 'tools/tests/test_inventory_accounting_review.py'
+      - 'tools/inventory-accounting-review.sql'
+      - 'scripts/test-inventory-accounting-review-postgres.sh'
+      - 'apps/api/migrations/**'
+      - 'packages/money/**'
+      - 'apps/api/src/inventory-*.ts'
+      - 'apps/api/src/sales-checkout*.ts'
+      - 'apps/api/src/register-shifts*.ts'
+permissions:
+  contents: read
+jobs:
+  independent-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Run independent decimal, accounting and mutation tests
+        run: python3 -m unittest tools.tests.test_inventory_accounting_review -v
+  disposable-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: inventory_review_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d inventory_review_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL_INVENTORY_REVIEW: postgresql://postgres:postgres@127.0.0.1:5432/inventory_review_test
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run PostgreSQL 18 temporary-table and mutation checks
+        run: bash scripts/test-inventory-accounting-review-postgres.sh

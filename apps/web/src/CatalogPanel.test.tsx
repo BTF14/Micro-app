@@ -59,6 +59,7 @@ describe("catalog panel", () => {
     });
 
     expect(container.textContent).toContain("Producto exacto");
+    expect(container.textContent).toContain("Unidad entera");
     expect(container.textContent).toContain("US$ 23,85");
     expect(container.textContent).toContain("Bs. 870,53");
     expect(container.textContent).toContain("US$ 10,00");

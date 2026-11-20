@@ -130,8 +130,13 @@ describe("product form", () => {
     await act(async () => { setValue(unit, "kg"); });
     const mode = container.querySelector<HTMLSelectElement>("select");
     expect(mode?.value).toBe("fractional");
-    await act(async () => { setValue(unit, "unidad"); });
-    expect(mode?.value).toBe("fractional");
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
+      setter?.call(mode, "integer");
+      mode?.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => { setValue(unit, "g"); });
+    expect(mode?.value).toBe("integer");
   });
 
   it("rejects fractional minimum stock in integer mode before sending a request", async () => {

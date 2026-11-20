@@ -13,7 +13,7 @@ def exact(value: str, precision: int, scale: int) -> Decimal:
     match = re.fullmatch(r"-?(0|[1-9][0-9]*)(?:\\.([0-9]+))?", value)
     if match is None:
         raise ValueError("decimal must be a plain base-10 string without whitespace or exponent")
-    fraction = match.group(1) or ""
+    fraction = match.group(2) or ""
     if len(fraction) > scale:
         raise ValueError("decimal scale exceeded")
     try:

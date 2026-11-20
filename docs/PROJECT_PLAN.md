@@ -1,3 +1,25 @@
+# Plan vigente — post-merge PR #383/#387; Paso 4 inventory-accounting-review en curso — 2026-11-19
+
+- **Main verificado:** 57f426375db79a555c976574ee9b876e1d873141 (merge PR #387).
+- **Paso 3B / BCV 0027:** implementado e integrado mediante PR #383; Neon main registra 0027 como applied (consulta read-only a schema_migrations). PR #387 incorpora la validación de la cadena TLS OV R36 del sync Node BCV.
+- **Paso 4 / inventory-accounting-review:** perfil, skill, ODD task, modelo decimal independiente, mutaciones controladas y harness PostgreSQL 18 versionados en PR #388 OPEN / Draft. No avanzar a Carril B1 hasta completar revisión y checks exact-SHA.
+- **PR #388:** https://github.com/BTF14/Micro-app/pull/388; rama feat/inventory-accounting-review-20261119. Mantener Draft, sin merge ni auto-merge. PR #385/#386 permanecen fuera de alcance.
+- **Carril B1:** bloqueado hasta cierre de Paso 4. No SQL 0028+, quantity_mode, cambios sale_items ni rutas comerciales en este bloque.
+- **Gates globales:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; presupuesto USD 0.
+
+## Orden vigente
+
+1. Paso 1 — Docs/Tooling (completado).
+2. Carril A + spec BCV 0027 (completado según PR #383).
+3. Cierre/reconciliación de Nivel 1 + implementación 0027 (mergeado; Neon main 0027 applied).
+4. inventory-accounting-review (en PR #388; cerrar con validadores, pruebas, diff y 100 % checks exact-SHA).
+5. Carril B1 (0028+) solo después del cierre aprobado de Paso 4.
+6. Hardening, PR CSV, Scanner/B2, cierres/reportes y AC-6/preproducción según dependencias y gates existentes.
+
+Los bloques siguientes son historia de decisiones y cortes anteriores; prevalece este plan y el estado vivo de GitHub/Neon.
+
+---
+
 # Plan vigente — Nivel 1 cerrado; Paso 3B (0027) desbloqueado — 2026-11-18
 
 - **Base exacta auditada:** main = 25dbf6e40a99e011c951ab55338de6d4b98332ad, post-merge PR #381.

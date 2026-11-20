@@ -116,6 +116,18 @@ BEGIN
       RAISE EXCEPTION 'INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE'
         USING ERRCODE = '23514';
     END IF;
+    IF EXISTS (
+      SELECT 1
+        FROM public.inventory_count_lines l
+        JOIN public.inventory_counts c
+          ON c.organization_id=l.organization_id AND c.id=l.count_id
+       WHERE l.organization_id=NEW.organization_id AND l.product_id=NEW.id
+         AND c.status='draft'
+         AND l.counted_quantity <> pg_catalog.trunc(l.counted_quantity)
+    ) THEN
+      RAISE EXCEPTION 'INTEGER_PRODUCT_HAS_FRACTIONAL_PENDING_COUNT'
+        USING ERRCODE = '23514';
+    END IF;
   END IF;
   RETURN NEW;
 END;

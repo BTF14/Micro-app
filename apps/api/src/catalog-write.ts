@@ -366,10 +366,17 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
           }
           if (previous.quantity_mode === "fractional" && nextMode === "integer") {
             const fractionalBalances = await transaction.query<{ has_fractional: boolean }>(
-              `SELECT EXISTS (SELECT 1 FROM public.inventory_balances
-                WHERE organization_id = $1 AND product_id = $2
-                  AND (on_hand_quantity <> pg_catalog.trunc(on_hand_quantity)
-                    OR reserved_quantity <> pg_catalog.trunc(reserved_quantity))) AS has_fractional`,
+              `SELECT (
+                EXISTS (SELECT 1 FROM public.inventory_balances
+                  WHERE organization_id = $1 AND product_id = $2
+                    AND (on_hand_quantity <> pg_catalog.trunc(on_hand_quantity)
+                      OR reserved_quantity <> pg_catalog.trunc(reserved_quantity)))
+                OR EXISTS (SELECT 1 FROM public.inventory_count_lines l
+                  JOIN public.inventory_counts c
+                    ON c.organization_id=l.organization_id AND c.id=l.count_id
+                  WHERE l.organization_id=$1 AND l.product_id=$2 AND c.status='draft'
+                    AND l.counted_quantity <> pg_catalog.trunc(l.counted_quantity))
+              ) AS has_fractional`,
               [tenant.organizationId, productId],
             );
             if (fractionalBalances.rows[0]?.has_fractional) return { kind: "fractional_balance_conflict" as const };

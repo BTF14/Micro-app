@@ -82,6 +82,13 @@ BEGIN
      OR pg_catalog.strpos(def,'SALE_ITEM_QUANTITY_SNAPSHOT_MUST_MATCH_PRODUCT')=0
   THEN RAISE EXCEPTION 'SALE_ITEM_SNAPSHOT_TRIGGER_DEFINITION_INVALID'; END IF;
 
+  SELECT pg_catalog.pg_get_functiondef('public.guard_product_quantity_mode_transition()'::regprocedure)
+    INTO def;
+  IF pg_catalog.strpos(def,'inventory_count_lines')=0
+     OR pg_catalog.strpos(def,'inventory_counts')=0
+     OR pg_catalog.strpos(def,'INTEGER_PRODUCT_HAS_FRACTIONAL_PENDING_COUNT')=0
+  THEN RAISE EXCEPTION 'PRODUCT_MODE_TRANSITION_PENDING_COUNT_GUARD_MISSING'; END IF;
+
   SELECT pg_catalog.pg_get_functiondef('public.guard_integer_inventory_count_line()'::regprocedure)
     INTO def;
   IF pg_catalog.strpos(def,'counted_quantity')=0

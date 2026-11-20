@@ -1159,4 +1159,14 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(accepted.status).toBe(201);
   });
 
+  it("rejects fractional counts in integer mode and accepts fractional mode", async () => {
+    await client.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const rejected = await request(root() + "/counts/physical", { reason: "Integer mode rejects halves", lines: [{ product_id: productId, counted_quantity: "0.500" }] });
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    await client.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const accepted = await request(root() + "/counts/physical", { reason: "Fractional mode accepts grams", lines: [{ product_id: productId, counted_quantity: "1.250" }] });
+    expect(accepted.status).toBe(201);
+  });
+
 });

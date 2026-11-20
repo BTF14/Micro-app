@@ -225,4 +225,14 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
     expect(accepted.status).toBe(201);
   });
 
+  it("rejects fractional receipt quantities in integer mode and accepts fractional mode", async () => {
+    await admin.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const rejected = await post(root(), body("0.500"));
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    await admin.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const accepted = await post(root(), body("1.250"));
+    expect(accepted.status).toBe(201);
+  });
+
 });

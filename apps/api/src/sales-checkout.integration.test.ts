@@ -553,12 +553,13 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
   it("completes a USD sale with exact decimals, current BCV, own shift and ledger reconciliation", async () => {
     await seedBalance("10.000", "1.000");
-    const response = await request(checkoutBody("1.250", "29.8125"), "usd-" + crypto.randomUUID());
+    const saleKey = "usd-" + crypto.randomUUID();
+    const response = await request(checkoutBody("1.250", "29.8125"), saleKey);
     expect(response.status).toBe(201);
     const sale = await response.json() as {
       id: string; status: string; subtotal_usd: string; total_usd: string; total_ves: string;
       bcv_rate: string; operation_date: string; exchange_rate_effective_date: string;
-      lines: Array<{ quantity: string; line_total_usd: string; line_total_ves: string }>;
+      lines: Array<{ quantity: string; unit_snapshot: string; quantity_mode_snapshot: "integer" | "fractional"; line_total_usd: string; line_total_ves: string }>;
     };
     expect(sale.status).toBe("completed");
     expect(sale.operation_date).toBe(rateDate);
@@ -596,6 +597,12 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       line_total_ves: convertUsdToVes("29.8125", "250.12345678"),
     });
     expect(sale.lines[0]).not.toHaveProperty("unit_cost_usd");
+    expect(sale.lines[0]).toMatchObject({ unit_snapshot: "unidad", quantity_mode_snapshot: "fractional" });
+    await client.query("UPDATE public.products SET unit='g' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const replayAfterCatalogEdit = await request(checkoutBody("1.250", "29.8125"), saleKey);
+    expect(replayAfterCatalogEdit.status).toBe(200);
+    const historicalReplay = await replayAfterCatalogEdit.json() as { lines: Array<{ unit_snapshot: string; quantity_mode_snapshot: string }> };
+    expect(historicalReplay.lines[0]).toMatchObject({ unit_snapshot: "unidad", quantity_mode_snapshot: "fractional" });
     expect(sale.total_ves).toBe(convertUsdToVes("29.8125", "250.12345678"));
 
     const balance = await readBalance();

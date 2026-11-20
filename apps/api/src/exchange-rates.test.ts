@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import officialBcvHomepageHtml from "./fixtures/bcv-homepage-dom-2026-11-09.html?raw";
 import { fetchBcvOfficialRate, findApplicableBcvRate, findLatestBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, syncBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
@@ -300,6 +300,14 @@ describe("BCV official homepage DOM capture", () => {
 });
 
 describe("BCV synchronization connection lifecycle", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-09T12:00:00-04:00"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("closes the claim connection before fetching and uses a fresh connection to persist", async () => {
     const events: string[] = [];
     let attemptId = "";
@@ -355,6 +363,14 @@ describe("BCV synchronization connection lifecycle", () => {
 
 
 describe("BCV synchronization failure and cleanup semantics", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-09T12:00:00-04:00"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("records a fetch failure with a separate short-lived DB connection", async () => {
     const events: string[] = [];
     let attemptId = "";

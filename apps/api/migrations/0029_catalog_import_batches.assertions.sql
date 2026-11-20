@@ -21,8 +21,20 @@ BEGIN
   THEN RAISE EXCEPTION 'CATALOG_IMPORT_BATCHES_IDEMPOTENCY_UNIQUE_MISSING'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_index i WHERE i.indrelid=table_oid AND i.indisvalid AND i.indisready
     AND pg_catalog.pg_get_indexdef(i.indexrelid) LIKE '%(organization_id, created_at DESC, id DESC)%')
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='u'
+    AND pg_catalog.pg_get_constraintdef(oid) LIKE 'UNIQUE (organization_id, id)%')
+  THEN RAISE EXCEPTION 'CATALOG_IMPORT_BATCHES_ORG_ID_UNIQUE_MISSING'; END IF;
   THEN RAISE EXCEPTION 'CATALOG_IMPORT_BATCHES_HISTORY_INDEX_MISSING'; END IF;
   IF (SELECT count(*) FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c') <> 9
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%idempotency_key%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%request_hash%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%status%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%total_rows%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%created_count%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%updated_count%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%unchanged_count%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%summary%')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='c' AND pg_catalog.pg_get_constraintdef(oid) LIKE '%created_count%updated_count%unchanged_count%total_rows%')
   THEN RAISE EXCEPTION 'CATALOG_IMPORT_BATCHES_CHECK_CONSTRAINTS_MISSING'; END IF;
   IF (SELECT count(*) FROM pg_catalog.pg_constraint WHERE conrelid=table_oid AND contype='f'
       AND confrelid IN ('public.organizations'::regclass,'public.organization_members'::regclass,'public.audit_logs'::regclass)) <> 3

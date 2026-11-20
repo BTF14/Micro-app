@@ -75,6 +75,29 @@ function postgresCode(error: unknown): string | undefined {
   return typeof error.code === "string" ? error.code : undefined;
 }
 
+async function hasValidMembershipOutsideOrganization(
+  tx: DatabaseClient,
+  sessionToken: string,
+  organizationId: string,
+): Promise<boolean> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sessionToken));
+  const tokenHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const result = await tx.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+         FROM public.auth_sessions s
+         JOIN public.app_users u ON u.id=s.user_id
+         JOIN public.organization_members m ON m.user_id=u.id
+         JOIN public.organizations o ON o.id=m.organization_id
+        WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>pg_catalog.now()
+          AND u.is_active=true AND m.is_active=true AND o.is_active=true
+          AND m.organization_id<>$2
+     ) AS exists`,
+    [tokenHash, organizationId],
+  );
+  return result.rows[0]?.exists === true;
+}
+
 function decimalEqual(field: string, left: string, right: string): boolean {
   const scale = field === "minimum_stock" ? 3 : 4;
   return parseNumeric(left, 14, scale) === parseNumeric(right, 14, scale);
@@ -331,7 +354,9 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
           withDatabaseTransaction(client, async (tx) => {
             const authorization = await authorizeTenantOperation(tx, sessionToken, organizationId, "catalog.product.manage");
             if (!authorization.allowed) {
-              return { kind: authorization.reason === "operation_denied" ? "forbidden" as const : "unauthenticated" as const };
+              if (authorization.reason === "operation_denied") return { kind: "forbidden" as const };
+              const outside = await hasValidMembershipOutsideOrganization(tx, sessionToken, organizationId);
+              return { kind: outside ? "not_found" as const : "unauthenticated" as const };
             }
             const tenant = authorization.context;
             const canonicalHash = await computeCanonicalCsvHash(
@@ -475,6 +500,7 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
 
         if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
         if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para importar productos." }, 403);
+        if (result.kind === "not_found") return c.json({ error: "ORGANIZATION_NOT_FOUND", message: "No se encontró la organización solicitada." }, 404);
         if (result.kind === "hash_mismatch") return c.json({ error: "HASH_MISMATCH", message: "El CSV no coincide con la vista previa confirmada." }, 409);
         if (result.kind === "idempotency_conflict") return c.json({ error: "IDEMPOTENCY_KEY_CONFLICT", message: "La clave de idempotencia ya fue utilizada con otro contenido." }, 409);
         if (result.kind === "validation_failed") return c.json({ error: "CSV_VALIDATION_FAILED", errors: result.errors }, 400);
@@ -484,8 +510,14 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
           delimiter: result.delimiter, headers: result.headers, canonical_hash: result.canonicalHash,
           can_apply: result.canApply, summary: result.summary, items: result.items, errors: result.errors,
         }, 200);
-        if (result.kind === "replayed") return c.json({ replayed: true, ...result }, 200);
-        return c.json({ replayed: false, ...result }, 200);
+        if (result.kind === "replayed") return c.json({
+          replayed: true, batch_id: result.batch_id, canonical_hash: result.canonical_hash,
+          summary: result.summary, audit_log_id: result.audit_log_id, created_at: result.created_at,
+        }, 200);
+        return c.json({
+          replayed: false, batch_id: result.batch_id, canonical_hash: result.canonical_hash,
+          audit_log_id: result.audit_log_id, summary: result.summary, created_at: result.created_at,
+        }, 200);
       } catch (error) {
         if (postgresCode(error) === "23505") return c.json({ error: "PRODUCT_CONFLICT", message: "Existe un SKU o código de barras duplicado." }, 409);
         if (postgresCode(error) === "23514") return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "El cambio viola una guarda de cantidades enteras; no se aplicó ninguna fila." }, 409);

@@ -7,9 +7,9 @@
 | FastMCP | — | No adoptar. | Introduce superficie/servicio no necesario para stack actual. | Descartado por ahora. |
 | 500-AI-Agents-Projects | — | No adoptar. | Demos genéricos, dependencias/modelos y patrones CrewAI no justificados por stack ni presupuesto $0. | Descartado por ahora. |
 
-### Agentes propios especializados (agenda, no creados en Paso 1)
+### Agentes propios especializados (estado actualizado 2026-11-19)
 
-- **inventory-accounting-review**: crear justo antes de Carril B1. Especialidad: ledger/Kardex append-only ↔ balances; precisión contextual NUMERIC (14,3)/(14,4)/(14,2)/(18,8); ausencia de float; snapshots históricos; conciliación líneas = totales = pagos = cierre de turno; conteos/transferencias. QA anti-puntos ciegos: invariantes independientes, baterías extremas con herramientas gratuitas, mutaciones deliberadas selectivas en dinero, stock y tenant/sucursal y evidencia de que tests detectan cada mutación crítica. No sustituye backend-data-review ni security-review; añade la capa contable-operativa.
+- **inventory-accounting-review — CREADO / VERSIONADO en PR #388 (OPEN / Draft):** perfil .github/agents/inventory-accounting-review.agent.md y skill .agents/skills/micro-app-inventory-accounting-review/SKILL.md. Alcance: Kardex append-only ↔ balances; NUMERIC(14,3)/(14,4)/(16,2)/(18,8), sin float; snapshots históricos; líneas/subtotal/total/pagos/cierre de turno; conteos, revisión de transferencias; aislamiento tenant/sucursal; invariantes independientes y mutaciones selectivas detectables en dinero/stock/scope. Harness Python + PostgreSQL temporal y CI $0. No sustituye backend-data-review ni security-review. No implementa B1, 0028+, quantity_mode, cambios sale_items ni lógica comercial. Mantener PR Draft hasta completar exact-SHA checks y revisión.
 - **ve-fx-compliance-review**: crear al abordar AC-6. Especialidad: fuentes primarias BCV/SENIAT/SUDEBAN y normas IVA, Convenio Cambiario, Precios Justos/SUNDDE e IGTF; distinguir norma vigente, publicada-no-vigente e interpretación; registrar fecha, fuente, conclusión y limitación. Incluir Providencia SNAT/2026/00093 y entrada en vigor prevista abril 2027. Nunca emitir dictamen de contador/abogado ni declarar cumplimiento certificado.
 
 ### Decisión BCV 0027 — 2026-11-17

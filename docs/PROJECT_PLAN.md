@@ -1,3 +1,15 @@
+# Plan vigente — Cierre Paso 6 Hardening B1 + 0027 — 2026-11-20
+
+- **Base main:** c2fa2fe453af0c3dbb7dd95e8b79a59eed828234; posterior a PR #390, #391, #385 y #386; 0 PRs antiguas pendientes.
+- **Paso 5 — Carril B1 / 0028:** CERRADO Y MIGRADO. PR #390 MERGED; Neon main migrado a 0028 por el propietario.
+- **Paso 6 — Hardening B1 + 0027:** PR #391 (6A: orden de bloqueos, 23514 -> 400, limpieza de duplicados) MERGED; PR #392 (6B: cobertura GET /sales/:saleId y reconciliación documental) OPEN / Draft. Integrar 6B tras CI exact-SHA y revisión humana.
+- **Estado operativo reportado por el propietario:** /health y /api/exchange-rates/latest responden HTTP 200. No se accedió a Neon ni a infraestructura privada durante esta ejecución.
+- **Siguiente paso de roadmap:** Paso 7 — PR 2: Importador CSV, después de integrar Paso 6.
+- **Gates globales invariables:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
+- **Límite:** mantener PR #392 OPEN / Draft, sin merge ni auto-merge. No tocar código productivo, migraciones, Neon, secretos, DNS, Cloudflare ni despliegues.
+
+---
+
 # Plan vigente — Paso 5 Carril B1 / PR #390 OPEN-Draft — 2026-11-20
 
 - **Main verificado en GitHub:** `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`, post-merge de PR #388 y #389.

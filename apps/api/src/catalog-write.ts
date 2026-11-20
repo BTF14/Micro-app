@@ -20,6 +20,7 @@ type ProductInput = {
   costUsd: string;
   priceUsd: string;
   minimumStock: string;
+  quantityMode: "integer" | "fractional";
 };
 
 type ProductRow = {
@@ -32,6 +33,7 @@ type ProductRow = {
   cost_usd: string;
   price_usd: string;
   minimum_stock: string;
+  quantity_mode: "integer" | "fractional";
   is_active: boolean;
 };
 
@@ -57,7 +59,7 @@ function decimalValue(value: unknown, precision: number, scale: number): string 
 function parseProductInput(value: unknown): ProductInput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
-  const allowed = new Set(["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock"]);
+  const allowed = new Set(["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock", "quantity_mode"]);
   if (Object.keys(body).some((key) => !allowed.has(key))) return null;
 
   const sku = boundedText(body.sku, 80, true);
@@ -68,14 +70,17 @@ function parseProductInput(value: unknown): ProductInput | null {
   const costUsd = body.cost_usd === undefined ? "0.0" : decimalValue(body.cost_usd, 14, 4);
   const priceUsd = decimalValue(body.price_usd, 14, 4);
   const minimumStock = body.minimum_stock === undefined ? "0.0" : decimalValue(body.minimum_stock, 14, 3);
+  const quantityMode = body.quantity_mode === undefined ? "integer" : body.quantity_mode;
 
   if (
     sku === null || name === null || unit === null || barcode === null && body.barcode !== undefined && body.barcode !== null ||
     description === null && body.description !== undefined && body.description !== null ||
-    costUsd === null || priceUsd === null || minimumStock === null
+    costUsd === null || priceUsd === null || minimumStock === null ||
+    (quantityMode !== "integer" && quantityMode !== "fractional") ||
+    (quantityMode === "integer" && parseNumeric(minimumStock, 14, 3) % 1000n !== 0n)
   ) return null;
 
-  return { sku, barcode, name, description, unit, costUsd, priceUsd, minimumStock };
+  return { sku, barcode, name, description, unit, costUsd, priceUsd, minimumStock, quantityMode };
 }
 
 type ProductPatch = {
@@ -87,13 +92,14 @@ type ProductPatch = {
   costUsd?: string;
   priceUsd?: string;
   minimumStock?: string;
+  quantityMode?: "integer" | "fractional";
   isActive?: boolean;
 };
 
 function parseProductPatch(value: unknown): ProductPatch | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
-  const allowed = new Set(["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock", "is_active"]);
+  const allowed = new Set(["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock", "quantity_mode", "is_active"]);
   const keys = Object.keys(body);
   if (keys.length === 0 || keys.some((key) => !allowed.has(key))) return null;
 
@@ -154,6 +160,11 @@ function parseProductPatch(value: unknown): ProductPatch | null {
         patch.minimumStock = parsed;
         break;
       }
+      case "quantity_mode": {
+        if (body[key] !== "integer" && body[key] !== "fractional") return null;
+        patch.quantityMode = body[key];
+        break;
+      }
       case "is_active": {
         if (typeof body[key] !== "boolean") return null;
         patch.isActive = body[key];
@@ -162,6 +173,10 @@ function parseProductPatch(value: unknown): ProductPatch | null {
     }
   }
   return patch;
+}
+
+function postgresMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "";
 }
 
 function postgresCode(error: unknown): string | undefined {
@@ -229,12 +244,12 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
 
           const inserted = await transaction.query<ProductRow>(
             `INSERT INTO products
-              (organization_id, sku, barcode, name, description, unit, cost_usd, price_usd, minimum_stock)
-             VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric, $9::numeric)
-             RETURNING id, sku, barcode, name, description, unit,
+              (organization_id, sku, barcode, name, description, unit, cost_usd, price_usd, minimum_stock, quantity_mode)
+             VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8::numeric, $9::numeric, $10)
+             RETURNING id, sku, barcode, name, description, unit, quantity_mode,
                        cost_usd::text AS cost_usd, price_usd::text AS price_usd,
                        minimum_stock::text AS minimum_stock, is_active`,
-            [tenant.organizationId, input.sku, input.barcode, input.name, input.description, input.unit, input.costUsd, input.priceUsd, input.minimumStock],
+            [tenant.organizationId, input.sku, input.barcode, input.name, input.description, input.unit, input.costUsd, input.priceUsd, input.minimumStock, input.quantityMode],
           );
           const product = inserted.rows[0];
           if (!product) throw new Error("Product insert returned no row.");
@@ -243,7 +258,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
             `INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
              VALUES ($1, $2, 'product.created', 'product', $3, $4::jsonb)`,
             [tenant.organizationId, tenant.userId, product.id, JSON.stringify({
-              changed_fields: ["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock"],
+              changed_fields: ["sku", "barcode", "name", "description", "unit", "cost_usd", "price_usd", "minimum_stock", "quantity_mode"],
               snapshot: {
                 sku: product.sku, barcode: product.barcode, name: product.name,
                 description: product.description, unit: product.unit, cost_usd: product.cost_usd,
@@ -256,7 +271,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
             kind: "created" as const,
             product: {
               id: product.id, sku: product.sku, barcode: product.barcode, name: product.name,
-              description: product.description, unit: product.unit, price_usd: product.price_usd,
+              description: product.description, unit: product.unit, quantity_mode: product.quantity_mode, price_usd: product.price_usd,
               cost_usd: product.cost_usd, minimum_stock: product.minimum_stock, is_active: product.is_active,
             },
           };
@@ -333,7 +348,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
           const tenant = authorization.context;
 
           const previousResult = await transaction.query<ProductRow>(
-            `SELECT id, sku, barcode, name, description, unit,
+            `SELECT id, sku, barcode, name, description, unit, quantity_mode,
                     cost_usd::text AS cost_usd, price_usd::text AS price_usd,
                     minimum_stock::text AS minimum_stock, is_active
                FROM products
@@ -343,6 +358,30 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
           );
           const previous = previousResult.rows[0];
           if (!previous) return { kind: "not_found" as const };
+
+          const nextMode = patch.quantityMode ?? previous.quantity_mode;
+          const nextMinimumStock = patch.minimumStock ?? previous.minimum_stock;
+          const transitioningToInteger = previous.quantity_mode === "fractional" && nextMode === "integer";
+          if (nextMode === "integer" && parseNumeric(nextMinimumStock, 14, 3) % 1000n !== 0n) {
+            return { kind: transitioningToInteger ? "fractional_minimum_conflict" as const : "invalid_quantity_mode" as const };
+          }
+          if (transitioningToInteger) {
+            const fractionalBalances = await transaction.query<{ has_fractional: boolean }>(
+              `SELECT (
+                EXISTS (SELECT 1 FROM public.inventory_balances
+                  WHERE organization_id = $1 AND product_id = $2
+                    AND (on_hand_quantity <> pg_catalog.trunc(on_hand_quantity)
+                      OR reserved_quantity <> pg_catalog.trunc(reserved_quantity)))
+                OR EXISTS (SELECT 1 FROM public.inventory_count_lines l
+                  JOIN public.inventory_counts c
+                    ON c.organization_id=l.organization_id AND c.id=l.count_id
+                  WHERE l.organization_id=$1 AND l.product_id=$2 AND c.status='draft'
+                    AND l.counted_quantity <> pg_catalog.trunc(l.counted_quantity))
+              ) AS has_fractional`,
+              [tenant.organizationId, productId],
+            );
+            if (fractionalBalances.rows[0]?.has_fractional) return { kind: "fractional_balance_conflict" as const };
+          }
 
           const assignments: string[] = [];
           const values: unknown[] = [tenant.organizationId, productId];
@@ -355,6 +394,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
             ["costUsd", "cost_usd", patch.costUsd, true],
             ["priceUsd", "price_usd", patch.priceUsd, true],
             ["minimumStock", "minimum_stock", patch.minimumStock, true],
+            ["quantityMode", "quantity_mode", patch.quantityMode, false],
             ["isActive", "is_active", patch.isActive, false],
           ];
           for (const [key, column, value, numeric] of fields) {
@@ -369,7 +409,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
             `UPDATE products
                 SET ${assignments.join(", ")}
               WHERE organization_id = $1 AND id = $2
-              RETURNING id, sku, barcode, name, description, unit,
+              RETURNING id, sku, barcode, name, description, unit, quantity_mode,
                         cost_usd::text AS cost_usd, price_usd::text AS price_usd,
                         minimum_stock::text AS minimum_stock, is_active`,
             values,
@@ -380,7 +420,8 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
           const auditColumns: Array<[keyof ProductPatch, keyof ProductRow]> = [
             ["sku", "sku"], ["barcode", "barcode"], ["name", "name"],
             ["description", "description"], ["unit", "unit"], ["costUsd", "cost_usd"],
-            ["priceUsd", "price_usd"], ["minimumStock", "minimum_stock"], ["isActive", "is_active"],
+            ["priceUsd", "price_usd"], ["minimumStock", "minimum_stock"],
+            ["quantityMode", "quantity_mode"], ["isActive", "is_active"],
           ];
           const changedColumns = auditColumns
             .filter(([key]) => Object.prototype.hasOwnProperty.call(patch, key))
@@ -400,7 +441,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
             kind: "updated" as const,
             product: {
               id: product.id, sku: product.sku, barcode: product.barcode, name: product.name,
-              description: product.description, unit: product.unit, price_usd: product.price_usd,
+              description: product.description, unit: product.unit, quantity_mode: product.quantity_mode, price_usd: product.price_usd,
               cost_usd: product.cost_usd, minimum_stock: product.minimum_stock, is_active: product.is_active,
             },
           };
@@ -410,8 +451,14 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para editar productos." }, 403);
       if (result.kind === "not_found") return c.json({ error: "PRODUCT_NOT_FOUND", message: "No se encontró el producto." }, 404);
+      if (result.kind === "invalid_quantity_mode") return c.json({ error: "INTEGER_PRODUCT_MINIMUM_STOCK_MUST_BE_WHOLE", message: "El stock mínimo debe ser un número entero para productos de unidad entera." }, 400);
+      if (result.kind === "fractional_minimum_conflict") return c.json({ error: "FRACTIONAL_MINIMUM_STOCK_CONFLICT", message: "No se puede cambiar a unidad entera mientras el stock mínimo tenga decimales." }, 409);
+      if (result.kind === "fractional_balance_conflict") return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo fraccionario en algún almacén." }, 409);
       return c.json(result.product, 200);
     } catch (error) {
+      if (postgresCode(error) === "23514" && (postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE") || postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_MINIMUM_STOCK") || postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_PENDING_COUNT"))) {
+        return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo, mínimo o conteo pendiente fraccionario." }, 409);
+      }
       if (postgresCode(error) === "23505") {
         return c.json({ error: "PRODUCT_CONFLICT", message: "Ya existe un producto con ese SKU o código de barras." }, 409);
       }

@@ -462,6 +462,18 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.sql
       - name: Verify BCV 0027 migration contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
+      - name: Verify Carril B1 0028 migration rollback atomicity
+        run: |
+          sed '/^COMMIT;$/i SELECT 1/0;' apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.sql > /tmp/0028-carril-b1-failure.sql
+          status=0
+          docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < /tmp/0028-carril-b1-failure.sql || status=$?
+          test "$status" -ne 0
+          remaining="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.products'::regclass AND attname='quantity_mode' AND NOT attisdropped) AND NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid='public.sale_items'::regclass AND attname IN ('unit_snapshot','quantity_mode_snapshot') AND NOT attisdropped)")"
+          test "$remaining" = "t"
+      - name: Apply Carril B1 migration 0028
+        run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.sql
+      - name: Verify Carril B1 0028 quantity-mode and sale-snapshot contract
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql
       - name: Verify application objects are owned by the non-superuser migrator
         run: |
           ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"

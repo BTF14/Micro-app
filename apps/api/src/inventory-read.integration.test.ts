@@ -131,7 +131,7 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     );
     firstProductId = first.rows[0]!.id;
     const second = await admin.query<{ id: string }>(
-      "INSERT INTO products (organization_id, sku, name, unit, cost_usd, price_usd, minimum_stock) VALUES ($1, $2, 'Read Product B', 'kg', 1.0000, 2.0000, 0.500) RETURNING id",
+      "INSERT INTO products (organization_id, sku, name, unit, cost_usd, price_usd, minimum_stock, quantity_mode) VALUES ($1, $2, 'Read Product B', 'kg', 1.0000, 2.0000, 0.500, 'fractional') RETURNING id",
       [organizationId, "READ-B-" + suffix],
     );
     secondProductId = second.rows[0]!.id;

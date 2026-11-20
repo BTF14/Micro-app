@@ -10,6 +10,7 @@ type CatalogProduct = {
   name: string;
   description: string | null;
   unit: string;
+  quantity_mode: "integer" | "fractional";
   cost_usd?: string;
   price_usd: string;
   is_active: boolean;
@@ -24,6 +25,7 @@ type ProductDraft = {
   cost_usd: string;
   price_usd: string;
   minimum_stock: string;
+  quantity_mode: "integer" | "fractional";
   is_active: boolean;
 };
 
@@ -41,6 +43,7 @@ function initialDraft(product?: CatalogProduct): ProductDraft {
     name: product?.name ?? "",
     description: product?.description ?? "",
     unit: product?.unit ?? "unidad",
+    quantity_mode: product?.quantity_mode ?? "integer",
     cost_usd: product?.cost_usd ? formatMoneyForDisplay(product.cost_usd) : "0.00",
     price_usd: product?.price_usd ? formatMoneyForDisplay(product.price_usd) : "",
     minimum_stock: product ? "" : "0",
@@ -52,6 +55,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
   const [draft, setDraft] = useState<ProductDraft>(() => initialDraft(product));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [quantityModeManuallySet, setQuantityModeManuallySet] = useState(Boolean(product));
 
   function update<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -80,6 +84,10 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         setError("Los costos, precios y mínimos de inventario no pueden ser negativos.");
         return;
       }
+      if (draft.quantity_mode === "integer" && minimumStock !== null && minimumStock % 1000n !== 0n) {
+        setError("El stock mínimo debe ser entero para productos de unidad entera.");
+        return;
+      }
     } catch {
       setError("Usa decimales válidos: USD con hasta 4 decimales y mínimo de inventario con hasta 3.");
       return;
@@ -91,6 +99,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
       name: draft.name.trim(),
       description: draft.description.trim() || null,
       unit: draft.unit.trim(),
+      quantity_mode: draft.quantity_mode,
       cost_usd: costUsd,
       price_usd: priceUsd,
       ...(product
@@ -145,7 +154,23 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Unidad
-          <input value={draft.unit} onChange={(event) => update("unit", event.target.value)} maxLength={40} required />
+          <input value={draft.unit} onChange={(event) => {
+            const unit = event.target.value;
+            update("unit", unit);
+            const metricUnits = new Set(["kg","kilogramo","kilogramos","g","gr","gramo","gramos","lb","libra","libras","oz","onza","onzas","l","lt","litro","litros","ml","mililitro","mililitros","m","mt","metro","metros","cm","centimetro","centimetros","granel"]);
+            if (!quantityModeManuallySet) update("quantity_mode", metricUnits.has(unit.trim().toLowerCase()) ? "fractional" : "integer");
+          }} maxLength={40} required />
+        </label>
+        <label>
+          Modo de cantidad
+          <select value={draft.quantity_mode} onChange={(event) => {
+            setQuantityModeManuallySet(true);
+            update("quantity_mode", event.target.value as ProductDraft["quantity_mode"]);
+          }}>
+            <option value="integer">Unidad entera</option>
+            <option value="fractional">Fraccionable / peso / medida</option>
+          </select>
+          <span className="product-field-hint">Las unidades métricas conocidas sugieren modo fraccionable hasta que fijes el modo manualmente.</span>
         </label>
         <label className="product-form-wide">
           Descripción
@@ -163,8 +188,8 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Stock mínimo
-          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode="decimal" autoComplete="off" placeholder="0" required={!product} />
-          <span className="product-field-hint">{product ? "Hasta 3 decimales. Déjalo vacío para conservar el mínimo actual." : "Cantidad con hasta 3 decimales."}</span>
+          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode={draft.quantity_mode === "integer" ? "numeric" : "decimal"} step={draft.quantity_mode === "integer" ? "1" : "0.001"} autoComplete="off" placeholder="0" required={!product} />
+          <span className="product-field-hint">{draft.quantity_mode === "integer" ? "Debe ser un número entero." : "Cantidad con hasta 3 decimales."} {product ? "Déjalo vacío para conservar el mínimo actual." : ""}</span>
         </label>
         {product && (
           <label className="product-active-toggle">

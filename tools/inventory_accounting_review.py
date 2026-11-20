@@ -137,3 +137,44 @@ def reference_ledger():
 
 def reference_shift():
     return Shift("org-a","branch-a","register-a","cashier-a","20.00","15.00","2.00","0.00","33.00")
+
+
+@dataclass(frozen=True)
+class QuantitySnapshot:
+    unit_snapshot: str
+    quantity_mode_snapshot: str
+    quantity: str
+
+
+def validate_quantity_mode(mode: str, quantity: str, *, allow_zero: bool = False) -> Decimal:
+    if mode not in ("integer", "fractional"):
+        raise InvariantViolation("unknown quantity mode")
+    value = exact(quantity, 14, 3)
+    if value < 0 or (value == 0 and not allow_zero):
+        raise InvariantViolation("quantity must be positive")
+    if mode == "integer" and value != value.to_integral_value():
+        raise InvariantViolation("integer product quantity must be whole")
+    return value
+
+
+def validate_sale_quantity_snapshot(snapshot: QuantitySnapshot, product_unit: str, product_mode: str) -> None:
+    if not snapshot.unit_snapshot.strip():
+        raise InvariantViolation("sale unit snapshot must be non-empty")
+    if snapshot.unit_snapshot != product_unit or snapshot.quantity_mode_snapshot != product_mode:
+        raise InvariantViolation("sale quantity snapshot does not match product at insertion")
+    validate_quantity_mode(snapshot.quantity_mode_snapshot, snapshot.quantity)
+
+
+def validate_product_mode_transition(
+    old_mode: str, new_mode: str, minimum_stock: str, balances: Iterable[tuple[str, str]],
+) -> None:
+    if old_mode not in ("integer", "fractional") or new_mode not in ("integer", "fractional"):
+        raise InvariantViolation("unknown quantity mode")
+    minimum = exact(minimum_stock, 14, 3)
+    if new_mode == "integer" and minimum != minimum.to_integral_value():
+        raise InvariantViolation("integer product minimum stock must be whole")
+    if old_mode == "fractional" and new_mode == "integer":
+        for on_hand_text, reserved_text in balances:
+            on_hand, reserved = exact(on_hand_text, 14, 3), exact(reserved_text, 14, 3)
+            if on_hand != on_hand.to_integral_value() or reserved != reserved.to_integral_value():
+                raise InvariantViolation("fractional inventory balance blocks integer mode")

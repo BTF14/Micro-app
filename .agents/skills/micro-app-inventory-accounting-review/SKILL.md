@@ -1,6 +1,6 @@
 ---
 name: micro-app-inventory-accounting-review
-description: Independently test accounting and operational invariants across Micro-app inventory ledger/balances, exact decimals, sales/payments, register shifts, counts, transfers, and tenant/branch isolation before Carril B1.
+description: Independently test accounting and operational invariants across Micro-app inventory ledger/balances, exact decimals, sales/payments, register shifts, counts, transfers, and tenant/branch isolation through Carril B1 quantity-mode and snapshot invariants.
 ---
 
 # Micro-app inventory and accounting review
@@ -11,7 +11,7 @@ description: Independently test accounting and operational invariants across Mic
 - Never connect this suite to Neon main, production, a real tenant, or a database containing customer data.
 - The PostgreSQL runner requires an explicitly named disposable database (inventory_review_test or a name beginning with that prefix) on loopback. It refuses remote hosts and unrelated database names. Do not weaken this guard.
 - Mutations are applied only to copied in-memory dataclasses or temporary tables inside a transaction that is rolled back. Never patch production source, migration files, persistent fixtures or live database rows.
-- This is a review harness for current schema/code through migrations 0001–0027. It does not authorize 0028+, quantity_mode, sale_items changes, commercial endpoints or Carril B1.
+- This review harness covers the current schema/code through migrations 0001–0028, including quantity_mode and sale_items unit/mode snapshots. Migration 0028 is in scope only under an explicit ODD task and a dedicated non-production branch; this skill never authorizes Neon main, production, deployment or merge.
 
 ## Independent accounting invariants
 
@@ -21,26 +21,32 @@ description: Independently test accounting and operational invariants across Mic
    - Round ties away from zero. Apply documented per-line USD and VES rounding before summing; do not recompute a document total through a different rounding path.
    - Check max positive/negative, zero, negatives, excess fractional digits, exponent notation, malformed strings, overflow on sums and positive-rate/quantity constraints.
 
-2. Sales, snapshots and payments:
+2. Quantity mode and historical line-unit snapshots:
+   - quantity_mode is exactly integer or fractional. Integer products accept only whole quantities in checkout, count and receipt; fractional products preserve NUMERIC(14,3). Counts may accept zero where the existing count contract allows it.
+   - Backfill must conservatively classify known metric/bulk units, fractional minimum stock, fractional balances and historical ledger/line quantities as fractional; never use products.stock_quantity.
+   - sale_items.unit_snapshot and quantity_mode_snapshot are non-empty/valid, match the product under a row lock at insert, and remain immutable after catalog edits. A forged snapshot must fail even for direct runtime SQL.
+   - fractional → integer must reject fractional minimum_stock or any warehouse on_hand/reserved balance with a domain 409 at the API and a database guard. Runtime grants must remain column-minimal.
+
+3. Sales, snapshots and payments:
    - Recompute each line from snapshotted quantity × snapshotted unit price; compare persisted line amount.
    - Under no-discount policy, line USD sum equals subtotal USD and total USD.
    - Payment allocation positions are unique/contiguous where required; allocations reconcile to captured sale totals under current currency/equivalent rules.
    - Today's product price/cost/name/SKU or BCV rate cannot change completed historical sale/payment snapshots.
    - Idempotent retries cannot create duplicate sales, payments or movements; same key with a different request hash is a conflict.
 
-3. Inventory ledger and projection:
+4. Inventory ledger and projection:
    - For each (organization, branch, warehouse, product), balance on-hand equals opening plus immutable movement deltas; reserved is non-negative and never exceeds on-hand. Trace legacy products.stock_quantity from migration 0001 and prove it is not an alternate mutable branch-stock source after the 0006 ledger introduction.
    - Every movement and projection row belongs to the same composite scope.
    - Count adjustments derive from a confirmed count and captured expected quantity/version. A stale physical count cannot overwrite an intervening movement.
    - Reversal is a new compensating event, never update/delete of the original.
    - Concurrency, retries and rollback must not double-apply or lose a movement.
 
-4. Register shifts:
+5. Register shifts:
    - Opening and closing cash are exact numeric.
    - Reconcile opening float + cash tenders − cash refunds/payouts + explicit adjustments to counted closing cash, using only movement classes actually defined by current model.
    - A close cannot absorb another cashier's, register's, branch's or tenant's movements. Closed shifts and snapshots remain historical facts.
 
-5. Tenant/branch and actor scope:
+6. Tenant/branch and actor scope:
    - Organization ID does not imply membership in every branch. Every row, actor, warehouse, product, sale and shift resolves to the same authorized scope.
    - Negative tests swap organization, branch, warehouse, product, cashier and actor IDs; attempt cross-tenant/cross-branch replay; verify database constraints and server authorization independently.
    - Revocation/concurrency tests cover lock order and authorization snapshot.
@@ -51,7 +57,8 @@ description: Independently test accounting and operational invariants across Mic
 |---|---|---|
 | Decimal parsing | max precision, one digit overflow, scale+1, exponent, whitespace, sign, zero, negatives | binary float or wrong scale accepted |
 | Rounding | positive/negative ties, just below/above tie, many-line accumulation | half-even/truncation or aggregate-before-line rounding |
-| Sale | multi-line, no discounts, snapshot price drift, line mismatch | line amount or total changed by 0.0001 |
+| Quantity mode | integer 0.500 rejected in sale/count/receipt; fractional 1.250 accepted; fractional balance blocks integer transition | one path accepts a fractional quantity or transition corrupts stock |
+| Sale | multi-line, no discounts, unit/mode snapshot drift, price drift, line mismatch | false snapshot accepted or historical unit rewritten; line amount/total changed by 0.0001 |
 | Payments | USD/VES/mixed, allocation gap/duplicate, residue, retry | payment reduced/duplicated while sale total fixed |
 | Ledger | opening, count, receipt, sale, reversal, concurrent delta | movement delta or balance changed by 0.001 |
 | Counts | stale expected quantity/version, empty count, duplicate confirmation | stale count overwrites newer stock |
@@ -61,7 +68,7 @@ description: Independently test accounting and operational invariants across Mic
 
 ## Reproducible protocol
 
-1. Inspect live main SHA, migrations 0001–0027, packages/money, checkout/count/receipt/shift modules, integration tests and domain models. Record implemented, schema-only, specified or absent behavior.
+1. Inspect live main SHA, migrations 0001–0028, packages/money, checkout/count/receipt/shift modules, integration tests and domain models. Record implemented, schema-only, specified or absent behavior.
 2. Run independent standard-library model tests:
    - python3 -m unittest tools.tests.test_inventory_accounting_review -v
 3. Run PostgreSQL harness only against disposable local PostgreSQL:
@@ -76,4 +83,4 @@ description: Independently test accounting and operational invariants across Mic
 
 ## Expected evidence
 
-Report invariant → independent assertion → mutation → detected failure. Separate Python reference-model evidence from PostgreSQL numeric/relational evidence and existing production integration tests. This harness does not certify every production trigger, authorization path, concurrency schedule or transfer workflow.
+Report invariant → independent assertion → mutation → detected failure. Separate Python reference-model evidence from PostgreSQL numeric/relational evidence and existing production integration tests. This harness does not certify every production trigger, authorization path, concurrency schedule or transfer workflow. The 0028 migration assertions and PostgreSQL 18 integration tests must separately exercise the real guards.

@@ -1,14 +1,17 @@
-# Corte vigente — Paso 4 inventory-accounting-review / PR #388 — 2026-11-19
+# Corte vigente — Paso 5 Carril B1 / PR #390 — 2026-11-20
 
-- **GitHub main verificado:** 57f426375db79a555c976574ee9b876e1d873141. Es el merge commit de PR #387.
-- **PR #383:** MERGED. La migración 0027 forma parte del main actual; el estado anterior de esta página que afirmaba PR #383 Draft y Neon main 0025 queda supersedido.
-- **PR #387:** MERGED en main. El workflow Node de BCV usa el intermedio Sectigo Public Server Authentication CA OV R36, con pin SHA-256 verificado y validación TLS normal; no se introdujo bypass TLS.
-- **Neon main:** comprobación read-only de public.schema_migrations en el proyecto micro-app-db: 0027_bcv_nonbusiness_day_effective_date.sql aparece state=applied; 0026 y 0025 también applied. No se ejecutó DDL/DML ni se modificó Neon.
-- **PR #388:** https://github.com/BTF14/Micro-app/pull/388, rama feat/inventory-accounting-review-20261119, OPEN / Draft. Mantener sin merge ni auto-merge. El HEAD exacto y sus checks deben consultarse en vivo; no heredar checks de SHA anteriores.
-- **Paso 4:** agente, skill, tarea ODD, modelo de referencia Python, pruebas de mutación, harness PostgreSQL temporal y workflow específico versionados en PR #388. El modelo independiente se ejecutó en kernel aislado con 12/12 casos correctos; no equivale a ejecutar los comandos del checkout. PostgreSQL y validadores del repo pendientes de CI exact-SHA.
-- **Alcance preservado:** no se modificaron apps/**, packages/money/**, migraciones 0001–0027 ni se creó SQL 0028+. No quantity_mode, sale_items, rutas comerciales, Neon, secretos, Cloudflare ni configuración Worker.
+- **GitHub main verificado:** `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`, post-merge PR #388 y #389.
+- **PR #388:** MERGED; el inventory-accounting-review, modelo Python, pruebas de mutación y harness PostgreSQL 18 quedaron integrados.
+- **PR #389:** MERGED; pruebas históricas de sincronización BCV con reloj determinista.
+- **PR #390:** https://github.com/BTF14/Micro-app/pull/390; rama `feat/carril-b1-quantity-mode-snapshots-20261120`; OPEN / Draft, sin merge ni auto-merge. Consultar siempre su HEAD exacto en GitHub; no heredar checks de SHA anterior.
+- **Migración B1:** `0028_carril_b1_quantity_mode_and_sale_snapshots.sql` + assertions, aditivas; no se modificaron 0001–0027. Backfill conservador a fractional para unidades métricas/granel, mínimos, saldos, ledger, conteos, recepciones y líneas de venta fraccionarios.
+- **Defensas SQL:** snapshots de unidad/modo verificados contra producto al insertar; guards de cantidades enteras en `inventory_count_lines` y `inventory_receipt_lines`; cambio fractional→integer bloqueado con saldo fraccionario o conteo fraccionario pendiente; runtime solo recibe UPDATE de la columna `quantity_mode`.
+- **API/POS:** modo expuesto en catálogo/inventario; POST/PATCH de productos; checkout, conteos y recepciones validan integer/fractional; GET de detalle de venta devuelve snapshots sin costes; frontend usa etiquetas, autocompletado de unidades métricas, pasos y teclado según modo.
+- **QA:** modelo Python y SQL TEMP incorporan mutantes de 0.500, 1.250, snapshot falso, cambio de unidad y transición con saldo fraccionario; se añadieron tests de integración PostgreSQL 18 para checkout/conteos/recepciones/cambio de modo y snapshots históricos. Ejecución CI exact-SHA pendiente.
+- **Neon main:** el estado de partida aportado por el propietario es 0027; no se consultó ni modificó Neon en esta ejecución.
+- **Entorno:** no hay checkout local ni instancia PostgreSQL local disponible. No se afirma ejecución local de `validate-agent-docs.py`, unittest, pruebas de app, typecheck o build.
+- **PR #385/#386:** permanecen OPEN y fuera de alcance; no modificadas.
 - **Gates globales:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; Worker BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
-- **PR #385 y #386:** Dependabot fuera de alcance; no modificadas.
 
 Los cortes inferiores son snapshots históricos. Prevalecen este corte y los datos vivos de GitHub/Neon para sus respectivos dominios.
 

@@ -1,10 +1,13 @@
-# Estado del repositorio — 2026-11-08 UTC
+# Estado del repositorio — 2026-11-20
 
-El estado vivo de main, PRs, SHA, checks y próximos pasos está centralizado en [CURRENT_STATE.md](CURRENT_STATE.md) y [HANDOFF_NEXT_CHAT.md](HANDOFF_NEXT_CHAT.md). Los snapshots históricos que siguen en este documento son evidencia temporal: no reutilizar SHA ni resultados CI sin comprobar el HEAD exacto.
+- GitHub main verificado: `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`; PR #388 y #389 MERGED.
+- Migraciones versionadas en main: 0001–0027. PR #390 OPEN / Draft agrega únicamente en su rama la migración aditiva 0028 para `quantity_mode` y snapshots históricos de líneas de venta.
+- PR #385/#386 siguen fuera de alcance y no fueron modificadas.
+- Neon main 0027 es el estado de partida reportado por el propietario; esta revisión no accedió ni modificó Neon.
+- El principio de 0006 permanece: `inventory_balances` es proyección y `warehouse_inventory_movements` es ledger; `products.stock_quantity` heredada no es fuente de stock.
+- La implementación en PR #390 no equivale a habilitación productiva. **PRODUCTION: NOT READY**.
 
-- GitHub main protegido: `aa2804a0a6e7879f684b3baeb60646e50f1d6419`; PR #280 integrada por squash.
-- Neon rehearsal #42507066215: SUCCESS; migraciones 0001–0019 verificadas únicamente en `microapp_rehearsal`. Neon main no fue modificado.
-- Producción: **NOT READY**; no extrapolar el ensayo ni los builds automáticos a certificación productiva.
+Los bloques inferiores conservan revisiones históricas. No reutilizar sus SHAs, estados de PR ni conclusiones como evidencia actual.
 
 ---
 # Addendum de revisión vigente — 2026-11-08 UTC

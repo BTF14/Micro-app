@@ -15,6 +15,7 @@ type CatalogProduct = {
   name: string;
   description: string | null;
   unit: string;
+  quantity_mode: "integer" | "fractional";
   price_usd: string;
   cost_usd?: string;
 };
@@ -200,7 +201,7 @@ export default function CatalogPanel({
                   <tr key={item.id}>
                     <td data-label="Producto">
                       <strong>{item.name}</strong>
-                      <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""}</span>
+                      <span className="catalog-product-meta">{item.sku}{item.barcode ? ` · ${item.barcode}` : ""}{item.unit ? ` · ${item.unit}` : ""} · {item.quantity_mode === "fractional" ? "Fraccionable" : "Unidad entera"}</span>
                     </td>
                     <td data-label="Precio USD" className="catalog-money"><span className="catalog-price-usd">US$ {formatUsd(item.price_usd)}</span></td>
                     <td data-label="Equivalente VES" className="catalog-money">

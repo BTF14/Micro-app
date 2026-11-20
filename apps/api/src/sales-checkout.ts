@@ -41,6 +41,8 @@ type ProductRow = {
   name: string;
   price_usd: string;
   cost_usd: string;
+  unit: string;
+  quantity_mode: "integer" | "fractional";
 };
 type RateRow = { id: string; rate: string; effective_date: string; validation_status: "valid" | "stale" };
 type ManualFxAuthorizationRow = { id: string; rate: string; starts_at: string; expires_at: string };
@@ -66,6 +68,8 @@ type SaleLineRow = {
   product_id: string;
   product_name_snapshot: string;
   sku_snapshot: string;
+  unit_snapshot: string;
+  quantity_mode_snapshot: "integer" | "fractional";
   quantity: string;
   unit_price_usd: string;
   line_total_usd: string;
@@ -84,7 +88,7 @@ type CheckoutResult =
   | { kind: "created" | "replayed"; sale: Record<string, unknown> }
   | { kind: "unauthenticated" | "forbidden" | "branch_denied" | "warehouse_not_found" |
       "shift_required" | "rate_unavailable" | "bcv_rate_unavailable" | "manual_ack_required" | "invalid_products" | "insufficient_stock" |
-      "idempotency_conflict" | "invalid_payment" };
+      "idempotency_conflict" | "invalid_payment" | "invalid_quantity" };
 
 function caracasDate(now: Date): string {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Caracas", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
@@ -349,7 +353,7 @@ async function loadSaleResponse(
   const sale = header.rows[0];
   if (!sale) return null;
   const lines = await tx.query<SaleLineRow>(
-    `SELECT product_id, product_name_snapshot, sku_snapshot, quantity::text,
+    `SELECT product_id, product_name_snapshot, sku_snapshot, unit_snapshot, quantity_mode_snapshot, quantity::text,
             unit_price_usd::text, line_total_usd::text, line_total_ves::text
        FROM public.sale_items
       WHERE organization_id = $1 AND sale_id = $2
@@ -418,6 +422,54 @@ async function findExistingSale(
 }
 
 export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): void {
+
+  app.get("/api/orgs/:organizationId/branches/:branchId/sales/:saleId", async (c) => {
+    c.header("Cache-Control", "private, no-store");
+    const organizationId = c.req.param("organizationId");
+    const branchId = c.req.param("branchId");
+    const saleId = c.req.param("saleId");
+    if (![organizationId, branchId, saleId].every((value) => UUID_PATTERN.test(value))) {
+      return c.json({ error: "INVALID_RESOURCE_ID", message: "El identificador del recurso no es válido." }, 400);
+    }
+    const sessionToken = getCookie(c, "microapp_session");
+    if (!sessionToken || sessionToken.length > 128) {
+      clearSessionCookie(c);
+      return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    }
+    try {
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+        withDatabaseTransaction(client, async (tx) => {
+          const authorization = await authorizeBranchOperation(
+            tx, sessionToken, organizationId, branchId, "reports.sales.own_shift",
+          );
+          if (!authorization.allowed) {
+            if (authorization.reason === "operation_denied") return { kind: "forbidden" as const };
+            if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+            return { kind: "unauthenticated" as const };
+          }
+          const canReadBranchSales = authorization.context.organizationRole === "owner"
+            || authorization.context.organizationRole === "admin";
+          const scopedSale = await tx.query<{ id: string }>(
+            `SELECT id FROM public.sales
+              WHERE organization_id=$1 AND branch_id=$2 AND id=$3 AND status='completed'
+                AND ($4::boolean OR created_by=$5)`,
+            [organizationId, branchId, saleId, canReadBranchSales, authorization.context.userId],
+          );
+          if (!scopedSale.rows[0]) return { kind: "not_found" as const };
+          const sale = await loadSaleResponse(tx, organizationId, saleId);
+          return sale ? { kind: "ok" as const, sale } : { kind: "not_found" as const };
+        }),
+      );
+      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+      if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar ventas." }, 403);
+      if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
+      if (result.kind === "not_found") return c.json({ error: "SALE_NOT_FOUND", message: "No se encontró la venta." }, 404);
+      return c.json(result.sale, 200);
+    } catch {
+      return c.json({ error: "SALE_READ_FAILED", message: "No se pudo consultar la venta." }, 500);
+    }
+  });
+
   app.post("/api/orgs/:organizationId/branches/:branchId/checkout", async (c) => {
     c.header("Cache-Control", "private, no-store");
     const organizationId = c.req.param("organizationId");
@@ -544,7 +596,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
 
           const productIds = input.lines.map((line) => line.productId);
           const productsResult = await tx.query<ProductRow>(
-            `SELECT id, sku, name, price_usd::text, cost_usd::text
+            `SELECT id, sku, name, price_usd::text, cost_usd::text, unit, quantity_mode
                FROM public.products
               WHERE organization_id = $1
                 AND id = ANY($2::uuid[])
@@ -555,9 +607,15 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           );
           if (productsResult.rows.length !== input.lines.length) return { kind: "invalid_products" };
           const productById = new Map(productsResult.rows.map((product) => [product.id, product]));
+          try {
+            if (input.lines.some((line) => productById.get(line.productId)?.quantity_mode === "integer" &&
+              parseNumeric(line.quantity, 14, 3) % 1000n !== 0n)) return { kind: "invalid_quantity" as const };
+          } catch {
+            return { kind: "invalid_quantity" as const };
+          }
 
           let computedLines: Array<{
-            productId: string; name: string; sku: string; quantity: string;
+            productId: string; name: string; sku: string; unit: string; quantityMode: "integer" | "fractional"; quantity: string;
             unitPriceUsd: string; unitCostUsd: string; lineUsd: string; lineVes: string;
           }>;
           let subtotalUsd: string;
@@ -571,6 +629,8 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
                 productId: product.id,
                 name: product.name,
                 sku: product.sku,
+                unit: product.unit,
+                quantityMode: product.quantity_mode,
                 quantity: line.quantity,
                 unitPriceUsd: formatNumeric(parseNumeric(product.price_usd, 14, 4), 14, 4),
                 unitCostUsd: formatNumeric(parseNumeric(product.cost_usd, 14, 4), 14, 4),
@@ -651,11 +711,11 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
           for (const line of computedLines) {
             await tx.query(
               `INSERT INTO public.sale_items (
-                 organization_id, sale_id, product_id, product_name_snapshot, sku_snapshot,
+                 organization_id, sale_id, product_id, product_name_snapshot, sku_snapshot, unit_snapshot, quantity_mode_snapshot,
                  quantity, unit_price_usd, unit_cost_usd, line_total_usd, line_total_ves
-               ) VALUES ($1, $2, $3, $4, $5, $6::numeric, $7::numeric, $8::numeric, $9::numeric, $10::numeric)`,
+               ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::numeric, $10::numeric, $11::numeric, $12::numeric)`,
               [
-                branch.organizationId, saleId, line.productId, line.name, line.sku,
+                branch.organizationId, saleId, line.productId, line.name, line.sku, line.unit, line.quantityMode,
                 line.quantity, line.unitPriceUsd, line.unitCostUsd, line.lineUsd, line.lineVes,
               ],
             );
@@ -753,6 +813,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
         case "invalid_products": return c.json({ error: "PRODUCT_NOT_AVAILABLE", message: "Uno o más productos no existen o están inactivos." }, 409);
         case "insufficient_stock": return c.json({ error: "INSUFFICIENT_STOCK", message: "La existencia disponible del almacén es insuficiente." }, 409);
         case "invalid_payment": return c.json({ error: "PAYMENT_TOTAL_INVALID", message: "Los pagos deben cubrir exactamente el total en una sola moneda." }, 400);
+        case "invalid_quantity": return c.json({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE", message: "Los productos de unidad entera solo admiten cantidades enteras." }, 400);
         case "idempotency_conflict": return c.json({ error: "IDEMPOTENCY_CONFLICT", message: "La clave ya fue utilizada con otra solicitud o una venta no finalizada." }, 409);
         case "replayed": return c.json(result.sale, 200);
         case "created": return c.json(result.sale, 201);

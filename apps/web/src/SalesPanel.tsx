@@ -19,7 +19,7 @@ type Warehouse = { id: string; name: string; code: string; is_active: boolean };
 type FxPanelState = { commercial_enabled: boolean; authorization: { id: string; rate: string; expires_at: string } | null };
 type CartLine = { product: QuickLookupProduct; quantity: string; quantityInput: string; quantityValid: boolean };
 type PaymentLine = { id: string; method: PaymentMethod; amount: string; reference: string };
-type SaleLineReceipt = { product_name_snapshot: string; sku_snapshot: string; quantity: string; unit_price_usd: string; line_total_usd: string; line_total_ves: string };
+type SaleLineReceipt = { product_name_snapshot: string; sku_snapshot: string; unit_snapshot: string; quantity_mode_snapshot: "integer" | "fractional"; quantity: string; unit_price_usd: string; line_total_usd: string; line_total_ves: string };
 type SalePaymentReceipt = { method: PaymentMethod; currency: Currency; amount: string; reference: string | null };
 type SaleReceipt = {
   sale_number: string; created_at: string; currency: Currency; subtotal_usd: string;
@@ -249,6 +249,7 @@ export default function SalesPanel({
 
   function addProduct(product: QuickLookupProduct) {
     const available = quantityUnits(product.available_quantity);
+    const step = 1000n;
     if (available <= 0n) {
       setNotice(product.name + " está agotado en este almacén y no se agregó.");
       return;
@@ -260,10 +261,10 @@ export default function SalesPanel({
       commitCart([...currentCart, { product, quantity: initialQty, quantityInput: initialQty, quantityValid: true }]);
       resetIdempotency();
       setNotice(product.name + " agregado al carrito.");
-    } else if (quantityUnits(existing.quantity) + 1000n > available) {
+    } else if (quantityUnits(existing.quantity) + step > available) {
       setNotice("No puedes superar la existencia disponible de " + product.name + ".");
     } else {
-      const nextQty = formatNumeric(quantityUnits(existing.quantity) + 1000n, 14, 3);
+      const nextQty = formatNumeric(quantityUnits(existing.quantity) + step, 14, 3);
       commitCart(currentCart.map((line) => line.product.product_id === product.product_id
         ? { ...line, product, quantity: nextQty, quantityInput: nextQty, quantityValid: true }
         : line));
@@ -282,6 +283,7 @@ export default function SalesPanel({
     try {
       const normalized = formatNumeric(parseNumeric(trimmed, 14, 3), 14, 3);
       if (parseNumeric(normalized, 14, 3) <= 0n) throw new Error("La cantidad debe ser mayor que cero.");
+      if (line.product.quantity_mode === "integer" && parseNumeric(normalized, 14, 3) % 1000n !== 0n) throw new Error("Este producto solo admite cantidades enteras.");
       if (quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
         throw new Error("La cantidad supera la existencia disponible de " + line.product.name + ".");
       }
@@ -307,6 +309,7 @@ export default function SalesPanel({
       const candidate = trimmed.slice(0, -1);
       try {
         const normalized = formatNumeric(parseNumeric(candidate, 14, 3), 14, 3);
+        if (line.product.quantity_mode === "integer" && parseNumeric(normalized, 14, 3) % 1000n !== 0n) throw new Error("Este producto solo admite cantidades enteras.");
         if (quantityUnits(normalized) > quantityUnits(line.product.available_quantity)) {
           setError("La cantidad supera la existencia disponible de " + line.product.name + ".");
           return;
@@ -471,7 +474,7 @@ export default function SalesPanel({
                   <div className="sales-cart-lines">
                     {computed.lines.map((line) => <article className="sales-cart-line" key={line.product.product_id}>
                       <div className="sales-cart-product"><strong>{line.product.name}</strong><small>{line.product.sku} · {usd(line.product.price_usd)} c/u</small></div>
-                      <label className="sales-quantity"><span>Cantidad</span><input aria-label={`Cantidad de ${line.product.name}`} inputMode="decimal" value={line.quantityInput} onChange={(event) => updateQuantity(line.product.product_id, event.target.value)} onBlur={() => commitQuantityBlur(line.product.product_id)} /></label>
+                      <label className="sales-quantity"><span>Cantidad</span><input aria-label={`Cantidad de ${line.product.name}`} inputMode={line.product.quantity_mode === "integer" ? "numeric" : "decimal"} step={line.product.quantity_mode === "integer" ? "1" : "0.001"} value={line.quantityInput} onChange={(event) => updateQuantity(line.product.product_id, event.target.value)} onBlur={() => commitQuantityBlur(line.product.product_id)} /></label>
                       <div className="sales-line-total"><strong>{usd(line.lineUsd)}</strong><small>{line.lineVes ? ves(line.lineVes) : "Conversión no disponible"}</small></div>
                       <div className="sales-line-actions"><button type="button" disabled={quantityUnits(line.quantity) <= 1000n} onClick={() => updateQuantity(line.product.product_id, formatNumeric(quantityUnits(line.quantity) - 1000n, 14, 3))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
                     </article>)}
@@ -510,7 +513,7 @@ export default function SalesPanel({
         {receipt.fx_source === 'manual_contingency' && receipt.fx_authorization_id && (
           <p className="sales-receipt-date">Referencia de autorización: {receipt.fx_authorization_id}</p>
         )}
-        <div className="sales-receipt-lines">{receipt.lines.map((line, index) => <div key={`${line.sku_snapshot}-${index}`}><div><strong>{line.product_name_snapshot}</strong><small>{line.sku_snapshot} · {line.quantity} × {usd(line.unit_price_usd)}</small></div><span>{usd(line.line_total_usd)}<small>{ves(line.line_total_ves)}</small></span></div>)}</div>
+        <div className="sales-receipt-lines">{receipt.lines.map((line, index) => <div key={`${line.sku_snapshot}-${index}`}><div><strong>{line.product_name_snapshot}</strong><small>{line.sku_snapshot} · {line.unit_snapshot} · {line.quantity} × {usd(line.unit_price_usd)}</small></div><span>{usd(line.line_total_usd)}<small>{ves(line.line_total_ves)}</small></span></div>)}</div>
         <div className="sales-receipt-payments"><h3>Pagos recibidos</h3>{receipt.payments.map((payment, index) => <div key={index}><span>{PAYMENT_METHODS.find((method) => method.value === payment.method)?.label ?? payment.method}{payment.reference ? ` · Ref. ${payment.reference}` : ""}</span><strong>{payment.currency === "USD" ? usd(payment.amount) : ves(payment.amount)}</strong></div>)}</div>
         <div className="sales-receipt-totals"><div><span>Total USD</span><strong>{usd(receipt.total_usd)}</strong></div><div><span>Total VES</span><strong>{ves(receipt.total_ves)}</strong></div></div>
         <button type="button" className="sales-primary-button" onClick={newSale}>Nueva venta</button>

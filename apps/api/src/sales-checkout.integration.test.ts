@@ -407,8 +407,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
   beforeEach(async () => {
     const product = await client.query<{ id: string }>(
-      `INSERT INTO public.products(organization_id,sku,name,price_usd,cost_usd)
-       VALUES($1,$2,'Checkout Product',23.85,2.00) RETURNING id`,
+      `INSERT INTO public.products(organization_id,sku,name,price_usd,cost_usd,quantity_mode)
+       VALUES($1,$2,'Checkout Product',23.85,2.00,'fractional') RETURNING id`,
       [organizationId, "CHECKOUT-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12)],
     );
     productId = product.rows[0]!.id;
@@ -553,12 +553,13 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
   it("completes a USD sale with exact decimals, current BCV, own shift and ledger reconciliation", async () => {
     await seedBalance("10.000", "1.000");
-    const response = await request(checkoutBody("1.250", "29.8125"), "usd-" + crypto.randomUUID());
+    const saleKey = "usd-" + crypto.randomUUID();
+    const response = await request(checkoutBody("1.250", "29.8125"), saleKey);
     expect(response.status).toBe(201);
     const sale = await response.json() as {
       id: string; status: string; subtotal_usd: string; total_usd: string; total_ves: string;
       bcv_rate: string; operation_date: string; exchange_rate_effective_date: string;
-      lines: Array<{ quantity: string; line_total_usd: string; line_total_ves: string }>;
+      lines: Array<{ quantity: string; unit_snapshot: string; quantity_mode_snapshot: "integer" | "fractional"; line_total_usd: string; line_total_ves: string }>;
     };
     expect(sale.status).toBe("completed");
     expect(sale.operation_date).toBe(rateDate);
@@ -592,10 +593,25 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(sale.total_usd).toBe("29.8125");
     expect(sale.bcv_rate).toBe("250.12345678");
     expect(sale.lines[0]).toMatchObject({
-      quantity: "1.250", line_total_usd: "29.8125",
+      quantity: "1.250", unit_snapshot: "unidad", quantity_mode_snapshot: "fractional", line_total_usd: "29.8125",
       line_total_ves: convertUsdToVes("29.8125", "250.12345678"),
     });
     expect(sale.lines[0]).not.toHaveProperty("unit_cost_usd");
+    expect(sale.lines[0]).toMatchObject({ unit_snapshot: "unidad", quantity_mode_snapshot: "fractional" });
+    await client.query("UPDATE public.products SET unit='g' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const replayAfterCatalogEdit = await request(checkoutBody("1.250", "29.8125"), saleKey);
+    expect(replayAfterCatalogEdit.status).toBe(200);
+    const historicalReplay = await replayAfterCatalogEdit.json() as { lines: Array<{ unit_snapshot: string; quantity_mode_snapshot: string }> };
+    expect(historicalReplay.lines[0]).toMatchObject({ unit_snapshot: "unidad", quantity_mode_snapshot: "fractional" });
+    const detail = await app.fetch(new Request(
+      "https://api.example/api/orgs/" + organizationId + "/branches/" + branchId + "/sales/" + sale.id,
+      { headers: { Cookie: "microapp_session=" + token } },
+    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN });
+    expect(detail.status).toBe(200);
+    const detailBody = await detail.json() as { lines: Array<Record<string, unknown>> };
+    expect(detailBody.lines[0]).toMatchObject({ unit_snapshot: "unidad", quantity_mode_snapshot: "fractional" });
+    expect(detailBody.lines[0]).not.toHaveProperty("unit_cost_usd");
+    expect(detailBody.lines[0]).not.toHaveProperty("cost_usd");
     expect(sale.total_ves).toBe(convertUsdToVes("29.8125", "250.12345678"));
 
     const balance = await readBalance();
@@ -1733,8 +1749,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
           saleId = inserted.rows[0]!.id;
           await runtimeClient.query(
             `INSERT INTO public.sale_items
-              (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
-             VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027-UNCOVERED',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
+              (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,unit_snapshot,quantity_mode_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
+             VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027-UNCOVERED','unidad','fractional',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
             [organizationId,saleId,productId,convertUsdToVes("1.0000",candidate.rate)],
           );
           await runtimeClient.query(
@@ -1807,8 +1823,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       saleId = inserted.rows[0]!.id;
       await runtimeClient.query(
         `INSERT INTO public.sale_items
-          (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
-         VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
+          (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,unit_snapshot,quantity_mode_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
+         VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027','unidad','fractional',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
         [organizationId,saleId,productId,convertUsdToVes("1.0000","250.12345678")],
       );
       await runtimeClient.query(
@@ -1843,6 +1859,24 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     );
     expect(counts.rows[0]).toEqual({ completed_sales: 0, payments: 0, movements: 0, audits: 0 });
     expect((await readBalance()).on_hand_quantity).toBe("10.000");
+  });
+
+  it("rejects fractional checkout quantities for integer products", async () => {
+    await client.query("UPDATE public.products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const response = await request(checkoutBody("0.500", "11.9250"), "integer-quantity-" + crypto.randomUUID());
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    const sales = await client.query("SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key LIKE 'integer-quantity-%'", [organizationId]);
+    expect(sales.rows[0]?.count).toBe(0);
+  });
+
+  it("rejects fractional checkout quantities for integer products", async () => {
+    await client.query("UPDATE public.products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const response = await request(checkoutBody("0.500", "11.9250"), "integer-quantity-" + crypto.randomUUID());
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    const sales = await client.query("SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key LIKE 'integer-quantity-%'", [organizationId]);
+    expect(sales.rows[0]?.count).toBe(0);
   });
 
 });

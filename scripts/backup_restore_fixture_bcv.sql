@@ -284,13 +284,15 @@ VALUES ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
 
 INSERT INTO public.sale_items
   (id, organization_id, sale_id, product_id, product_name_snapshot, sku_snapshot,
-   quantity, unit_price_usd, unit_cost_usd, line_total_usd, line_total_ves)
-VALUES ('ffffffff-ffff-4fff-8fff-ffffffffffff',
-        '11111111-1111-4111-8111-111111111111',
-        'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
-        '77777777-7777-4777-8777-777777777777',
-        'Synthetic Product', 'SYN-RESTORE-001',
-        2.000, 5.0000, 2.0000, 10.0000, 2501.23);
+   unit_snapshot, quantity_mode_snapshot, quantity, unit_price_usd, unit_cost_usd, line_total_usd, line_total_ves)
+SELECT 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+       '11111111-1111-4111-8111-111111111111',
+       'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+       p.id, 'Synthetic Product', 'SYN-RESTORE-001',
+       p.unit, p.quantity_mode, 2.000, 5.0000, 2.0000, 10.0000, 2501.23
+  FROM public.products p
+ WHERE p.organization_id='11111111-1111-4111-8111-111111111111'
+   AND p.id='77777777-7777-4777-8777-777777777777';
 
 INSERT INTO public.payments
   (id, organization_id, sale_id, method, currency, amount,

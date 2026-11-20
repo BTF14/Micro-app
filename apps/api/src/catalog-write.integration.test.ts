@@ -90,6 +90,28 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
     );
   }
 
+
+  async function updateRequest(
+    fixture: Fixture,
+    organizationId: string,
+    productId: string,
+    payload: unknown,
+  ): Promise<Response> {
+    return app.fetch(
+      new Request("https://api.example/api/orgs/" + organizationId + "/catalog/" + productId, {
+        method: "PATCH",
+        headers: {
+          Cookie: "microapp_session=" + fixture.token,
+          Origin: "https://frontend.example",
+          "Content-Type": "application/json",
+          "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`,
+        },
+        body: JSON.stringify(payload),
+      }),
+      { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" },
+    );
+  }
+
   beforeAll(async () => {
     client = new Client({ connectionString: databaseUrlAdmin });
     await client.connect();
@@ -270,6 +292,43 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
       [organizationA],
     );
     expect(persisted.rows[0]).toEqual({ products: "0", audits: "0" });
+  });
+
+  it("defaults new products to integer mode and accepts explicit fractional mode", async () => {
+    const defaultResponse = await createRequest(fixtures.owner, organizationA, {
+      sku: "MODE-DEFAULT", name: "Default integer", price_usd: "1.00",
+    });
+    expect(defaultResponse.status).toBe(201);
+    expect(await defaultResponse.json()).toMatchObject({ quantity_mode: "integer" });
+
+    const fractionalResponse = await createRequest(fixtures.owner, organizationA, {
+      sku: "MODE-FRACTIONAL", name: "Fractional product", price_usd: "1.00",
+      quantity_mode: "fractional", minimum_stock: "0.500",
+    });
+    expect(fractionalResponse.status).toBe(201);
+    expect(await fractionalResponse.json()).toMatchObject({
+      quantity_mode: "fractional", minimum_stock: "0.500",
+    });
+
+    const invalidIntegerMinimum = await createRequest(fixtures.owner, organizationA, {
+      sku: "MODE-INVALID", name: "Invalid integer minimum", price_usd: "1.00",
+      minimum_stock: "0.500",
+    });
+    expect(invalidIntegerMinimum.status).toBe(400);
+  });
+
+  it("returns 409 when fractional minimum stock blocks an integer-mode transition", async () => {
+    const created = await createRequest(fixtures.owner, organizationA, {
+      sku: "MODE-MINIMUM-CONFLICT", name: "Fractional minimum", unit: "kg",
+      price_usd: "1.00", quantity_mode: "fractional", minimum_stock: "0.500",
+    });
+    expect(created.status).toBe(201);
+    const product = await created.json() as { id: string };
+    const changed = await updateRequest(fixtures.owner, organizationA, product.id, {
+      quantity_mode: "integer",
+    });
+    expect(changed.status).toBe(409);
+    expect(await changed.json()).toMatchObject({ error: "FRACTIONAL_MINIMUM_STOCK_CONFLICT" });
   });
 
 });

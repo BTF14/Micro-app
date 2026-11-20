@@ -107,7 +107,7 @@ export function buildInventoryReadQuery(input: {
     order = "lower(p.name) ASC, p.id ASC";
   }
   const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
-  const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit,
+  const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit, p.quantity_mode,
       p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
       COALESCE(b.on_hand_quantity, 0)::numeric(14,3)::text AS on_hand_quantity,
       COALESCE(b.reserved_quantity, 0)::numeric(14,3)::text AS reserved_quantity,

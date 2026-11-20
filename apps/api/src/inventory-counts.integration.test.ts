@@ -147,6 +147,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   beforeEach(async () => {
+    // Tests may deliberately downgrade this owner to cashier; restore the fixture role between cases.
+    await client.query("UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2", [organizationId, userId]);
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
     const warehouse = await client.query<{ id: string }>(
       "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'Inventory Count Test Warehouse') RETURNING id",
@@ -154,7 +156,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     );
     warehouseId = warehouse.rows[0]!.id;
     const product = await client.query<{ id: string }>(
-      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Inventory Count Test Product', 1) RETURNING id",
+      "INSERT INTO products (organization_id, sku, name, price_usd, quantity_mode) VALUES ($1, $2, 'Inventory Count Test Product', 1, 'fractional') RETURNING id",
       [organizationId, "INV-COUNT-" + suffix],
     );
     productId = product.rows[0]!.id;
@@ -1149,4 +1151,44 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const countRead = await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}/counts`);
     expect(countRead.status).toBe(403);
   });
+  it("rejects fractional counts in integer mode and accepts fractional mode", async () => {
+    await client.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const rejected = await request(root() + "/counts/physical", { reason: "Integer mode rejects halves", lines: [{ product_id: productId, counted_quantity: "0.500" }] });
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    await client.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const accepted = await request(root() + "/counts/physical", { reason: "Fractional mode accepts grams", lines: [{ product_id: productId, counted_quantity: "1.250" }] });
+    expect(accepted.status).toBe(201);
+  });
+
+  it("rejects fractional counts in integer mode and accepts fractional mode", async () => {
+    await client.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const rejected = await request(root() + "/counts/physical", { reason: "Integer mode rejects halves", lines: [{ product_id: productId, counted_quantity: "0.500" }] });
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    await client.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const accepted = await request(root() + "/counts/physical", { reason: "Fractional mode accepts grams", lines: [{ product_id: productId, counted_quantity: "1.250" }] });
+    expect(accepted.status).toBe(201);
+  });
+
+  it("blocks fractional-to-integer mode changes while any warehouse balance is fractional", async () => {
+    await seedInventoryBalanceFor(productId, "1.500");
+    const response = await app.fetch(new Request("https://api.example/api/orgs/" + organizationId + "/catalog/" + productId, {
+      method: "PATCH",
+      headers: {
+        Cookie: "microapp_session=" + token,
+        Origin: "https://frontend.example",
+        "Content-Type": "application/json",
+        "CF-Connecting-IP": `198.51.100.${syntheticIpCounter++}`,
+      },
+      body: JSON.stringify({ quantity_mode: "integer" }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example", GOOGLE_CLIENT_SECRET: "test-google-client-secret" });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT" });
+    await expect(client.query(
+      "UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2",
+      [organizationId, productId],
+    )).rejects.toThrow(/INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE/);
+  });
+
 });

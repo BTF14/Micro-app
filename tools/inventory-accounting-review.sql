@@ -77,4 +77,118 @@ BEGIN
  END;
 END
 $ves_check$;
+
+-- Quantity-mode contract and controlled mutants. All fixtures are TEMP and rolled back.
+CREATE TEMP TABLE iar_products (
+  product_id text PRIMARY KEY, unit text NOT NULL, quantity_mode text NOT NULL
+    CHECK (quantity_mode IN ('integer','fractional')),
+  minimum_stock numeric(14,3) NOT NULL,
+  CHECK (quantity_mode <> 'integer' OR minimum_stock=trunc(minimum_stock))
+);
+CREATE TEMP TABLE iar_quantity_balances (
+  product_id text NOT NULL, on_hand numeric(14,3) NOT NULL, reserved numeric(14,3) NOT NULL
+);
+CREATE TEMP TABLE iar_sale_snapshots (
+  product_id text NOT NULL, unit_snapshot text NOT NULL CHECK(length(btrim(unit_snapshot))>0),
+  quantity_mode_snapshot text NOT NULL CHECK(quantity_mode_snapshot IN ('integer','fractional')),
+  quantity numeric(14,3) NOT NULL CHECK(quantity>0),
+  CHECK(quantity_mode_snapshot<>'integer' OR quantity=trunc(quantity))
+);
+CREATE TEMP TABLE iar_count_lines (
+  product_id text NOT NULL, counted_quantity numeric(14,3) NOT NULL CHECK(counted_quantity>=0)
+);
+CREATE TEMP TABLE iar_receipt_lines (
+  product_id text NOT NULL, quantity numeric(14,3) NOT NULL CHECK(quantity>0)
+);
+INSERT INTO iar_products VALUES ('integer-a','unidad','integer',0.000),('fractional-a','kg','fractional',0.000);
+
+CREATE FUNCTION pg_temp.iar_guard_sale_snapshot() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE p record;
+BEGIN
+ SELECT unit,quantity_mode INTO p FROM iar_products WHERE product_id=NEW.product_id;
+ IF NOT FOUND OR NEW.unit_snapshot IS DISTINCT FROM p.unit
+   OR NEW.quantity_mode_snapshot IS DISTINCT FROM p.quantity_mode THEN
+   RAISE EXCEPTION 'sale quantity snapshot mismatch' USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER iar_sale_snapshot_guard BEFORE INSERT ON iar_sale_snapshots
+FOR EACH ROW EXECUTE FUNCTION pg_temp.iar_guard_sale_snapshot();
+
+CREATE FUNCTION pg_temp.iar_guard_count() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE mode text;
+BEGIN
+ SELECT quantity_mode INTO mode FROM iar_products WHERE product_id=NEW.product_id;
+ IF mode='integer' AND NEW.counted_quantity<>trunc(NEW.counted_quantity) THEN
+   RAISE EXCEPTION 'integer count quantity must be whole' USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER iar_count_guard BEFORE INSERT ON iar_count_lines
+FOR EACH ROW EXECUTE FUNCTION pg_temp.iar_guard_count();
+
+CREATE FUNCTION pg_temp.iar_guard_receipt() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE mode text;
+BEGIN
+ SELECT quantity_mode INTO mode FROM iar_products WHERE product_id=NEW.product_id;
+ IF mode='integer' AND NEW.quantity<>trunc(NEW.quantity) THEN
+   RAISE EXCEPTION 'integer receipt quantity must be whole' USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER iar_receipt_guard BEFORE INSERT ON iar_receipt_lines
+FOR EACH ROW EXECUTE FUNCTION pg_temp.iar_guard_receipt();
+
+CREATE FUNCTION pg_temp.iar_guard_mode_transition() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF NEW.quantity_mode='integer' AND OLD.quantity_mode='fractional'
+    AND EXISTS(SELECT 1 FROM iar_quantity_balances b WHERE b.product_id=NEW.product_id
+      AND (b.on_hand<>trunc(b.on_hand) OR b.reserved<>trunc(b.reserved))) THEN
+   RAISE EXCEPTION 'fractional inventory balance blocks integer mode' USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER iar_product_mode_guard BEFORE UPDATE OF quantity_mode ON iar_products
+FOR EACH ROW EXECUTE FUNCTION pg_temp.iar_guard_mode_transition();
+
+DO $quantity_mode_tests$
+BEGIN
+ BEGIN
+   INSERT INTO iar_sale_snapshots VALUES ('integer-a','unidad','integer',0.500);
+   RAISE EXCEPTION 'integer sale item accepted 0.500';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ BEGIN
+   INSERT INTO iar_count_lines VALUES ('integer-a',0.500);
+   RAISE EXCEPTION 'integer count accepted 0.500';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ BEGIN
+   INSERT INTO iar_receipt_lines VALUES ('integer-a',0.500);
+   RAISE EXCEPTION 'integer receipt accepted 0.500';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ INSERT INTO iar_sale_snapshots VALUES ('fractional-a','kg','fractional',1.250);
+ BEGIN
+   INSERT INTO iar_sale_snapshots VALUES ('fractional-a','unidad','fractional',1.250);
+   RAISE EXCEPTION 'false unit_snapshot accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ BEGIN
+   INSERT INTO iar_sale_snapshots VALUES ('fractional-a','kg','integer',1.000);
+   RAISE EXCEPTION 'false quantity_mode_snapshot accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ UPDATE iar_products SET unit='g' WHERE product_id='fractional-a';
+ IF (SELECT unit_snapshot FROM iar_sale_snapshots WHERE product_id='fractional-a')<>'kg' THEN
+   RAISE EXCEPTION 'historical unit snapshot changed after product edit';
+ END IF;
+ INSERT INTO iar_count_lines VALUES ('fractional-a',1.250);
+ INSERT INTO iar_receipt_lines VALUES ('fractional-a',1.250);
+ INSERT INTO iar_quantity_balances VALUES ('fractional-a',1.500,0.000);
+ BEGIN
+   UPDATE iar_products SET quantity_mode='integer' WHERE product_id='fractional-a';
+   RAISE EXCEPTION 'fractional balance transition accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ IF (SELECT quantity_mode FROM iar_products WHERE product_id='fractional-a')<>'fractional' THEN
+   RAISE EXCEPTION 'failed integer transition changed the product';
+ END IF;
+END
+$quantity_mode_tests$;
+
 ROLLBACK;

@@ -1,3 +1,19 @@
+## Turno 61 — Paso 5 Carril B1 / PR #390 (2026-11-20)
+
+- Main verificado en GitHub: `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`; PR #388 y #389 confirmadas MERGED. PR #385/#386 siguen OPEN y fuera de alcance.
+- Creada rama `feat/carril-b1-quantity-mode-snapshots-20261120` y PR #390 OPEN / Draft: https://github.com/BTF14/Micro-app/pull/390. Sin merge ni auto-merge.
+- Añadida ODD task de B1, migración aditiva 0028 + assertions; no se modificaron 0001–0027.
+- Añadido `products.quantity_mode` con backfill conservador por unidades métricas/granel, mínimo, saldos, movimientos, conteos, recepciones y líneas históricas; check de mínimo entero y guard de transición fractional→integer.
+- Añadidos `sale_items.unit_snapshot` / `quantity_mode_snapshot`, backfill, NOT NULL, checks y trigger SECURITY DEFINER de inserción para rechazar snapshots falsos. Runtime obtiene UPDATE únicamente sobre `products.quantity_mode`.
+- Añadidas defensas API/DB para checkout, conteos y recepciones; el esquema real usa `inventory_count_lines` y la RPC vigente es `create_inventory_receipt`. Añadido GET de detalle de venta con snapshots, scope de sucursal/actor y sin costes.
+- Actualizado frontend de catálogo, formulario, inventario, búsqueda rápida y POS; se usan modos, pasos y teclados apropiados, sugerencia métrica no vinculante y validación de mínimo entero.
+- Añadidos tests Python/SQL de mutantes y pruebas de integración PostgreSQL 18 para catálogo, checkout, conteos, recepciones, snapshots históricos y cambio de modo con saldo fraccionario. Reconciliado skill y agente inventory-accounting-review para cubrir 0028 con ODD explícita.
+- Documentos PROJECT_PLAN, CURRENT_STATE y HANDOFF_NEXT_CHAT reconciliados. Estado Neon main 0027 procede del contexto aportado por el propietario; no se consultó ni modificó Neon.
+- No hay checkout local ni PostgreSQL local en este entorno. No se afirma ejecución local de validadores, unittest, pruebas de app, typecheck, build o harness PostgreSQL. Pendiente 100 % de checks exact-SHA en GitHub Actions y tres revisiones independientes secuenciales (backend-data, security, inventory-accounting).
+- Gates preservados: AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; presupuesto USD 0.
+
+---
+
 ## Turno 60 — Paso 4 inventory-accounting-review / PR #388 (2026-11-19)
 
 - Main verificado en GitHub: 57f426375db79a555c976574ee9b876e1d873141, merge de PR #387.

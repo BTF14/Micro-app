@@ -33,6 +33,7 @@ const balance = (overrides: Record<string, unknown> = {}) => ({
   sku: "SKU-1",
   name: "Harina",
   unit: "kg",
+  quantity_mode: "fractional",
   price_usd: "2.0000",
   minimum_stock: "2.000",
   on_hand_quantity: "15.000",

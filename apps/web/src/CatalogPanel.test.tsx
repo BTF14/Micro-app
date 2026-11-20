@@ -43,6 +43,7 @@ describe("catalog panel", () => {
         name: "Producto exacto",
         description: null,
         unit: "unidad",
+        quantity_mode: "integer",
         price_usd: "23.8500",
         cost_usd: "10.0000",
       }],
@@ -58,6 +59,7 @@ describe("catalog panel", () => {
     });
 
     expect(container.textContent).toContain("Producto exacto");
+    expect(container.textContent).toContain("Unidad entera");
     expect(container.textContent).toContain("US$ 23,85");
     expect(container.textContent).toContain("Bs. 870,53");
     expect(container.textContent).toContain("US$ 10,00");
@@ -82,6 +84,7 @@ describe("catalog panel", () => {
         name: "Producto sin costo visible",
         description: null,
         unit: "unidad",
+        quantity_mode: "integer",
         price_usd: "1.2500",
       }],
       nextCursor: null,
@@ -110,7 +113,7 @@ describe("catalog panel", () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100}))
       .mockResolvedValueOnce(jsonResponse({items:[{
-        id:"p1",is_active:true,sku:"SKU-FAST",barcode:"750123",name:"Café molido",description:null,unit:"bolsa",price_usd:"4.2500",
+        id:"p1",is_active:true,sku:"SKU-FAST",barcode:"750123",name:"Café molido",description:null,unit:"bolsa",quantity_mode:"integer",price_usd:"4.2500",
       }],nextCursor:null,limit:100}));
     await renderPanel({organizationId:"00000000-0000-4000-8000-000000000010",exchangeRate:"36.50000000",exchangeRateStatus:"current",canManage:false});
     const input=container.querySelector<HTMLInputElement>("#catalog-quick-search");
@@ -143,7 +146,8 @@ describe("catalog panel", () => {
       .mockResolvedValueOnce(jsonResponse({
         items: [{
           id: cursor, is_active: true, sku: "SKU-1", barcode: null, name: "Primero",
-          description: null, unit: "unidad", price_usd: "1.0000",
+          description: null, unit: "unidad",
+        quantity_mode: "integer", price_usd: "1.0000",
         }],
         nextCursor: cursor,
         limit: 100,
@@ -151,7 +155,8 @@ describe("catalog panel", () => {
       .mockResolvedValueOnce(jsonResponse({
         items: [{
           id: "00000000-0000-4000-8000-000000000021", is_active: true, sku: "SKU-2",
-          barcode: null, name: "Segundo", description: null, unit: "unidad", price_usd: "2.0000",
+          barcode: null, name: "Segundo", description: null, unit: "unidad",
+        quantity_mode: "integer", price_usd: "2.0000",
         }],
         nextCursor: null,
         limit: 100,

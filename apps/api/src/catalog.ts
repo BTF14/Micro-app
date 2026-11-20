@@ -19,6 +19,7 @@ type CatalogRow = {
   name: string;
   description: string | null;
   unit: string;
+  quantity_mode: "integer" | "fractional";
   price_usd: string;
   cost_usd?: string;
 };
@@ -43,7 +44,7 @@ export function buildCatalogQuery(
   const canReadCost = authorizeCommercialOperation(role, "catalog.read_costs");
 
   const columns =
-    "id, is_active, sku, barcode, name, description, unit, price_usd::text AS price_usd" +
+    "id, is_active, sku, barcode, name, description, unit, quantity_mode, price_usd::text AS price_usd" +
     (canReadCost ? ", cost_usd::text AS cost_usd" : "");
 
   const normalizedSearch = search?.trim() ?? "";
@@ -135,6 +136,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
               name: row.name,
               description: row.description,
               unit: row.unit,
+              quantity_mode: row.quantity_mode,
               price_usd: row.price_usd,
             };
             return query.canReadCost ? { ...item, cost_usd: row.cost_usd! } : item;

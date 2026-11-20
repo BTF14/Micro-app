@@ -5,7 +5,8 @@ import unittest
 from tools.inventory_accounting_review import (
     exact, payment_amount, reference_ledger, reference_sale, reference_shift, rounded,
     validate_actor_scope, validate_ledger, validate_sale, validate_shift,
-    InvariantViolation,
+    InvariantViolation, QuantitySnapshot, validate_quantity_mode,
+    validate_sale_quantity_snapshot, validate_product_mode_transition,
 )
 
 class InventoryAccountingReviewTests(unittest.TestCase):
@@ -76,6 +77,32 @@ class InventoryAccountingReviewTests(unittest.TestCase):
     def test_shift_close_mutant_is_killed(self):
         s=reference_shift(); validate_shift(s)
         with self.assertRaisesRegex(InvariantViolation,"shift cash movements"): validate_shift(replace(s,counted_closing_cash="32.99"))
+
+
+    def test_integer_and_fractional_quantity_modes(self):
+        self.assertEqual(Decimal("1.000"), validate_quantity_mode("integer", "1.000"))
+        with self.assertRaisesRegex(InvariantViolation, "must be whole"):
+            validate_quantity_mode("integer", "0.500")
+        self.assertEqual(Decimal("1.250"), validate_quantity_mode("fractional", "1.250"))
+        self.assertEqual(Decimal("0.000"), validate_quantity_mode("integer", "0.000", allow_zero=True))
+
+    def test_sale_quantity_snapshots_match_product_at_insert(self):
+        snapshot = QuantitySnapshot("kg", "fractional", "1.250")
+        validate_sale_quantity_snapshot(snapshot, "kg", "fractional")
+        with self.assertRaisesRegex(InvariantViolation, "does not match product"):
+            validate_sale_quantity_snapshot(snapshot, "unidad", "integer")
+        # Frozen historical snapshot is independent of later catalog edits.
+        current_product = {"unit": "g", "quantity_mode": "fractional"}
+        self.assertEqual("kg", snapshot.unit_snapshot)
+        self.assertEqual("fractional", snapshot.quantity_mode_snapshot)
+        self.assertNotEqual(snapshot.unit_snapshot, current_product["unit"])
+
+    def test_fractional_to_integer_mode_change_checks_minimum_and_balances(self):
+        with self.assertRaisesRegex(InvariantViolation, "minimum stock"):
+            validate_product_mode_transition("fractional", "integer", "0.500", [])
+        with self.assertRaisesRegex(InvariantViolation, "fractional inventory balance"):
+            validate_product_mode_transition("fractional", "integer", "0.000", [("1.500", "0.000")])
+        validate_product_mode_transition("fractional", "integer", "2.000", [("2.000", "1.000")])
 
     def test_half_even_mutant_is_killed(self):
         self.assertNotEqual(rounded(Decimal("1.23445"),4),Decimal("1.2344"))

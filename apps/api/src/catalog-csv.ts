@@ -73,7 +73,7 @@ function decodeCsv(input: Uint8Array | string): string {
       throw new CatalogCsvError("CSV_TOO_LARGE", "El archivo CSV excede 262144 bytes.");
     }
     try {
-      text = new TextDecoder("utf-8", { fatal: true }).decode(input);
+      text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(input);
     } catch {
       throw new CatalogCsvError("INVALID_UTF8", "El archivo no contiene UTF-8 válido.");
     }
@@ -257,7 +257,7 @@ function validateRow(
   if (sku !== null) result.sku = sku;
   else addError(errors, rowNumber, "sku", "SKU_REQUIRED", "sku es obligatorio en todas las filas.");
 
-  const textFields: Array<[keyof CatalogCsvRow, number, number]> = [
+  const textFields: Array<["name" | "unit", number, number]> = [
     ["name", 1, 240], ["unit", 1, 40],
   ];
   for (const [field, min, max] of textFields) {
@@ -265,7 +265,10 @@ function validateRow(
     const value = raw.get(field) ?? "";
     if (!value.trim()) continue;
     const parsed = boundedText(value, min, max, field, rowNumber, errors);
-    if (parsed !== null) result[field] = parsed;
+    if (parsed !== null) {
+      if (field === "name") result.name = parsed;
+      else result.unit = parsed;
+    }
   }
 
   for (const [field, precision, scale] of [

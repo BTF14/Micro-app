@@ -74,6 +74,7 @@ describe("product form", () => {
     expect(payload.price_usd).toBe("23.8500");
     expect(payload.cost_usd).toBe("10.0000");
     expect(payload.minimum_stock).toBe("0");
+    expect(payload.quantity_mode).toBe("integer");
     expect(payload).not.toHaveProperty("discount");
     expect(payload).not.toHaveProperty("discount_usd");
     expect(onSaved).toHaveBeenCalledOnce();
@@ -89,6 +90,7 @@ describe("product form", () => {
       name: "Café",
       description: null,
       unit: "kg",
+      quantity_mode: "fractional",
       cost_usd: "10.0000",
       price_usd: "23.8500",
       is_active: true,
@@ -116,10 +118,28 @@ describe("product form", () => {
     expect(field("Costo USD").getAttribute("placeholder")).toBe("0.00");
     expect(field("Stock mínimo").getAttribute("placeholder")).toBe("0");
     await act(async () => { root.render(<ProductForm key="editing" organizationId="org-1" product={{
-      id:"p1",sku:"SKU",barcode:null,name:"Producto",description:null,unit:"unidad",cost_usd:"10.0000",price_usd:"23.8500",is_active:true,
+      id:"p1",sku:"SKU",barcode:null,name:"Producto",description:null,unit:"unidad",quantity_mode:"integer",cost_usd:"10.0000",price_usd:"23.8500",is_active:true,
     }} onCancel={vi.fn()} onSaved={vi.fn()} />); });
     expect(field("Precio USD").value).toBe("23.85");
     expect(field("Costo USD").value).toBe("10.00");
+  });
+
+  it("suggests fractional mode for metric units until the user chooses a mode manually", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    const unit = field("Unidad") as HTMLInputElement;
+    await act(async () => { setValue(unit, "kg"); });
+    const mode = container.querySelector<HTMLSelectElement>("select");
+    expect(mode?.value).toBe("fractional");
+    await act(async () => { setValue(unit, "unidad"); });
+    expect(mode?.value).toBe("fractional");
+  });
+
+  it("rejects fractional minimum stock in integer mode before sending a request", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    await act(async () => { setValue(field("SKU"), "SKU-1"); setValue(field("Nombre"), "Producto"); setValue(field("Precio USD"), "1.00"); setValue(field("Stock mínimo"), "0.500"); });
+    await submitForm();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("El stock mínimo debe ser entero");
   });
 
   it("rejects negative monetary values before sending a request", async () => {

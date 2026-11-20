@@ -1169,4 +1169,23 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(accepted.status).toBe(201);
   });
 
+  it("blocks fractional-to-integer mode changes while any warehouse balance is fractional", async () => {
+    await seedInventoryBalanceFor(productId, "1.500");
+    const response = await app.fetch(new Request("https://api.example/api/orgs/" + organizationId + "/catalog/" + productId, {
+      method: "PATCH",
+      headers: {
+        Cookie: "microapp_session=" + token,
+        Origin: "https://frontend.example",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ quantity_mode: "integer" }),
+    }), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN: "https://frontend.example" });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT" });
+    await expect(client.query(
+      "UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2",
+      [organizationId, productId],
+    )).rejects.toThrow(/INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE/);
+  });
+
 });

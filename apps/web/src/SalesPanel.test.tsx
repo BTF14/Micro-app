@@ -11,13 +11,13 @@ vi.mock("./QuickProductLookup", () => ({
     <div>
       <button type="button" onClick={() => onSelect({
         product_id: "00000000-0000-4000-8000-000000000001", is_active: true, sku: "A-1",
-        barcode: null, name: "Producto A", unit: "unidad", price_usd: "0.0002", available_quantity: "2.000",
+        barcode: null, name: "Producto A", unit: "unidad", quantity_mode: "integer", price_usd: "0.0002", available_quantity: "2.000",
       })}>Agregar producto A</button>
       <button type="button" onClick={() => onSelect({
         product_id: "00000000-0000-4000-8000-000000000002", is_active: true, sku: "B-1",
         barcode: null, name: "Producto B", unit: "unidad", price_usd: "0.0002", available_quantity: "1.000",
       })}>Agregar producto B</button>
-      <button type="button" onClick={() => onSelect({ product_id: "00000000-0000-4000-8000-000000000003", is_active: true, sku: "C-1", barcode: null, name: "Producto C", unit: "kg", price_usd: "1000.0000", available_quantity: "5.000" })}>Agregar producto C</button>
+      <button type="button" onClick={() => onSelect({ product_id: "00000000-0000-4000-8000-000000000003", is_active: true, sku: "C-1", barcode: null, name: "Producto C", unit: "kg", quantity_mode: "fractional", price_usd: "1000.0000", available_quantity: "5.000" })}>Agregar producto C</button>
       <button type="button" onClick={() => onSelect({ product_id: "00000000-0000-4000-8000-000000000004", is_active: true, sku: "D-1", barcode: null, name: "Producto D", unit: "kg", price_usd: "10.0000", available_quantity: "0.500" })}>Agregar producto D</button>
     </div>
   ),
@@ -99,8 +99,8 @@ describe("SalesPanel", () => {
       sale_number: "V-000042", created_at: "2026-11-14T15:00:00Z", currency: "USD",
       subtotal_usd: "0.0004", total_usd: "0.0004", total_ves: "0.02", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null,
       lines: [
-        { product_name_snapshot: "Producto A", sku_snapshot: "A-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
-        { product_name_snapshot: "Producto B", sku_snapshot: "B-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
+        { product_name_snapshot: "Producto A", sku_snapshot: "A-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
+        { product_name_snapshot: "Producto B", sku_snapshot: "B-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
       ],
       payments: [{ method: "cash", currency: "USD", amount: "0.0004", reference: null }],
     };
@@ -142,7 +142,7 @@ describe("SalesPanel", () => {
     const receipt = {
       sale_number: "V-000043", created_at: "2026-11-14T15:05:00Z", currency: "VES",
       subtotal_usd: "1000.0000", total_usd: "1000.0000", total_ves: "36500.00", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null,
-      lines: [{ product_name_snapshot: "Producto C", sku_snapshot: "C-1", quantity: "1.000", unit_price_usd: "1000.0000", line_total_usd: "1000.0000", line_total_ves: "36500.00" }],
+      lines: [{ product_name_snapshot: "Producto C", sku_snapshot: "C-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "1000.0000", line_total_usd: "1000.0000", line_total_ves: "36500.00" }],
       payments: [
         { method: "mobile_payment", currency: "VES", amount: "20000.00", reference: "REF-12345" },
         { method: "cash", currency: "VES", amount: "16500.00", reference: null },
@@ -266,7 +266,7 @@ describe("SalesPanel", () => {
       bcv_rate: null, fx_rate: "104.00000000", fx_source: "manual_contingency",
       fx_receipt_label: "Tasa manual de contingencia (no oficial BCV)",
       fx_authorization_id: "auth-1", manual_fx_acknowledged_at: "2026-11-17T15:00:00Z",
-      lines: [{ product_name_snapshot: "Producto A", sku_snapshot: "A-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.02" }],
+      lines: [{ product_name_snapshot: "Producto A", sku_snapshot: "A-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.02" }],
       payments: [{ method: "cash", currency: "USD", amount: "0.0002", reference: null }],
     };
     vi.mocked(apiRequest)
@@ -332,7 +332,7 @@ describe("SalesPanel", () => {
       bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official",
       fx_receipt_label: "Tasa BCV oficial", fx_authorization_id: null,
       operation_date: "2026-11-07", exchange_rate_effective_date: "2026-11-09",
-      lines: [{ product_name_snapshot: "Producto A", sku_snapshot: "A-1", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" }],
+      lines: [{ product_name_snapshot: "Producto A", sku_snapshot: "A-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" }],
       payments: [{ method: "cash", currency: "USD", amount: "0.0002", reference: null }],
     };
     vi.mocked(apiRequest)

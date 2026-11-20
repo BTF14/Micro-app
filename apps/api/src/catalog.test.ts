@@ -18,6 +18,7 @@ describe("catalog SQL projection", () => {
     expect(query.canReadCost).toBe(false);
     expect(query.statement).not.toContain("cost_usd");
     expect(query.statement).not.toContain("stock_quantity");
+    expect(query.statement).toContain("quantity_mode");
     expect(query.statement).toContain("is_active");
     expect(query.statement).not.toContain("AND is_active = true");
     expect(query.statement).toContain("organization_id = $1");

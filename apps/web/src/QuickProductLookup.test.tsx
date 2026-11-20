@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import QuickProductLookup from "./QuickProductLookup";
 let container:HTMLDivElement,root:Root;
 const ORG="11111111-2222-4333-8444-555555555555",BRANCH="22222222-3333-4444-8555-666666666666",WAREHOUSE="33333333-4444-4555-8666-777777777777";
-const product={product_id:"00000000-0000-4000-8000-000000000001",is_active:true,sku:"SKU-1",barcode:"750123",name:"Café molido",unit:"bolsa",price_usd:"4.2500",available_quantity:"0.000",cost_usd:"0.7500"};
+const product={product_id:"00000000-0000-4000-8000-000000000001",is_active:true,sku:"SKU-1",barcode:"750123",name:"Café molido",unit:"bolsa",quantity_mode:"fractional",price_usd:"4.2500",available_quantity:"0.000",cost_usd:"0.7500"};
 const json=(body:unknown)=>new Response(JSON.stringify(body),{status:200,headers:{"Content-Type":"application/json"}});
 const settle=()=>act(async()=>{await new Promise(r=>setTimeout(r,0));});
 async function render(status:"current"|"stale"|"unavailable",rate:string|null){await act(async()=>{root.render(<QuickProductLookup organizationId={ORG} exchangeRate={rate} exchangeRateStatus={status}/>);});await settle();await settle();}

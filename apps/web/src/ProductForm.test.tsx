@@ -90,7 +90,7 @@ describe("product form", () => {
       name: "Café",
       description: null,
       unit: "kg",
-      quantity_mode: "fractional",
+      quantity_mode: "fractional" as const,
       cost_usd: "10.0000",
       price_usd: "23.8500",
       is_active: true,

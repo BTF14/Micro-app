@@ -175,6 +175,10 @@ function parseProductPatch(value: unknown): ProductPatch | null {
   return patch;
 }
 
+function postgresMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "";
+}
+
 function postgresCode(error: unknown): string | undefined {
   if (!error || typeof error !== "object" || !("code" in error)) return undefined;
   return typeof error.code === "string" ? error.code : undefined;
@@ -429,7 +433,7 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
             kind: "updated" as const,
             product: {
               id: product.id, sku: product.sku, barcode: product.barcode, name: product.name,
-              description: product.description, unit: product.unit, price_usd: product.price_usd,
+              description: product.description, unit: product.unit, quantity_mode: product.quantity_mode, price_usd: product.price_usd,
               cost_usd: product.cost_usd, minimum_stock: product.minimum_stock, is_active: product.is_active,
             },
           };
@@ -443,6 +447,9 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       if (result.kind === "fractional_balance_conflict") return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo fraccionario en algún almacén." }, 409);
       return c.json(result.product, 200);
     } catch (error) {
+      if (postgresCode(error) === "23514" && postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE")) {
+        return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo fraccionario en algún almacén." }, 409);
+      }
       if (postgresCode(error) === "23505") {
         return c.json({ error: "PRODUCT_CONFLICT", message: "Ya existe un producto con ese SKU o código de barras." }, 409);
       }

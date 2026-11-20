@@ -257,7 +257,7 @@ export default function SalesPanel({
     const currentCart = cartRef.current;
     const existing = currentCart.find((line) => line.product.product_id === product.product_id);
     if (!existing) {
-      const initialQty = formatNumeric(available < step ? available : step, 14, 3);
+      const initialQty = formatNumeric(available < 1000n ? available : 1000n, 14, 3);
       commitCart([...currentCart, { product, quantity: initialQty, quantityInput: initialQty, quantityValid: true }]);
       resetIdempotency();
       setNotice(product.name + " agregado al carrito.");

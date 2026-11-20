@@ -154,29 +154,31 @@ function parseRecords(text: string, delimiter: ResolvedCsvDelimiter): string[][]
   return records;
 }
 
-function firstRecord(text: string, delimiter: ResolvedCsvDelimiter): string[] {
-  // Delimiter inference inspects only the header record. Parsing the entire
-  // document with a guessed (possibly wrong) delimiter can misread quoted data.
-  const headerRecord = text.split(/\r\n|\n|\r/, 1)[0] ?? "";
-  const records = parseRecords(headerRecord, delimiter);
-  return records[0] ?? [];
-}
-
 function resolveDelimiter(text: string, requested: CsvDelimiter): ResolvedCsvDelimiter {
   if (requested === "," || requested === ";") return requested;
-  const commaHeader = firstRecord(text, ",");
-  const semicolonHeader = firstRecord(text, ";");
-  const commaUsable = commaHeader.length > 1;
-  const semicolonUsable = semicolonHeader.length > 1;
-  const firstLine = text.split(/\r\n|\n|\r/, 1)[0] ?? "";
-  const hasComma = firstLine.includes(",");
-  const hasSemicolon = firstLine.includes(";");
-  if ((hasComma && hasSemicolon) || commaUsable === semicolonUsable) {
+  const header = text.split(/\r\n|\n|\r/, 1)[0] ?? "";
+  let quoted = false;
+  let commas = 0;
+  let semicolons = 0;
+  for (let index = 0; index < header.length; index += 1) {
+    const char = header[index];
+    if (char === '"') {
+      if (quoted && header[index + 1] === '"') {
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (!quoted && char === ",") {
+      commas += 1;
+    } else if (!quoted && char === ";") {
+      semicolons += 1;
+    }
+  }
+  if (quoted || (commas > 0 && semicolons > 0) || (commas === 0 && semicolons === 0)) {
     throw new CatalogCsvError("AMBIGUOUS_DELIMITER", "No se puede determinar el separador de forma unívoca; selecciona coma o punto y coma manualmente.");
   }
-  return commaUsable ? "," : ";";
+  return commas > 0 ? "," : ";";
 }
-
 function isEmptyRecord(record: string[]): boolean {
   return record.every((value) => value.trim() === "");
 }
@@ -226,7 +228,7 @@ function decimalValue(
   const decimalPattern = scale === 0
     ? /^(?:0|[1-9][0-9]*)$/
     : new RegExp(`^(?:0|[1-9][0-9]*)(?:\\.[0-9]{1,${scale}})?$`);
-  if (!decimalPattern.test(canonical)) {
+  if ((delimiter === ";" && trimmed.includes(".")) || !decimalPattern.test(canonical)) {
     addError(errors, row, field, "INVALID_DECIMAL", `${field} no respeta el formato decimal del separador ni la escala ${scale}.`);
     return undefined;
   }

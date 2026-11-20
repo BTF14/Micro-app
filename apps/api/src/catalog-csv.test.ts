@@ -32,15 +32,15 @@ describe("catalog CSV decoding and limits", () => {
   it("accepts exactly 256 KiB and rejects one byte more", () => {
     const exact = "sku\nA" + " ".repeat(CSV_MAX_BYTES - 5);
     expect(new TextEncoder().encode(exact).byteLength).toBe(CSV_MAX_BYTES);
-    expect(parse(exact).rows).toHaveLength(1);
+    expect(parse(exact, ",").rows).toHaveLength(1);
     const oversized = exact + " ";
-    expect(() => parse(oversized)).toThrowError(expect.objectContaining({ code: "CSV_TOO_LARGE" }));
+    expect(() => parse(oversized, ",")).toThrowError(expect.objectContaining({ code: "CSV_TOO_LARGE" }));
   });
 
   it("accepts 1000 data rows and rejects 1001", () => {
     const rows = Array.from({ length: CSV_MAX_DATA_ROWS }, (_, index) => `SKU${index}`).join("\n");
-    expect(parse(`sku\n${rows}`).dataRowCount).toBe(1000);
-    expect(() => parse(`sku\n${rows}\nSKU1000`)).toThrowError(
+    expect(parse(`sku\n${rows}`, ",").dataRowCount).toBe(1000);
+    expect(() => parse(`sku\n${rows}\nSKU1000`, ",")).toThrowError(
       expect.objectContaining({ code: "TOO_MANY_ROWS" }),
     );
   });
@@ -61,6 +61,10 @@ describe("delimiter selection and RFC 4180", () => {
   it("detects a unique delimiter automatically", () => {
     expect(parse("sku,name\nA,Alpha").delimiter).toBe(",");
     expect(parse("sku;name\nA;Alpha").delimiter).toBe(";");
+  });
+
+  it("detects delimiters when header cells are quoted", () => {
+    expect(parse('"sku","name"\\nA,Alpha').delimiter).toBe(",");
   });
 
   it("rejects ambiguous auto headers and requests manual selection", () => {
@@ -120,7 +124,7 @@ describe("headers and row validation", () => {
   });
 
   it("requires SKU in the header and every data row", () => {
-    expect(() => parse("name\nAlpha")).toThrowError(
+    expect(() => parse("name\nAlpha", ",")).toThrowError(
       expect.objectContaining({ code: "SKU_HEADER_REQUIRED" }),
     );
     expect(codes("sku,name\n,Alpha")).toContain("SKU_REQUIRED");
@@ -156,8 +160,9 @@ describe("headers and row validation", () => {
 
 describe("CSV Formula Injection", () => {
   it.each(["=", "+", "-", "@", "\t", "\r"])("neutralizes dangerous prefix %j", (prefix) => {
-    expect(neutralizeCsvFormula(prefix + "SUM(A1)")).toBe("'" + prefix + "SUM(A1)");
-    expect(formatSafeCsvCell(prefix + "SUM(A1)")).toBe("'" + prefix + "SUM(A1)");
+    const safe = neutralizeCsvFormula(prefix + "SUM(A1)");
+    expect(safe).toBe("'" + prefix + "SUM(A1)");
+    expect(formatSafeCsvCell(prefix + "SUM(A1)")).toBe(prefix === "\r" ? '"' + safe + '"' : safe);
   });
 
   it("neutralizes a formula after leading whitespace", () => {
@@ -191,11 +196,9 @@ describe("canonical hash", () => {
 });
 
 describe("error contract", () => {
-  it("exposes stable error codes", () => {
-    try {
-      parseCatalogCsv("sku,name\nA,Alpha", "auto");
-    } catch (error) {
-      expect(error).toBeInstanceOf(CatalogCsvError);
-    }
+  it("exposes stable error codes for malformed CSV", () => {
+    expect(() => parseCatalogCsv('sku,name\\nA,"unterminated', "auto")).toThrowError(
+      expect.objectContaining({ code: "UNCLOSED_QUOTE" }),
+    );
   });
 });

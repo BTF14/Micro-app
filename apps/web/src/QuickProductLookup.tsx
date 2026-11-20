@@ -15,6 +15,7 @@ export type QuickLookupProduct = {
   barcode: string | null;
   name: string;
   unit: string;
+  quantity_mode: "integer" | "fractional";
   price_usd: string;
   available_quantity: string;
 };
@@ -428,7 +429,7 @@ export default function QuickProductLookup({
                   <strong className={outOfStock ? "out" : ""}>
                     {outOfStock ? `Agotado · ${formatAvailableQuantity(item.available_quantity, item.unit)}` : formatAvailableQuantity(item.available_quantity, item.unit)}
                   </strong>
-                  {!outOfStock && <span>Disponible</span>}
+                  {!outOfStock && <span>{item.quantity_mode === "fractional" ? "Fraccionable" : "Unidad entera"} · Disponible</span>}
                 </div>
                 {onSelect && (
                   <button type="button" className="catalog-edit" onClick={() => onSelect(item)}>

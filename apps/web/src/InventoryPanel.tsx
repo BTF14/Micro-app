@@ -13,6 +13,7 @@ type BalanceItem = {
   barcode?: string | null;
   name: string;
   unit: string;
+  quantity_mode: "integer" | "fractional";
   minimum_stock: string;
   on_hand_quantity: string;
   reserved_quantity: string;
@@ -67,6 +68,8 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
   const manageableProducts = items.filter((item) => item.is_active);
+  const selectedReceiptProduct = manageableProducts.find((item) => item.product_id === receiptProductId) ?? manageableProducts[0];
+  const selectedCountProduct = manageableProducts.find((item) => item.product_id === countProductId) ?? manageableProducts[0];
 
   const fail = (reason: unknown, fallback: string) => setError(reason instanceof Error ? reason.message : fallback);
 
@@ -272,11 +275,11 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
             <h2>Recibir mercancía</h2>
             <label>Producto
               <select value={receiptProductId || manageableProducts[0]!.product_id} onChange={(event) => setReceiptProductId(event.target.value)}>
-                {manageableProducts.map((item) => <option key={item.product_id} value={item.product_id}>{item.name} · {item.sku}</option>)}
+                {manageableProducts.map((item) => <option key={item.product_id} value={item.product_id}>{item.name} · {item.sku} · {item.quantity_mode === "fractional" ? "Fraccionable" : "Entero"}</option>)}
               </select>
             </label>
             <label>Cantidad
-              <input required inputMode="decimal" value={receiptQuantity} onChange={(event) => setReceiptQuantity(normalizeDecimalInput(event.target.value))} />
+              <input required inputMode={selectedReceiptProduct?.quantity_mode === "integer" ? "numeric" : "decimal"} step={selectedReceiptProduct?.quantity_mode === "integer" ? "1" : "0.001"} value={receiptQuantity} onChange={(event) => setReceiptQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Costo unitario USD
               <input required inputMode="decimal" value={receiptCost} onChange={(event) => setReceiptCost(normalizeDecimalInput(event.target.value))} />
@@ -294,7 +297,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad contada
-              <input required inputMode="decimal" value={countQuantity} onChange={(event) => setCountQuantity(normalizeDecimalInput(event.target.value))} />
+              <input required inputMode={selectedCountProduct?.quantity_mode === "integer" ? "numeric" : "decimal"} step={selectedCountProduct?.quantity_mode === "integer" ? "1" : "0.001"} value={countQuantity} onChange={(event) => setCountQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={countReason} onChange={(event) => setCountReason(event.target.value)} />

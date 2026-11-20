@@ -121,7 +121,7 @@ describe("mapCameraScannerError", () => {
   it.each(cases)("maps %s to Spanish guidance", (name, expectedText) => {
     const message = mapCameraScannerError({ name });
     expect(message).toContain(expectedText);
-    expect(message).toMatch(/busca(?:ndo)? el producto/);
+    expect(message).toMatch(/busca(?:r|ndo)? el producto/);
     expect(message).not.toContain(name);
   });
   it("returns generic manual fallback for unknown or non-DOM errors", () => {

@@ -49,7 +49,7 @@ ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep
 export MIGRATION_DATABASE_URL="$bcv_migrator_url"
 bash scripts/db/migrate.sh
 
-# BCV profile: all 29 migrations, automatic creator edges, and the full 0022-0028 assertion chain.
+# BCV profile: all 29 migrations, automatic creator edges, and the full 0022-0029 assertion chain.
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*)=29 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \

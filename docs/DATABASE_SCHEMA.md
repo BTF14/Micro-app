@@ -1,10 +1,13 @@
-# Estado vigente del esquema — 2026-11-14 UTC
+# Estado vigente del esquema — 2026-11-20
 
-**GitHub main:** fac1e87d4cd9569b92cfc5fbaa41706f99b72430. El repositorio versiona las migraciones 0001–0025; el ledger de Neon main registró 25 migraciones aplicadas en la verificación read-only previa. Esta tarea no ejecuta SQL ni modifica Neon.
+- **GitHub main:** `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`, migraciones 0001–0027.
+- **PR #390 OPEN / Draft:** rama `feat/carril-b1-quantity-mode-snapshots-20261120`; propone migración aditiva 0028 con `products.quantity_mode`, snapshots de `sale_items` y guards de cantidades. Hasta merge, 0028 no forma parte del esquema de main.
+- **Neon main:** 0027 según el estado de partida aportado por el propietario; no hubo acceso ni escritura de Neon en esta tarea.
+- El esquema de main incluye ventas/pagos/snapshots financieros, turnos, sucursales, almacenes, balances, Kardex append-only, conteos/recepciones y roles separados `microapp_migrator`, `microapp_runtime`, `microapp_bcv_sync` y `microapp_backup`.
+- No usar `products.stock_quantity` como fuente de stock: desde 0006 la fuente de verdad es `inventory_balances` proyectada desde `warehouse_inventory_movements`.
+- Producción **NOT READY**. No inferir aplicación remota desde CI ni ejecutar 0028 en Neon main.
 
-El esquema vigente incluye, entre otras, las tablas sales, payments, sale_items, register_shifts, bcv_sync_state y audit_logs con protección append-only. También incluye catálogo, sucursales, almacenes, balances, movimientos, conteos/recepciones y estado de sincronización BCV. Los roles microapp_migrator, microapp_runtime, microapp_bcv_sync y microapp_backup son roles separados.
-
-> Los bloques fechados 2026-11-08 y 2026-10-30 que siguen son snapshots históricos y no describen el estado vigente de main ni de Neon main. No reutilizar sus SHAs, inventarios de migraciones o conclusiones de aplicación remota. Revalidar en vivo antes de cualquier operación futura.
+Los snapshots fechados inferiores son históricos; revalidar SHA, ledger y permisos en vivo antes de cualquier acción.
 
 ---
 

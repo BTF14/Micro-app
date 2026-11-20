@@ -1,45 +1,14 @@
-# Addendum API vivo — 2026-11-08 UTC
+# Addendum API vivo — 2026-11-20
 
-**Código fuente:** main `96e2e2d9f76bc8fcc3bab2fa9503e480545c8869`. Este addendum reemplaza el checkpoint histórico 2026-10-30; los detalles inferiores se conservan como historial.
+**GitHub main:** `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`, posterior a PR #388/#389 (ambas MERGED). El inventario de rutas montadas se verifica en `apps/api/src/index.ts`: auth/Google, sucursales, catálogo GET/POST/PATCH, conteos, lectura de inventario, recepciones, checkout, turnos de caja, estructura organizacional, contingencia FX y exchange rates, además de `/health`.
 
-## Módulos efectivamente registrados en `apps/api/src/index.ts`
+- Main incluye checkout transaccional, pagos, movimientos de inventario y reconciliación diferida en PostgreSQL; el addendum 2026-11-08 que afirma que no hay handler de checkout es histórico y está supersedido.
+- **PR #390 OPEN / Draft:** añade `quantity_mode`, snapshots de línea y GET branch-scoped de detalle/recibo de venta. Es trabajo de rama, todavía no forma parte de main.
+- El GET de detalle en PR #390 usa permiso `reports.sales.own_shift`; cashier queda limitado a ventas creadas por su usuario dentro de la sucursal, owner/admin a la sucursal autorizada. El payload no expone `cost_usd` ni `unit_cost_usd`.
+- **Neon main:** estado de partida aportado por el propietario = migración 0027. No se consultó ni modificó Neon en la ejecución de PR #390.
+- Producción continúa **NOT READY**; checks y previews se atribuyen siempre al HEAD exacto, nunca a un SHA anterior.
 
-- `registerAuthRoutes` y `registerGoogleAuthRoutes`: sesión, OAuth, bootstrap y rate limiting.
-- `registerCatalogRoutes` y `registerCatalogWriteRoutes`: lectura y escritura de catálogo.
-- `registerInventoryCountRoutes` y `registerInventoryReadRoutes`: conteos y lectura de inventario.
-- `/health`: healthcheck público.
-- Middleware global CORS con `FRONTEND_ORIGIN` HTTPS validado; métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key y credentials.
-- Middleware API-dark: si `APP_ENV=preview` o el hostname es un Worker `workers.dev` no productivo, solo permite `/health`; las demás rutas responden 503. Wrangler declara `APP_ENV=preview` bajo `[previews.vars]`.
-
-## Límites vigentes
-
-- El código de main no registra rutas BCV; los endpoints `/api/exchange-rates/latest` y `/api/exchange-rates/history` están en #255, aún Draft y no fusionada.
-- Main no registra un handler de checkout/pagos. #233 conserva handler/tests únicos, pero no está integrado.
-- `cashier-open-shift.ts` existe como helper aislado; no está montado como ruta en `index.ts`.
-- La UI `CatalogPanel` soporta conversión decimal y estado BCV, pero la alimentación de tasa oficial desde App llega mediante #255.
-- Los endpoints actuales no equivalen a un MVP POS completo: faltan checkout integrado, pagos, transferencia de inventario en dos etapas y validación E2E contra Neon autorizado.
-
-# Estado actual de integración API — Micro app
-
-**GitHub/PR checkpoint — 2026-10-30 UTC:** `main` = `82386c6e9300e06f8fa209aa52995b939a72442a`; PR #178 OPEN, DRAFT, NOT MERGED, rama `docs/reconcile-role-model-and-cloudflare-20261030`. HEAD verificado antes de esta sincronización: `a45d84eb5f51e50d3a24f9d6858b5d14efb3ce6b`, 68 ahead / 0 behind. En ese SHA se observaron 11/11 workflow runs Actions success (9 PR + 2 push) y previews Cloudflare Pages/Workers exitosas. Este commit documental produce un SHA posterior; revalidar antes de cualquier decisión. No extrapolar checks/previews.
-
-**Estado de hosting en main:** PR #177 fusionada; `main` observado en `82386c6e9300e06f8fa209aa52995b939a72442a`. La validación post-merge de #177 observó 9/9 check-runs success y seis contextos requeridos success; ese resultado es histórico y no valida PR #178 ni commits posteriores.
-
-## Límite actual de API
-No hay handlers comerciales ni autorización por operación demostrada. La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La estructura vigente es un único rol por miembro/organización en `organization_members.role`; `branch_memberships` solo asigna acceso a sucursales, no define roles por sucursal. Los resolvers de tenant/branch/turno resuelven contexto/ámbito; no autorizan operaciones. No añadir endpoints, middleware ni role-switches comerciales antes de aprobación explícita. No afirmar ledger/auditoría comercial implementados.
-
-## CORS y Cloudflare
-Issue #78 sigue abierta. En `apps/api/src/index.ts`, Hono CORS compara el Origin con `FRONTEND_ORIGIN` validado y declara métodos GET/POST/PATCH/DELETE/OPTIONS, headers Content-Type/Authorization/Idempotency-Key, credenciales y max-age 600. `apps/api/src/index.test.ts` prueba preflight simulado autorizado y origen externo no autorizado; no valida el Worker desplegado.
-
-Inspección autenticada de solo lectura del 2026-10-30: Worker `micro-app-api` Active Deployment en Producción, versión `49975c43-4161-4809-9c00-8ba83e53e6a0`, Build ID `957478f6-0f43-4b5c-932a-621be067d6d9`, commit `82386c6e9300e06f8fa209aa52995b939a72442a`, 100% de asignación de tráfico. Pages `micro-app` production branch `main`, SHA `82386c6e9300e06f8fa209aa52995b939a72442a`, URL `https://cc23ff0c.micro-app-63i.pages.dev`. La lista visible de variables de Pages estaba vacía; `apps/web/.env.production` versionado define `VITE_API_BASE_URL` y `apps/web/vite.config.ts` lo carga mediante `loadEnv`. La página pública muestra el enlace “Continuar con Google” apuntando a `/auth/google` del Worker. La inspección no pudo leer el bundle JS ni confirmar el valor compilado para las demás llamadas API. No se cambió configuración ni se revelaron valores.
-
-**CORS sigue NO VERIFICADO:** falta ejecutar OPTIONS real con Origin autorizado `https://micro-app-63i.pages.dev` y externo `https://attacker.example`, registrar status y headers `Access-Control-*`. No inferir éxito por versión activa, métricas, CI ni tests. `VITE_API_BASE_URL` sí está definida en `apps/web/.env.production` y `apps/web/vite.config.ts` la carga mediante `loadEnv`; que el panel de Pages no muestre una variable configurada no demuestra que falte en el build. La comprobación pendiente es inspeccionar el bundle JavaScript publicado y confirmar el valor efectivo compilado que usa el frontend para las llamadas API. No declarar integración frontend/API correcta hasta verificarlo.
-
-
-**Preflight de esta sesión:** se intentaron OPTIONS reales contra `https://micro-app-api.btfcasheb.workers.dev/health` para el origen permitido `https://micro-app-63i.pages.dev` y el externo `https://attacker.example`. Ambos fallaron con curl exit 6 (`Could not resolve host`); no se recibió status ni headers. CORS permanece **NO VERIFICADO**. La preview Worker del SHA padre respondió `status=ok` en GET `/health`, pero no sustituye estos preflight. El bundle JS publicado no se pudo inspeccionar.
-
-## Migraciones y entorno
-Main versiona migraciones 0001–0004; no afirmar que 0003/0004 estén aplicadas a Neon `main`. PostgreSQL desechable es el entorno primario de validación. No ejecutar SQL remoto ni tocar datos reales en esta continuidad.
+Los addenda y snapshots inferiores se conservan como historia y no prevalecen sobre este corte.
 
 ---
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan por trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.

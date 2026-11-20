@@ -48,7 +48,7 @@ afterEach(async () => {
 });
 
 describe("FxContingencyPanel", () => {
-  it("keeps AC-6 commercial enablement visibly disabled and offers owner-only branch delegation", async () => {
+  it("uses clear commercial copy and offers owner-only branch delegation without technical terms", async () => {
     vi.mocked(apiRequest)
       .mockResolvedValueOnce(branchList as never)
       .mockResolvedValueOnce(structure as never)
@@ -56,10 +56,25 @@ describe("FxContingencyPanel", () => {
       .mockResolvedValueOnce({ delegations: [] } as never);
     await act(async () => { root.render(<FxContingencyPanel organizationId={ORG} role="owner" />); });
     await settle(); await settle();
-    expect(container.textContent).toContain("deshabilitada");
-    expect(container.textContent).toContain("aprobación escrita contable/legal (AC-6)");
+    expect(container.textContent).toContain("Uso en caja: desactivado por defecto hasta contar con validación contable y legal.");
+    expect(container.textContent).not.toContain("AC-6");
     expect(container.textContent).toContain("Delegación de administradores");
-    expect(container.textContent).toContain("fx.contingency.authorize");
+    expect(container.textContent).toContain("Autorizar a este administrador");
+    expect(container.textContent).not.toContain("fx.contingency.authorize");
+  });
+
+  it("renders the current BCV status, effective date and reference rate", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(branchList as never)
+      .mockResolvedValueOnce({
+        ...fxState,
+        bcv: { status: "current", effective_date: "2026-11-20", rate: "918.76620000" },
+      } as never);
+    await act(async () => { root.render(<FxContingencyPanel organizationId={ORG} role="admin" />); });
+    await settle(); await settle();
+    expect(container.textContent).toContain("al día");
+    expect(container.textContent).toContain("2026-11-20");
+    expect(container.textContent).toContain("918.76620000");
   });
 
   it("sends the explicit high-deviation confirmation separately from its reason", async () => {

@@ -220,7 +220,7 @@ describe.skipIf(!isDisposable(runtimeUrl, "microapp_runtime") ||
         [organizationId, branchId, inventoryUserId],
       );
       const product = await admin.query<{ id: string }>(
-        "INSERT INTO public.products(organization_id,sku,name,price_usd,cost_usd) VALUES($1,$2,$3,23.85,2.00) RETURNING id",
+        "INSERT INTO public.products(organization_id,sku,name,price_usd,cost_usd,quantity_mode) VALUES($1,$2,$3,23.85,2.00,'fractional') RETURNING id",
         [organizationId, "SKU-" + suffix, "Synthetic checkout product"],
       );
       productId = product.rows[0]!.id;

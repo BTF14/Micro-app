@@ -26,6 +26,15 @@ def exact(value: str, precision: int, scale: int) -> Decimal:
         raise ValueError("numeric precision exceeded")
     return number
 
+def payment_amount(currency: str, value: str) -> Decimal:
+    if currency not in ("USD", "VES"):
+        raise ValueError("unsupported settlement currency")
+    amount = exact(value, 14, 4)
+    if currency == "VES" and amount.quantize(Decimal("0.01")) != amount:
+        raise ValueError("VES payment amount must have two decimal places")
+    return amount
+
+
 def rounded(value: Decimal, scale: int) -> Decimal:
     return value.quantize(Decimal(1).scaleb(-scale), rounding=ROUND_HALF_UP)
 

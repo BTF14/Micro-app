@@ -19,6 +19,16 @@
 - La unidad debe ser explícita en el producto. No asumir que todo se vende por unidad entera.
 - Antes de habilitar ventas, validar la precisión permitida por unidad de medida y rechazar cantidades con más decimales de los admitidos.
 
+## 2.1 Modos de cantidad — Carril B1 (PR #390 OPEN / Draft)
+
+Esta sección describe el cambio propuesto en PR #390; no forma parte de GitHub main hasta su merge.
+
+- `products.quantity_mode` admite exactamente `integer` o `fractional`; el default API/DB es `integer`. El modo entero solo acepta cantidades enteras en checkout, conteos y recepciones; el modo fraccionable conserva precisión NUMERIC(14,3).
+- El formulario puede sugerir `fractional` al reconocer unidades métricas/de granel, pero el usuario puede fijar el modo manualmente.
+- El backfill de 0028 clasifica como fractional las unidades métricas/granel, mínimos fraccionarios, balances, movimientos legacy/Kardex, conteos, recepciones y líneas históricas fraccionarias. Nunca usa `products.stock_quantity`.
+- Cambiar de fractional a integer devuelve 409 si minimum_stock, on_hand/reserved o un conteo draft contiene fracciones. La BD repite la defensa para escrituras SQL directas y concurrencia.
+- Cada línea de venta conserva `unit_snapshot` y `quantity_mode_snapshot`; no se reescriben cuando cambia el catálogo. El trigger de inserción verifica ambos contra el producto bloqueado.
+
 ## 3. Aritmética y redondeo
 
 - No usar JavaScript Number para operaciones monetarias.

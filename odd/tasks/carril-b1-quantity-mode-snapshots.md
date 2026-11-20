@@ -72,6 +72,11 @@ Excluded:
 - El ledger append-only `warehouse_inventory_movements` y `inventory_balances` siguen siendo la fuente de stock. No usar `products.stock_quantity`.
 - Las revisiones especialistas no son subagentes persistentes. Si no hay ejecución delegada verificable, registrar revisión secuencial y sus límites.
 
+### Decisiones de migración y concurrencia
+
+- El backfill de `sale_items` debe respetar el lifecycle append-only de 0015 y la reconciliación diferida de 0027: desactivar solo `sale_items_checkout_lifecycle_guard` y `sale_items_completed_reconciliation` dentro de la transacción de 0028, ejecutar el backfill, reactivarlos antes del COMMIT y comprobar `tgenabled='O'` en assertions.
+- El trigger de transición a integer revisa saldos fraccionarios y conteos draft; las rutas de escritura bloquean producto con `FOR SHARE` al validar cantidad. El API devuelve 409 también para minimum_stock fraccionario al cambiar de fractional a integer.
+
 ## Closure and handoff
 
 - Final commit SHA: pendiente

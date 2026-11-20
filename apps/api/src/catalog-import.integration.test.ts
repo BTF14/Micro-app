@@ -336,14 +336,12 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     const triggerName = "catalog_import_fail_late_" + suffix;
     await client!.query(
       `CREATE FUNCTION public.${functionName}() RETURNS trigger
-       LANGUAGE plpgsql AS $
-       BEGIN
-         IF NEW.sku = 'IMPORT-ROLLBACK-TRIGGER' THEN
-           RAISE EXCEPTION 'simulated late unique collision' USING ERRCODE='23505';
+       LANGUAGE plpgsql AS 'BEGIN
+         IF NEW.sku = ''IMPORT-ROLLBACK-TRIGGER'' THEN
+           RAISE EXCEPTION ''simulated late unique collision'' USING ERRCODE=''23505'';
          END IF;
          RETURN NEW;
-       END;
-       $`,
+       END;'`,
     );
     await client!.query(
       `CREATE TRIGGER ${triggerName} BEFORE INSERT ON public.products

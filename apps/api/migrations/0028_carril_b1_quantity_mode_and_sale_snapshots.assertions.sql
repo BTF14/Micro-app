@@ -128,4 +128,116 @@ BEGIN
 END;
 $carril_b1_assertions$;
 
+
+-- Exercise the actual production trigger functions against isolated temporary
+-- line tables and synthetic products. This transaction is rolled back below.
+CREATE TEMP TABLE b1_sale_item_assertions (
+  id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
+  organization_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  unit_snapshot text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(unit_snapshot)) > 0),
+  quantity_mode_snapshot text NOT NULL CHECK (quantity_mode_snapshot IN ('integer','fractional')),
+  quantity numeric(14,3) NOT NULL CHECK (quantity > 0),
+  CHECK (quantity_mode_snapshot <> 'integer' OR quantity = pg_catalog.trunc(quantity))
+);
+CREATE TRIGGER b1_sale_item_snapshot_guard
+BEFORE INSERT ON pg_temp.b1_sale_item_assertions
+FOR EACH ROW EXECUTE FUNCTION public.guard_sale_item_quantity_snapshots();
+
+CREATE TEMP TABLE b1_count_line_assertions (
+  organization_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  counted_quantity numeric(14,3) NOT NULL
+);
+CREATE TRIGGER b1_count_line_integer_guard
+BEFORE INSERT ON pg_temp.b1_count_line_assertions
+FOR EACH ROW EXECUTE FUNCTION public.guard_integer_inventory_count_line();
+
+CREATE TEMP TABLE b1_receipt_line_assertions (
+  organization_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  quantity numeric(14,3) NOT NULL
+);
+CREATE TRIGGER b1_receipt_line_integer_guard
+BEFORE INSERT ON pg_temp.b1_receipt_line_assertions
+FOR EACH ROW EXECUTE FUNCTION public.guard_integer_inventory_receipt_line();
+
+DO $carril_b1_behavior$
+DECLARE
+  org_id uuid := pg_catalog.gen_random_uuid();
+  integer_product_id uuid := pg_catalog.gen_random_uuid();
+  fractional_product_id uuid := pg_catalog.gen_random_uuid();
+  fractional_minimum_product_id uuid := pg_catalog.gen_random_uuid();
+  snapshot_id uuid;
+BEGIN
+  INSERT INTO public.organizations (id, name, slug)
+  VALUES (org_id, 'Carril B1 assertions', 'b1-' || pg_catalog.replace(org_id::text, '-', ''));
+
+  INSERT INTO public.products
+    (id, organization_id, sku, name, unit, price_usd, minimum_stock, quantity_mode)
+  VALUES
+    (integer_product_id, org_id, 'B1-INT', 'Integer assertion product', 'unidad', 1.0000, 0.000, 'integer'),
+    (fractional_product_id, org_id, 'B1-FRAC', 'Fractional assertion product', 'kg', 1.0000, 0.000, 'fractional'),
+    (fractional_minimum_product_id, org_id, 'B1-MIN', 'Fractional minimum assertion product', 'unidad', 1.0000, 0.500, 'fractional');
+
+  -- 0.500 is rejected for integer sale lines; 1.250 is accepted for fractional.
+  BEGIN
+    INSERT INTO pg_temp.b1_sale_item_assertions
+      (organization_id, product_id, unit_snapshot, quantity_mode_snapshot, quantity)
+    VALUES (org_id, integer_product_id, 'unidad', 'integer', 0.500);
+    RAISE EXCEPTION 'B1_INTEGER_SALE_FRACTION_ACCEPTED';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  INSERT INTO pg_temp.b1_sale_item_assertions
+    (organization_id, product_id, unit_snapshot, quantity_mode_snapshot, quantity)
+  VALUES (org_id, fractional_product_id, 'kg', 'fractional', 1.250)
+  RETURNING id INTO snapshot_id;
+
+  -- The production BEFORE INSERT count guard rejects integer 0.500 and accepts fractional 1.250.
+  BEGIN
+    INSERT INTO pg_temp.b1_count_line_assertions VALUES (org_id, integer_product_id, 0.500);
+    RAISE EXCEPTION 'B1_INTEGER_COUNT_FRACTION_ACCEPTED';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  INSERT INTO pg_temp.b1_count_line_assertions VALUES (org_id, fractional_product_id, 1.250);
+
+  -- The production receipt-line guard rejects integer 0.500 and accepts fractional 1.250.
+  BEGIN
+    INSERT INTO pg_temp.b1_receipt_line_assertions VALUES (org_id, integer_product_id, 0.500);
+    RAISE EXCEPTION 'B1_INTEGER_RECEIPT_FRACTION_ACCEPTED';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  INSERT INTO pg_temp.b1_receipt_line_assertions VALUES (org_id, fractional_product_id, 1.250);
+
+  -- A forged mode snapshot must fail even when its quantity is a whole number.
+  BEGIN
+    INSERT INTO pg_temp.b1_sale_item_assertions
+      (organization_id, product_id, unit_snapshot, quantity_mode_snapshot, quantity)
+    VALUES (org_id, fractional_product_id, 'kg', 'integer', 1.000);
+    RAISE EXCEPTION 'B1_FALSE_QUANTITY_MODE_SNAPSHOT_ACCEPTED';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+
+  -- Editing the product later must not rewrite the already captured sale unit/mode.
+  UPDATE public.products SET unit='g' WHERE id=fractional_product_id;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_temp.b1_sale_item_assertions
+     WHERE id=snapshot_id AND unit_snapshot='kg' AND quantity_mode_snapshot='fractional'
+  ) THEN RAISE EXCEPTION 'B1_HISTORICAL_SALE_SNAPSHOT_CHANGED'; END IF;
+
+  -- Fractional minimum stock blocks a fractional -> integer transition.
+  BEGIN
+    UPDATE public.products SET quantity_mode='integer'
+     WHERE id=fractional_minimum_product_id;
+    RAISE EXCEPTION 'B1_FRACTIONAL_MINIMUM_TRANSITION_ACCEPTED';
+  EXCEPTION WHEN check_violation THEN
+    IF pg_catalog.strpos(SQLERRM, 'INTEGER_PRODUCT_HAS_FRACTIONAL_MINIMUM_STOCK') = 0 THEN RAISE; END IF;
+  END;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.products
+     WHERE id=fractional_minimum_product_id AND quantity_mode='fractional'
+  ) THEN RAISE EXCEPTION 'B1_FRACTIONAL_MINIMUM_PRODUCT_MODE_CHANGED'; END IF;
+END;
+$carril_b1_behavior$;
+
 ROLLBACK;

@@ -451,7 +451,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
             || authorization.context.organizationRole === "admin";
           const scopedSale = await tx.query<{ id: string }>(
             `SELECT id FROM public.sales
-              WHERE organization_id=$1 AND branch_id=$2 AND id=$3
+              WHERE organization_id=$1 AND branch_id=$2 AND id=$3 AND status='completed'
                 AND ($4::boolean OR created_by=$5)`,
             [organizationId, branchId, saleId, canReadBranchSales, authorization.context.userId],
           );

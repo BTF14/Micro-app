@@ -1,7 +1,7 @@
 # ODD task: Carril B1 — quantity_mode y snapshots de venta
 
 - Status: in progress
-- Issue / PR: pendiente de creación
+- Issue / PR: PR #390 OPEN / Draft — https://github.com/BTF14/Micro-app/pull/390
 - Owner / reviewer: Tech Lead / revisión independiente backend-data, security e inventory-accounting
 - Started: 2026-11-20
 - Risk: critical
@@ -58,12 +58,12 @@ Excluded:
 | Task | Expected result | Validation / evidence | Status |
 |---|---|---|---|
 | Verificar main y PR relacionadas | SHA vivo y límites de alcance | GitHub API | completed |
-| Inspeccionar contratos SQL/API/UX y skills | Mapa de impacto real | Fuentes main | in progress |
-| Crear migración 0028 + assertions | Schema y defensas aditivas | PostgreSQL 18 migration workflow | pending |
-| Implementar API y frontend | Contratos coherentes | Unit/integration/typecheck/build | pending |
+| Inspeccionar contratos SQL/API/UX y skills | Mapa de impacto real; divergencias de nombres y grants identificadas | Fuentes main | completed |
+| Crear migración 0028 + assertions | Schema y defensas aditivas | PR #390; PostgreSQL 18 migration workflow pendiente | implemented / CI pending |
+| Implementar API y frontend | Contratos coherentes, GET de recibo con snapshots y sin costes | PR #390; unit/integration/typecheck/build pendientes de CI | implemented / CI pending |
 | QA de reconciliación y mutantes | Cada mutante crítico detectado | Python + PostgreSQL 18 | pending |
-| Revisiones independientes | Hallazgos y mitigaciones | backend-data, security, accounting | pending |
-| Actualizar continuidad y abrir PR Draft | Handoff coherente | GitHub PR exact-SHA | pending |
+| Revisiones independientes | Hallazgos y mitigaciones | Pasadas secuenciales pendientes de cierre | pending |
+| Actualizar continuidad y abrir PR Draft | Handoff coherente | PR #390 OPEN / Draft; documentos de continuidad pendientes | in progress |
 
 ## Technical decisions
 

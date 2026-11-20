@@ -63,7 +63,7 @@ describe("delimiter selection and RFC 4180", () => {
   });
 
   it("detects delimiters when header cells are quoted", () => {
-    expect(parse('"sku","name"\\nA,Alpha').delimiter).toBe(",");
+    expect(parse('"sku","name"\nA,Alpha').delimiter).toBe(",");
   });
 
   it("rejects ambiguous auto headers and requests manual selection", () => {
@@ -197,7 +197,7 @@ describe("canonical hash", () => {
 
 describe("error contract", () => {
   it("exposes stable error codes for malformed CSV", () => {
-    expect(() => parseCatalogCsv('sku,name\\nA,"unterminated', "auto")).toThrowError(
+    expect(() => parseCatalogCsv('sku,name\nA,"unterminated', "auto")).toThrowError(
       expect.objectContaining({ code: "UNCLOSED_QUOTE" }),
     );
   });

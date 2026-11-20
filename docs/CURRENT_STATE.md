@@ -1,6 +1,6 @@
 # Corte vigente — post-PR #394 + roadmap CSV 7B y Tour Visual E2E — 2026-11-20
 
-- **main verificado:** `e87385141943195e1d884f31233f84a87eae8dac` (merge commit de PR #394); comparación GitHub `main...`idéntica a este SHA.
+- **main verificado:** `e87385141943195e1d884f31233f84a87eae8dac` (merge commit de PR #394); GitHub confirmó que la rama `main` apunta a este mismo SHA.
 - **PR #392 — MERGED** (`019997f797c0e7357f05a11d3d8043899f8d5244`): cierre del Paso 6 / Micro-PR 6B, cobertura de `GET /sales/:saleId` y sincronización documental.
 - **PR #393 — MERGED** (`e0801e29e093a17bcc9e4c7116e8081a8d12c41b`): Paso 7 / Micro-PR 7A; SDD CSV reconciliado, ODD `odd/tasks/catalog-csv-importer.md`, parser puro `catalog-csv.ts` y 31 unit tests.
 - **PR #394 — MERGED** (`e87385141943195e1d884f31233f84a87eae8dac`): hotfix UI de `FxContingencyPanel`; lectura de contrato BCV 0027 (`status`, `effective_date`, `rate`), copy comercial sin exponer `AC-6` ni permisos internos, y alineación/tamaño del checkbox.

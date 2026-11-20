@@ -1,6 +1,18 @@
 # ODD task: Paso 7 — PR 2: Importador CSV de catálogo (v1.1)
 
-- Status: in progress
+## Reconciliación final 7A–7D — 2026-11-20
+
+- **7A — PR #393 MERGED:** `e0801e29e093a17bcc9e4c7116e8081a8d12c41b`. SDD reconciliado, parser CSV seguro y 31 pruebas unitarias.
+- **7B — PR #396:** `03d872bdba0c70bb1cf52cba75e5193d662d48c1`. Migración aditiva 0029, assertions y harness CI/backup; Neon `main` reportado por el propietario como migrado a 0029. Esta tarea no accedió ni escribió Neon.
+- **7C — PR #397 MERGED:** `f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`. Endpoints preview/apply, validación de tenant, hash canónico, transacción e idempotencia.
+- **7D — PR #398 OPEN / Draft:** rama `feat/csv-importer-7d-ui-e2e-closure-20261120`; sin merge ni auto-merge. SHA final se registra tras crear el commit; no se inventa SHA de merge futuro.
+- **Implementación 7D:** UI de selección/validación UTF-8 y 256 KiB; resumen/detalle por fila; confirmación con clave idempotente estable durante reintentos; manejo de errores 400/409; refresco del catálogo; cobertura jsdom; escenario Playwright real PostgreSQL 18; copy de tienda sin códigos internos.
+- **Criterios cumplidos a nivel de implementación:** control de permisos UI; límite y decodificación estricta del archivo; preview/apply y hash esperado; detalle de errores; persistencia de clave en reintento; refresh tras 200; layout móvil y escenario E2E sin mocks. La evidencia de ejecución queda pendiente de GitHub Actions exact-SHA.
+- **Criterios de integración pendientes:** todos los check-runs/workflows de la punta exacta deben terminar; revisión humana; merge independiente autorizado y comprobación de main post-merge. Paso 7 no se declara integrado mientras esta PR permanezca Draft.
+- **Limitaciones/riesgos residuales:** E2E usa SKU sintético único y PostgreSQL 18 efímero; no es prueba de carga ni demuestra importaciones máximas. La validación cliente complementa, no sustituye, validaciones servidor. La clave se conserva mientras la vista siga abierta y se reintente sin cambiar archivo/delimitador ni generar otra preview; cerrar/recargar inicia otro flujo. Revisión visual/accesibilidad y gates de preproducción siguen separados de CI.
+
+
+- Status: completed (implementation 7A–7D; exact-SHA CI and merge pending)
 - Issue / PR: Micro-PR 7A; PR se abrirá en Draft
 - Owner / reviewer: Tech Lead / revisiones backend-data, security y QA
 - Started: 2026-11-20
@@ -25,13 +37,13 @@ Excluded:
 
 ## Acceptance criteria
 
-- [ ] AC-1 — SDD define Paso 7 — PR 2, mantiene gates comerciales y documenta catálogo organizacional, permiso e idempotencia `(organization_id, idempotency_key)`.
-- [ ] AC-2 — columnas admitidas/prohibidas, defaults, longitudes, NUMERIC y reglas de transición 0028 coinciden con código/migración vigentes.
-- [ ] AC-3 — parser decodifica UTF-8 estrictamente, aplica límites exactos y cumple RFC 4180; ambigüedad auto falla cerrada.
-- [ ] AC-4 — normalización, tipos, decimales exactos, quantity_mode, mínimo entero y colisiones SKU/barcode se validan sin DB/red ni Number para cantidades/importes.
-- [ ] AC-5 — neutralización de fórmulas y quoting CSV son independientes; valores decimales validados conservan exactitud; hash SHA-256 es determinista.
-- [ ] AC-6 — suite Vitest cubre los bordes definidos; CI exact-SHA confirma tests/typecheck y workflows aplicables.
-- [ ] AC-7 — diff contiene exclusivamente los cuatro archivos autorizados; PR queda OPEN / Draft, sin merge/auto-merge.
+- [x] AC-1 — SDD define Paso 7 — PR 2, mantiene gates comerciales y documenta catálogo organizacional, permiso e idempotencia `(organization_id, idempotency_key)`.
+- [x] AC-2 — columnas admitidas/prohibidas, defaults, longitudes, NUMERIC y reglas de transición 0028 coinciden con código/migración vigentes.
+- [x] AC-3 — parser decodifica UTF-8 estrictamente, aplica límites exactos y cumple RFC 4180; ambigüedad auto falla cerrada.
+- [x] AC-4 — normalización, tipos, decimales exactos, quantity_mode, mínimo entero y colisiones SKU/barcode se validan sin DB/red ni Number para cantidades/importes.
+- [x] AC-5 — neutralización de fórmulas y quoting CSV son independientes; valores decimales validados conservan exactitud; hash SHA-256 es determinista.
+- [ ] AC-6 — implementación y pruebas añadidas; pendiente confirmar CI exact-SHA — suite Vitest cubre los bordes definidos; CI exact-SHA confirma tests/typecheck y workflows aplicables.
+- [x] AC-7 — diff contiene exclusivamente los cuatro archivos autorizados; PR queda OPEN / Draft, sin merge/auto-merge.
 
 ## Risks and guardrails
 

@@ -1,3 +1,18 @@
+# Corte vigente — Paso 7D UI CSV + E2E — 2026-11-20
+
+- **Base exacta verificada:** `main` = `f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`, merge commit de PR #397.
+- **7A:** PR #393 MERGED, `e0801e29e093a17bcc9e4c7116e8081a8d12c41b`.
+- **7B:** PR #396, `03d872bdba0c70bb1cf52cba75e5193d662d48c1`; migración aditiva 0029 y Neon `main` reportado migrado por el propietario. Esta ejecución no accedió a Neon.
+- **7C:** PR #397 MERGED, `f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`; endpoints preview/apply e idempotencia.
+- **7D:** PR #398 OPEN / Draft, rama `feat/csv-importer-7d-ui-e2e-closure-20261120`;  UI, validación UTF-8/256 KiB, preview/detalle, clave idempotente, tests jsdom y E2E PostgreSQL 18. SHA final tras commit; no afirmar merge.
+- **Estado Paso 7:** implementación 7A–7D preparada; cierre formal condicionado a CI exact-SHA, revisión, merge autorizado y verificación post-merge.
+- **Siguiente roadmap:** **PR 3 — Scanner móvil / Carril B2** tras integrar 7D; luego PR 4 — Cierres/Reportes/Exportación.
+- **Tour Visual E2E ($0):** se conserva como auditoría integral posterior a CSV 7D, PR 3 y PR 4, antes de Pre-prod Audit; nueve secciones, 390×844 y 1280×800, screenshots temporales y revisión visual.
+- **Gates intactos:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; **PRODUCTION: NOT READY**; presupuesto objetivo USD 0.
+- **Entorno:** sin checkout local/terminal; no se afirma ejecución local de tests, build, typecheck, Playwright ni `python3 tools/validate-agent-docs.py`. Exigir 100 % de check-runs/workflows reales en el SHA final exacto. Sin Neon, deploy, secretos, DNS ni cambios de infraestructura.
+
+---
+
 # Corte vigente — post-PR #394 + roadmap CSV 7B y Tour Visual E2E — 2026-11-20
 
 - **main verificado:** `e87385141943195e1d884f31233f84a87eae8dac` (merge commit de PR #394); GitHub confirmó que la rama `main` apunta a este mismo SHA.

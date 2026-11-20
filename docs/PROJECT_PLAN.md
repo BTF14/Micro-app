@@ -1,3 +1,26 @@
+# Plan vigente — Cierre condicionado Paso 7 / siguiente PR 3 — 2026-11-20
+
+## Paso 7 — Importador CSV (implementación 7A–7D)
+- 7A PR #393 MERGED: `e0801e29e093a17bcc9e4c7116e8081a8d12c41b`.
+- 7B PR #396: `03d872bdba0c70bb1cf52cba75e5193d662d48c1`; migración aditiva 0029 y Neon main reportado migrado por el propietario.
+- 7C PR #397 MERGED: `f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`; preview/apply con hash canónico y protección idempotente.
+- 7D: rama `feat/csv-importer-7d-ui-e2e-closure-20261120`, PR OPEN / Draft; UI, tests jsdom y E2E real PostgreSQL 18. Pendiente CI exact-SHA, revisión y merge autorizado.
+- **Cierre formal del Paso 7:** únicamente después de integrar 7D y comprobar main post-merge. No declarar integrada una PR Draft.
+
+## Siguiente roadmap
+1. **PR 3 — Scanner móvil / Carril B2.**
+2. PR 4 — Cierres / Reportes / Exportación.
+3. Tour Visual E2E integral ($0), después de completar CSV, Scanner y Reportes/Cierres, antes de Pre-prod Audit; nueve secciones, 390×844 y 1280×800, accesibilidad/copy/overflow y screenshots temporales.
+4. Pre-prod Audit, `ve-fx-compliance-review`, AC-6 e Issue #53 mediante procesos independientes.
+
+## Gates globales sin cambios
+AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
+
+## Validación
+Sin checkout local: no afirmar tests, build, typecheck, Playwright ni `python3 tools/validate-agent-docs.py` ejecutados localmente. Exigir 100 % de check-runs/workflows GitHub Actions en el SHA final exacto. No acceder a Neon main ni modificar secretos, DNS, Cloudflare, workflows o migraciones.
+
+---
+
 # Plan vigente — Paso 7 Importador CSV + Tour Visual E2E — 2026-11-20
 
 ## Estado reconciliado post-PR #394

@@ -179,3 +179,146 @@ describe("catalog panel", () => {
     expect(vi.mocked(fetch).mock.calls[1][0]).toContain(`cursor=${cursor}`);
   });
 });
+
+
+describe("catalog CSV import", () => {
+  const props: ComponentProps<typeof CatalogPanel> = {
+    organizationId: "00000000-0000-4000-8000-000000000010",
+    exchangeRate: null, exchangeRateStatus: "unavailable", canManage: true,
+  };
+  const preview = {
+    delimiter: ",", canonical_hash: "a".repeat(64), can_apply: true,
+    summary: { total_rows: 1, creates: 1, updates: 0, unchanged: 0, errors: 0 },
+    items: [{ row: 2, sku: "CSV-NEW", action: "create", errors: [] }], errors: [],
+  };
+  async function settle() { await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); }); }
+  async function openImporter() {
+    await renderPanel(props);
+    await act(async () => { container.querySelector<HTMLButtonElement>(".catalog-import-open")?.click(); });
+  }
+  async function chooseCsv(contents: string | ArrayBuffer) {
+    const input = container.querySelector<HTMLInputElement>('.catalog-import input[type="file"]');
+    if (!input) throw new Error("CSV file input missing");
+    const file = new File([contents], "catalogo.csv", { type: "text/csv" });
+    Object.defineProperty(input, "files", { configurable: true, value: [file] });
+    await act(async () => { input.dispatchEvent(new Event("change", { bubbles: true })); });
+  }
+  async function previewCsv() {
+    await act(async () => { container.querySelector<HTMLButtonElement>(".catalog-import-primary")?.click(); });
+    await settle();
+  }
+  async function confirmCsv() {
+    const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent?.includes("Confirmar importación"));
+    await act(async () => { button?.click(); });
+    await settle();
+  }
+
+  it("shows Importar CSV only when canManage is true", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await renderPanel(props);
+    expect(container.querySelector(".catalog-import-open")).not.toBeNull();
+    await act(async () => { root.render(<CatalogPanel {...props} canManage={false} />); });
+    expect(container.querySelector(".catalog-import-open")).toBeNull();
+  });
+
+  it("rejects files larger than 256 KiB locally without calling fetch for preview", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await openImporter();
+    const before = vi.mocked(fetch).mock.calls.length;
+    await chooseCsv("x".repeat(262145));
+    await previewCsv();
+    expect(container.textContent).toContain("supera el límite de 256 KiB");
+    expect(vi.mocked(fetch).mock.calls).toHaveLength(before);
+  });
+
+  it("rejects invalid UTF-8 locally without sending a preview request", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await openImporter();
+    const before = vi.mocked(fetch).mock.calls.length;
+    const invalidUtf8 = new ArrayBuffer(2);
+    new Uint8Array(invalidUtf8).set([0xc3, 0x28]);
+    await chooseCsv(invalidUtf8);
+    await previewCsv();
+    expect(container.textContent).toContain("UTF-8 válido");
+    expect(vi.mocked(fetch).mock.calls).toHaveLength(before);
+  });
+
+  it("shows preview actions and row errors and disables confirmation when can_apply is false", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse({
+        ...preview, can_apply: false,
+        summary: { total_rows: 3, creates: 1, updates: 1, unchanged: 0, errors: 1 },
+        items: [
+          { row: 2, sku: "CSV-NEW", action: "create", errors: [] },
+          { row: 3, sku: "CSV-UPDATE", action: "update", errors: [] },
+          { row: 4, sku: "CSV-BAD", action: "invalid", errors: [{ row: 4, field: "price_usd", message: "El precio no es válido." }] },
+        ],
+        errors: [{ row: 4, field: "price_usd", message: "El precio no es válido." }],
+      }));
+    await openImporter();
+    await chooseCsv("sku,name,price_usd\nCSV-NEW,Nuevo,1\nCSV-UPDATE,Actualizado,2\nCSV-BAD,Error,");
+    await previewCsv();
+    expect(container.textContent).toContain("Altas");
+    expect(container.textContent).toContain("Actualizaciones");
+    expect(container.textContent).toContain("Alta");
+    expect(container.textContent).toContain("Actualizar");
+    expect(container.textContent).toContain("Error");
+    expect(container.textContent).toContain("Fila 4, Precio (USD): El precio no es válido.");
+    expect([...container.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent?.includes("Confirmar importación"))?.disabled).toBe(true);
+  });
+
+  it("applies with Idempotency-Key and expected_hash and refreshes the catalog", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse(preview))
+      .mockResolvedValueOnce(jsonResponse({ replayed: false, summary: preview.summary }))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await openImporter();
+    await chooseCsv("sku,name,price_usd\nCSV-NEW,Nuevo,1.0000");
+    await previewCsv();
+    await confirmCsv();
+    const call = vi.mocked(fetch).mock.calls[2];
+    const init = call?.[1] as RequestInit;
+    expect(new Headers(init.headers).get("Idempotency-Key")).toMatch(/^csv-/);
+    expect(JSON.parse(String(init.body))).toMatchObject({ expected_hash: preview.canonical_hash, delimiter: "," });
+    expect(vi.mocked(fetch).mock.calls[3]?.[0]).toContain("/catalog?limit=100");
+    expect(container.textContent).toContain("Importación completada");
+  });
+
+  it("reuses the same Idempotency-Key after a transient apply failure", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse(preview))
+      .mockRejectedValueOnce(new TypeError("network unavailable"))
+      .mockResolvedValueOnce(jsonResponse({ replayed: true, summary: preview.summary }))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await openImporter();
+    await chooseCsv("sku,name,price_usd\nCSV-NEW,Nuevo,1.0000");
+    await previewCsv();
+    await confirmCsv();
+    await confirmCsv();
+    const calls = vi.mocked(fetch).mock.calls;
+    const first = new Headers((calls[2]?.[1] as RequestInit).headers).get("Idempotency-Key");
+    const second = new Headers((calls[3]?.[1] as RequestInit).headers).get("Idempotency-Key");
+    expect(first).toBeTruthy();
+    expect(second).toBe(first);
+    expect(container.textContent).toContain("no se duplicaron cambios");
+  });
+
+  it("shows structured row errors and the message from a 409 apply response", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse(preview))
+      .mockResolvedValueOnce(jsonResponse({
+        message: "El producto cambió desde la revisión.",
+        errors: [{ row: 2, field: "barcode", message: "El código de barras ya está en uso." }],
+      }, 409));
+    await openImporter();
+    await chooseCsv("sku,name,price_usd\nCSV-NEW,Nuevo,1.0000");
+    await previewCsv();
+    await confirmCsv();
+    expect(container.textContent).toContain("El producto cambió desde la revisión.");
+    expect(container.textContent).toContain("Fila 2, Código de barras: El código de barras ya está en uso.");
+  });
+});

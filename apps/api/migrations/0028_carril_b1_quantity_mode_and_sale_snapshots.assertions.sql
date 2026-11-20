@@ -96,6 +96,11 @@ BEGIN
      OR pg_catalog.strpos(def,'INTEGER_PRODUCT_RECEIPT_QUANTITY_MUST_BE_WHOLE')=0
   THEN RAISE EXCEPTION 'INVENTORY_RECEIPT_INTEGER_GUARD_DEFINITION_INVALID'; END IF;
 
+  IF NOT pg_catalog.has_column_privilege('microapp_runtime','public.products','quantity_mode','SELECT')
+     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.products','quantity_mode','UPDATE')
+     OR pg_catalog.has_table_privilege('microapp_runtime','public.products','UPDATE')
+  THEN RAISE EXCEPTION 'PRODUCT_QUANTITY_MODE_RUNTIME_COLUMN_GRANT_INVALID'; END IF;
+
   IF pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','INSERT')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','UPDATE')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.inventory_balances','DELETE')

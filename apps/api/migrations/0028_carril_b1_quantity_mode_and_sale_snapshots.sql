@@ -216,4 +216,7 @@ CREATE TRIGGER inventory_receipt_lines_integer_quantity_guard
 BEFORE INSERT ON public.inventory_receipt_lines
 FOR EACH ROW EXECUTE FUNCTION public.guard_integer_inventory_receipt_line();
 
+-- Runtime may change only the new mode column; existing product grants remain narrow.
+GRANT UPDATE (quantity_mode) ON TABLE public.products TO microapp_runtime;
+
 COMMIT;

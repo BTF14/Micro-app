@@ -76,6 +76,16 @@ function postgresCode(error: unknown): string | undefined {
   return typeof error.code === "string" ? error.code : undefined;
 }
 
+function createAuditLogId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  let random = 0n;
+  for (const byte of bytes) random = (random << 8n) | BigInt(byte);
+  // Runtime has INSERT but deliberately no SELECT/sequence privileges on
+  // audit_logs. Use an explicit high-range identity value so the batch can
+  // reference the audit row without widening the production role.
+  return (8_000_000_000_000_000_000n + (random & ((1n << 60n) - 1n))).toString();
+}
+
 async function hasValidMembershipOutsideOrganization(
   tx: DatabaseClient,
   sessionToken: string,
@@ -463,12 +473,13 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
               errors: 0,
             };
             const batchId = crypto.randomUUID();
-            const audit = await tx.query<{ id: string }>(
+            const auditLogId = createAuditLogId();
+            await tx.query(
               `INSERT INTO public.audit_logs
-                (organization_id, actor_user_id, action, entity_type, entity_id, metadata)
-               VALUES ($1,$2,'catalog.import.applied','catalog_import_batch',$3,$4::jsonb)
-               RETURNING id`,
-              [tenant.organizationId, tenant.userId, batchId, JSON.stringify({
+                (id, organization_id, actor_user_id, action, entity_type, entity_id, metadata)
+               OVERRIDING SYSTEM VALUE
+               VALUES ($1,$2,$3,'catalog.import.applied','catalog_import_batch',$4,$5::jsonb)`,
+              [auditLogId, tenant.organizationId, tenant.userId, batchId, JSON.stringify({
                 canonical_hash: canonicalHash,
                 idempotency_key: idempotencyKey,
                 total_rows: summary.total_rows,
@@ -477,8 +488,6 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
                 unchanged: summary.unchanged,
               })],
             );
-            const auditLogId = audit.rows[0]?.id;
-            if (!auditLogId) throw new Error("Catalog import audit insert returned no id.");
             const batch = await tx.query<{ created_at: string }>(
               `INSERT INTO public.catalog_import_batches
                 (id, organization_id, idempotency_key, request_hash, status, total_rows,

@@ -1,3 +1,39 @@
+# Handoff vigente — PR #388 / Paso 4 inventory-accounting-review — 2026-11-19
+
+## Punto de partida verificado
+
+- Repositorio BTF14/Micro-app; main = 57f426375db79a555c976574ee9b876e1d873141, merge de PR #387.
+- PR #383 y PR #387 están MERGED.
+- PR #388: https://github.com/BTF14/Micro-app/pull/388, rama feat/inventory-accounting-review-20261119, base main, OPEN / Draft. No merge ni auto-merge.
+- Neon main verificado mediante consulta read-only: schema_migrations registra 0027 (y 0026/0025) como applied. No se modificó Neon.
+- BCV Node TLS sync: Sectigo OV R36; el workflow verifica identidad/fingerprint y conserva TLS estricto. Worker BCV_SYNC_ENABLED=false.
+
+## Trabajo versionado en PR #388
+
+- Perfil .github/agents/inventory-accounting-review.agent.md.
+- Skill .agents/skills/micro-app-inventory-accounting-review/SKILL.md.
+- Tarea odd/tasks/inventory-accounting-review.md.
+- Modelo independiente tools/inventory_accounting_review.py y tests tools/tests/test_inventory_accounting_review.py.
+- SQL temporal tools/inventory-accounting-review.sql, runner scripts/test-inventory-accounting-review-postgres.sh y workflow .github/workflows/inventory-accounting-review.yml.
+- Actualización mínima del Resource Registry, Current State y State Journal en este mismo bloque.
+
+## Evidencia y limitaciones
+
+- Modelo Python equivalente ejecutado en kernel aislado: 12/12 tests OK. No afirmar que se ejecutó localmente el módulo del checkout.
+- No hay checkout local del repositorio disponible en este entorno; no se pudieron ejecutar localmente python3 tools/validate-agent-docs.py, unittest del validador, scripts del monorepo ni PostgreSQL real.
+- El workflow de PR #388 debe ejecutar las pruebas en PostgreSQL 18 efímero y el modelo Python. Consultar el HEAD exacto final y el 100 % de check-runs/workflow runs antes de informar cierre.
+- El runner PostgreSQL exige loopback y una base inventory_review_test*, usa tablas TEMP y ROLLBACK. Nunca pasar credenciales de Neon.
+
+## Límites invariables
+
+No tocar PR #385/#386, Issue #53, Neon, migraciones 0001–0027, SQL 0028+, código comercial, sale_items, quantity_mode, secretos, Cloudflare ni Worker. Mantener AC-6 OPEN, FX_CONTINGENCY_ENABLED=false, Issue #53 OPEN/P0, freeze v1.1, BCV_SYNC_ENABLED=false y PRODUCTION: NOT READY. PR #388 debe permanecer OPEN / Draft sin merge/auto-merge.
+
+## Siguiente acción
+
+Ejecutar y revisar todos los checks sobre el HEAD vivo definitivo de PR #388; revisar diff completo y validar los cambios documentales. No marcar la tarea completada mientras haya checks pendientes o fallidos.
+
+---
+
 # Handoff vigente — Nivel 1 cerrado; Paso 3B (0027) desbloqueado — 2026-11-18
 
 - **Base auditada:** main = 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381).

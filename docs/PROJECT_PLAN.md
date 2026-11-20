@@ -1,3 +1,54 @@
+# Plan vigente — Paso 7 Importador CSV + Tour Visual E2E — 2026-11-20
+
+## Estado reconciliado post-PR #394
+
+- **main:** `e87385141943195e1d884f31233f84a87eae8dac`, verificado como merge commit de PR #394.
+- **PR #392 MERGED** (`019997f797c0e7357f05a11d3d8043899f8d5244`): Paso 6 / Micro-PR 6B, cobertura de `GET /sales/:saleId` y documentación.
+- **PR #393 MERGED** (`e0801e29e093a17bcc9e4c7116e8081a8d12c41b`): Paso 7 / Micro-PR 7A, SDD CSV reconciliado, ODD task `odd/tasks/catalog-csv-importer.md`, parser puro `catalog-csv.ts` y 31 unit tests.
+- **PR #394 MERGED** (`e87385141943195e1d884f31233f84a87eae8dac`): UI de contingencia FX con contrato BCV 0027 (`status`/`effective_date`/`rate`), copy comercial y checkbox corregido.
+- **Neon main:** migración 0028 reportada por el propietario; no acceder ni escribir Neon en este trabajo.
+- **Gates:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
+
+## Roadmap obligatorio y dependencias
+
+1. **Paso 7 — Importador CSV (en curso).**
+   - **7A — COMPLETADA:** PR #393 integrada; parser puro CSV, SDD/ODD reconciliados, 31 unit tests.
+   - **7B — SIGUIENTE:** migración aditiva `0029` (`catalog_import_batches`), assertions, scripts/workflows de migración y backup/restore. Diseñar constraints, tenant scope, lifecycle e idempotencia; no tocar migraciones históricas ni Neon main.
+   - **7C:** endpoints API `preview`/`apply`; pruebas PostgreSQL 18 efímeras, incluyendo concurrencia e idempotencia.
+   - **7D:** interfaz en `CatalogPanel.tsx`, Playwright E2E y cierre de ODD.
+2. **PR 3 — Scanner móvil / Carril B2:** pendiente.
+3. **PR 4 — Cierres / Reportes / Exportación:** pendiente.
+
+## Tour Visual E2E — auditoría UI/UX preproducción ($0)
+
+**Momento de ejecución:** inmediatamente después de terminar todas las pantallas de CSV 7D, PR 3 Scanner y PR 4 Reportes/Cierres, y antes de iniciar Pre-prod Audit, `ve-fx-compliance-review` e Issue #53.
+
+**Diseño de implementación:**
+- Reutilizar el workflow existente `.github/workflows/playwright-e2e.yml`; no incorporar servicios pagos, cuentas externas ni credenciales reales.
+- Crear una spec dedicada dentro de `apps/web/e2e/`; Chromium debe ejecutar contra PostgreSQL 18 efímero, API Hono y build real de Vite (no mocks como sustituto de integración).
+- Cubrir todas las secciones visibles: Resumen; Productos/CSV; Inventario; Consultar precio; Caja y turnos; Ventas; Estructura; Gestión cambiaria; Reportes.
+- Para cada sección, recorrer viewport móvil **390×844** y desktop **1280×800**.
+- Aserciones anti-regresión visual y de copy:
+  - El texto visible para cliente no debe contener `AC-6`, `Issue #`, `fx.contingency.`, `undefined` ni `NaN`.
+  - En móvil no debe existir overflow horizontal del documento ni de los contenedores principales.
+  - Los controles deben ser accesibles: nombre/label y rol correctos, foco visible, navegación por teclado y estado anunciado cuando corresponda.
+- Capturar cada pantalla con screenshot Playwright `fullPage: true`; publicar las capturas como Artifact temporal de GitHub Actions con `retention-days: 7`. El artifact sirve para inspección visual humana/IA; no sustituye aserciones automáticas ni revisión de producto.
+
+**Criterio de salida del Tour:** todas las secciones/viewport recorridos, aserciones funcionales/visuales/accesibles en verde, artifacts disponibles y revisión visual humana/IA completada. Un screenshot sin revisión no certifica calidad visual ni readiness.
+
+## Gates posteriores
+
+Solo después del Tour: **Pre-prod Audit → `ve-fx-compliance-review` → resolución profesional de AC-6 → revisión y cierre de Issue #53**. Mantener freeze v1.1 y PRODUCTION: NOT READY hasta que cada gate tenga evidencia y aprobación explícitas. Ninguna tarea documental o CI verde habilita por sí sola producción.
+
+## Disciplina de validación y alcance
+
+- Validar enlaces relativos y documentación con `python3 tools/validate-agent-docs.py` cuando exista checkout local.
+- Si no hay terminal/checkout, no declarar ejecución local; usar GitHub Actions y verificar todos los workflows/check-runs del SHA final exacto.
+- No heredar checks entre commits. Mantener cada PR Draft y sin merge/auto-merge hasta autorización independiente.
+- Esta actualización documental no modifica aplicaciones, migraciones, workflows, SDD/ODD, Neon, Cloudflare, secretos, datos reales ni flags.
+
+---
+
 # Plan vigente — Cierre Paso 6 Hardening B1 + 0027 — 2026-11-20
 
 - **Base main:** c2fa2fe453af0c3dbb7dd95e8b79a59eed828234; posterior a PR #390, #391, #385 y #386; 0 PRs antiguas pendientes.

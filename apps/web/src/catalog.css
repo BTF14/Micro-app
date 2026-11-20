@@ -161,7 +161,7 @@
 .catalog-import-success { margin:.9rem 0 0; padding:.8rem .9rem; border:1px solid #bfd5c6; border-radius:.65rem; background:#f1f7f2; color:#315b43; font-size:.76rem; line-height:1.55; overflow-wrap:anywhere; }
 @media(max-width:760px) {
  .catalog-heading { align-items:stretch; flex-direction:column; }
- .catalog-heading-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+ .catalog-heading-actions { display:grid; grid-template-columns:minmax(0,1fr); width:100%; }
  .catalog-heading-actions button { min-width:0; white-space:normal; }
  .catalog-import { padding:.8rem; }
  .catalog-import-fields { grid-template-columns:minmax(0,1fr); }

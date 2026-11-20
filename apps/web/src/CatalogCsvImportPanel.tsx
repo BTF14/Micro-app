@@ -18,6 +18,24 @@ function rowErrors(value: unknown): RowError[] {
 function actionLabel(action: PreviewItem["action"]): string {
   return action === "create" ? "Alta" : action === "update" ? "Actualizar" : action === "unchanged" ? "Sin cambios" : "Error";
 }
+function fieldLabel(field: string): string {
+  const labels: Record<string, string> = {
+    sku: "SKU", barcode: "Código de barras", name: "Nombre", description: "Descripción",
+    unit: "Unidad", cost_usd: "Costo (USD)", price_usd: "Precio (USD)",
+    minimum_stock: "Stock mínimo", quantity_mode: "Modo de cantidad", is_active: "Estado",
+  };
+  return labels[field] ?? "Dato";
+}
+function friendlyMessage(message: string): string {
+  return message
+    .replaceAll("price_usd", "precio (USD)")
+    .replaceAll("cost_usd", "costo (USD)")
+    .replaceAll("minimum_stock", "stock mínimo")
+    .replaceAll("quantity_mode", "modo de cantidad")
+    .replaceAll("barcode", "código de barras")
+    .replaceAll("name", "nombre")
+    .replaceAll("sku", "SKU");
+}
 
 export default function CatalogCsvImportPanel({ organizationId, onCancel, onImported }: Props) {
   const [file, setFile] = useState<File | null>(null);
@@ -106,7 +124,7 @@ export default function CatalogCsvImportPanel({ organizationId, onCancel, onImpo
             <span className={item.action === "invalid" ? "catalog-import-row-error" : "catalog-import-row-action"}>{actionLabel(item.action)}</span>
           </article>)}</div>
         {errors.length > 0 && <div className="catalog-import-errors" role="alert"><h3>Detalles que debes revisar</h3>
-          <ul>{errors.map((item, index) => <li key={item.row + "-" + item.field + "-" + index}>Fila {item.row}, {item.field}: {item.message}</li>)}</ul></div>}
+          <ul>{errors.map((item, index) => <li key={item.row + "-" + item.field + "-" + index}>Fila {item.row}, {fieldLabel(item.field)}: {friendlyMessage(item.message)}</li>)}</ul></div>}
         <div className="catalog-import-actions"><button className="catalog-import-primary" type="button" onClick={() => void handleApply()}
           disabled={busy || preview.can_apply !== true || preview.errors.length > 0 || errors.length > 0}>
           {busy && preview ? "Aplicando…" : "Confirmar importación"}</button></div>

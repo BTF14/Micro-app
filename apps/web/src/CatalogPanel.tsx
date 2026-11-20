@@ -127,7 +127,7 @@ export default function CatalogPanel({
         <div className="catalog-heading-actions">
           {canManage && (
             <>
-              <button className="catalog-create" type="button" onClick={() => { setEditingProduct(null); setShowCreateForm(true); }}>
+              <button className="catalog-create" type="button" onClick={() => { setShowImportPanel(false); setEditingProduct(null); setShowCreateForm(true); }}>
                 Nuevo producto
               </button>
               <button className="catalog-create catalog-import-open" type="button" onClick={() => { setShowCreateForm(false); setEditingProduct(null); setShowImportPanel(true); }}>
@@ -161,7 +161,6 @@ export default function CatalogPanel({
           organizationId={organizationId}
           onCancel={() => setShowImportPanel(false)}
           onImported={() => {
-            setShowImportPanel(false);
             void fetchPage(undefined, false, activeSearch);
           }}
         />

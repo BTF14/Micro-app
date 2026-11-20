@@ -231,6 +231,16 @@ describe("catalog CSV import", () => {
     expect(vi.mocked(fetch).mock.calls).toHaveLength(before);
   });
 
+  it("rejects invalid UTF-8 locally without sending a preview request", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await openImporter();
+    const before = vi.mocked(fetch).mock.calls.length;
+    await chooseCsv(new Uint8Array([0xc3, 0x28]));
+    await previewCsv();
+    expect(container.textContent).toContain("UTF-8 válido");
+    expect(vi.mocked(fetch).mock.calls).toHaveLength(before);
+  });
+
   it("shows preview actions and row errors and disables confirmation when can_apply is false", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }))
@@ -252,7 +262,7 @@ describe("catalog CSV import", () => {
     expect(container.textContent).toContain("Alta");
     expect(container.textContent).toContain("Actualizar");
     expect(container.textContent).toContain("Error");
-    expect(container.textContent).toContain("Fila 4, price_usd: El precio no es válido.");
+    expect(container.textContent).toContain("Fila 4, Precio (USD): El precio no es válido.");
     expect([...container.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent?.includes("Confirmar importación"))?.disabled).toBe(true);
   });
 
@@ -307,6 +317,6 @@ describe("catalog CSV import", () => {
     await previewCsv();
     await confirmCsv();
     expect(container.textContent).toContain("El producto cambió desde la revisión.");
-    expect(container.textContent).toContain("Fila 2, barcode: El código de barras ya está en uso.");
+    expect(container.textContent).toContain("Fila 2, Código de barras: El código de barras ya está en uso.");
   });
 });

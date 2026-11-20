@@ -436,6 +436,8 @@ test("real CSV catalog import persists through PostgreSQL 18 on mobile", async (
   const previewResponse = await previewPromise;
   expect(previewResponse.status()).toBe(200);
   await expect(page.getByText("Resumen de la revisión", { exact: true })).toBeVisible();
+  await expect(page.getByText("Altas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Actualizaciones", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page, "mobile CSV preview");
 
   const applyPromise = page.waitForResponse(response =>

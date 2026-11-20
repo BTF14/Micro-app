@@ -61,6 +61,14 @@ Excluded:
 | Synchronize canonical docs | Current state/handoff no longer claim Neon 0025 | Live evidence, PR and commit links | pending |
 | Review diff and exact-SHA CI | No forbidden file changed; Draft stays open | PR file list, check-runs/workflow runs | pending |
 
+## Initial code/schema observations
+
+- Migration 0001 still defines products.stock_quantity at organization scope. Migration 0006 introduces branch-scoped warehouses, inventory_balances and warehouse_inventory_movements and explicitly states that no legacy stock backfill occurs. The review must prove the legacy field is not a live alternate branch-stock source.
+- Migration 0006 allows transfer_out/transfer_in movement_type values, but the current API tree exposes count and receipt modules rather than a transfer dispatch/receipt workflow or transfer aggregate. Migration 0025 implements supplier receipts; do not infer it implements inter-branch transfer.
+- Migration 0015 has deferred completed-sale reconciliation across sale_items, total USD/VES, payment amounts/USD equivalents, current BCV snapshot, own open shift, active warehouse, inventory movements and audit event. Migration 0018 adds unique contiguous payment allocation positions.
+- Migration 0023 exposes atomic open/close shift functions with NUMERIC(14,4) USD and NUMERIC(16,2) VES cash; current shift API parses values as decimal strings.
+- Existing inventory receipt integration tests cover idempotency, concurrent receipts, tenant/branch scope, runtime direct-write denial and rollback when audit insertion fails. Existing count tests exercise idempotency, stale snapshots and concurrency; these remain code-specific evidence, separate from the new reference model.
+
 ## Technical decisions
 
 - Use Python decimal.Decimal with ROUND_HALF_UP as independent oracle for tie-away-from-zero semantics; reject Python float inputs. Do not import production TypeScript helper into the oracle.

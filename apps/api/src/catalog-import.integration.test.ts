@@ -200,12 +200,6 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
         (SELECT count(*) FROM audit_logs WHERE organization_id=$1)::text AS audits`,
       [organizationA],
     );
-    const source = csv([
-      ["IMPORT-EXISTING", "Existing product", "10"],
-      ["IMPORT-EXISTING", "Updated product", "11"],
-      ["NEW-PREVIEW", "New product", "5"],
-      ["MISSING-NAME", "", "4"],
-    ]);
     // Duplicate SKU is intentionally prohibited by the parser, so use a second
     // existing SKU fixture for the update/unchanged classification.
     const uniqueSource = csv([

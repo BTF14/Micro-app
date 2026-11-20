@@ -32,6 +32,23 @@ const cases: Array<{
     body: { sku: "SKU-1", name: "Product", price_usd: "1.00" },
   },
   {
+    name: "catalog import preview",
+    method: "POST",
+    path: `/api/orgs/${organizationId}/catalog/imports/preview`,
+    scope: "catalog:import:preview",
+    limit: 20,
+    body: { csv: "sku,name,price_usd\\nSKU-1,Product,1.00" },
+  },
+  {
+    name: "catalog import apply",
+    method: "POST",
+    path: `/api/orgs/${organizationId}/catalog/imports/apply`,
+    scope: "catalog:import:apply",
+    limit: 10,
+    headers: { "Idempotency-Key": "catalog-import-rate-limit-test" },
+    body: { csv: "sku,name,price_usd\\nSKU-1,Product,1.00" },
+  },
+  {
     name: "catalog update",
     method: "PATCH",
     path: `/api/orgs/${organizationId}/catalog/${productId}`,

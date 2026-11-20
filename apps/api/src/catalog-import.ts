@@ -83,7 +83,7 @@ async function hasValidMembershipOutsideOrganization(
 ): Promise<boolean> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sessionToken));
   const tokenHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-  const result = await tx.query<{ exists: boolean }>(
+  const result = await tx.query<{ has_membership: boolean }>(
     `SELECT EXISTS (
        SELECT 1
          FROM public.auth_sessions s

@@ -58,6 +58,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
       - name: Verify Carril B1 0028 quantity-mode and sale-snapshot contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql
+      - name: Verify catalog import batches migration 0029 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0029_catalog_import_batches.assertions.sql
       - name: Verify owner-only organization structure migration 0024 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
       - name: Verify inventory receipt migration 0025 contract

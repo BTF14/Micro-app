@@ -1,3 +1,19 @@
+# Corte vigente — Paso 4 inventory-accounting-review / PR #388 — 2026-11-19
+
+- **GitHub main verificado:** 57f426375db79a555c976574ee9b876e1d873141. Es el merge commit de PR #387.
+- **PR #383:** MERGED. La migración 0027 forma parte del main actual; el estado anterior de esta página que afirmaba PR #383 Draft y Neon main 0025 queda supersedido.
+- **PR #387:** MERGED en main. El workflow Node de BCV usa el intermedio Sectigo Public Server Authentication CA OV R36, con pin SHA-256 verificado y validación TLS normal; no se introdujo bypass TLS.
+- **Neon main:** comprobación read-only de public.schema_migrations en el proyecto micro-app-db: 0027_bcv_nonbusiness_day_effective_date.sql aparece state=applied; 0026 y 0025 también applied. No se ejecutó DDL/DML ni se modificó Neon.
+- **PR #388:** https://github.com/BTF14/Micro-app/pull/388, rama feat/inventory-accounting-review-20261119, OPEN / Draft. Mantener sin merge ni auto-merge. El HEAD exacto y sus checks deben consultarse en vivo; no heredar checks de SHA anteriores.
+- **Paso 4:** agente, skill, tarea ODD, modelo de referencia Python, pruebas de mutación, harness PostgreSQL temporal y workflow específico versionados en PR #388. El modelo independiente se ejecutó en kernel aislado con 12/12 casos correctos; no equivale a ejecutar los comandos del checkout. PostgreSQL y validadores del repo pendientes de CI exact-SHA.
+- **Alcance preservado:** no se modificaron apps/**, packages/money/**, migraciones 0001–0027 ni se creó SQL 0028+. No quantity_mode, sale_items, rutas comerciales, Neon, secretos, Cloudflare ni configuración Worker.
+- **Gates globales:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; Worker BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
+- **PR #385 y #386:** Dependabot fuera de alcance; no modificadas.
+
+Los cortes inferiores son snapshots históricos. Prevalecen este corte y los datos vivos de GitHub/Neon para sus respectivos dominios.
+
+---
+
 # Corte vigente — Nivel 1 cerrado/reconciliado; Paso 3B desbloqueado (2026-11-18)
 
 - **Main exacto auditado:** 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381). PR documental [#382](https://github.com/BTF14/Micro-app/pull/382) permanece OPEN/Draft, sin merge ni auto-merge.

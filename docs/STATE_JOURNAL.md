@@ -1,3 +1,17 @@
+## Turno 60 — Paso 4 inventory-accounting-review / PR #388 (2026-11-19)
+
+- Main verificado en GitHub: 57f426375db79a555c976574ee9b876e1d873141, merge de PR #387.
+- PR #383 y #387 confirmadas MERGED. #387 incorpora Sectigo OV R36 en el workflow Node BCV con validación de fingerprint/identidad y TLS normal.
+- Neon main verificado sin escrituras: public.schema_migrations registra 0027_bcv_nonbusiness_day_effective_date.sql como applied; 0026 y 0025 también applied. Se corrige el snapshot previo que decía 0025.
+- PR #388 creada OPEN / Draft desde main, rama feat/inventory-accounting-review-20261119. Sin merge ni auto-merge.
+- Añadidos agente, skill, ODD task, referencia Python decimal, 12 pruebas de modelo/mutantes, SQL PostgreSQL TEMP, runner loopback/disposable DB y workflow PostgreSQL 18.
+- La ejecución aislada equivalente del modelo Python pasó 12/12. El checkout real no está montado en este entorno; no se afirma ejecución local del validador de agentes, sus tests, suite de API ni harness PostgreSQL.
+- Pendiente: sincronización final documental y verificación 100 % exact-SHA de check-runs/workflow runs. Mantener PR #388 Draft.
+- Sin cambios a apps/**, packages/money/**, migraciones 0001–0027, Neon, secretos, Cloudflare o Worker. Sin SQL 0028+, quantity_mode, sale_items ni lógica comercial.
+- Gates preservados: AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; USD 0.
+
+---
+
 ## Turno 59 — cierre/reconciliación Nivel 1 y desbloqueo Paso 3B (2026-11-18)
 
 - Base auditada: main = 25dbf6e40a99e011c951ab55338de6d4b98332ad (post-merge PR #381). PR #382 sigue OPEN/Draft, sin merge ni auto-merge.

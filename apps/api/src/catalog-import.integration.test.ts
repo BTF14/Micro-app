@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import app from "./index";
 
@@ -35,6 +35,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
   let branchId = "";
   let warehouseId = "";
   let existingProductId = "";
+  let updateProductId = "";
   let fractionalProductId = "";
   const fixtures = {} as Record<"ownerA" | "ownerB" | "inventory" | "cashier", Fixture>;
   const userIds: string[] = [];
@@ -116,6 +117,12 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
       [organizationA],
     );
     existingProductId = existing.rows[0]!.id;
+    const updateProduct = await client.query<{ id: string }>(
+      `INSERT INTO products (organization_id,sku,name,price_usd,cost_usd,minimum_stock,unit,quantity_mode)
+       VALUES ($1,'IMPORT-UPDATE','Old name',5,0,0,'unidad','integer') RETURNING id`,
+      [organizationA],
+    );
+    updateProductId = updateProduct.rows[0]!.id;
 
     const fractional = await client.query<{ id: string }>(
       `INSERT INTO products (organization_id,sku,name,price_usd,cost_usd,minimum_stock,unit,quantity_mode)
@@ -203,6 +210,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     // existing SKU fixture for the update/unchanged classification.
     const uniqueSource = csv([
       ["IMPORT-EXISTING", "Existing product", "10"],
+      ["IMPORT-UPDATE", "Updated name", "5"],
       ["NEW-PREVIEW", "New product", "5"],
       ["MISSING-NAME", "", "4"],
     ]);
@@ -215,6 +223,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     };
     expect(body.can_apply).toBe(false);
     expect(body.summary.creates).toBe(1);
+    expect(body.summary.updates).toBe(1);
     expect(body.summary.unchanged).toBe(1);
     expect(body.errors.some((error) => error.code === "MISSING_REQUIRED_FIELD")).toBe(true);
     const after = await client.query<{ products: string; batches: string; audits: string }>(
@@ -226,6 +235,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     );
     expect(after.rows).toEqual(before.rows);
     expect(existingProductId).toBeTruthy();
+    expect(updateProductId).toBeTruthy();
   });
 
   it("applies more than 100 rows atomically, records one batch/audit, and leaves inventory ledgers untouched", async () => {

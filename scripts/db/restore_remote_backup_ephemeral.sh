@@ -115,6 +115,8 @@ SELECT CASE
        AND count(DISTINCT version) = 27 AND bool_and(state = 'applied') THEN 'bcv-0027'
   WHEN count(*) = 28 AND min(version) = '0001' AND max(version) = '0028'
        AND count(DISTINCT version) = 28 AND bool_and(state = 'applied') THEN 'bcv-0028'
+  WHEN count(*) = 29 AND min(version) = '0001' AND max(version) = '0029'
+       AND count(DISTINCT version) = 29 AND bool_and(state = 'applied') THEN 'bcv-0029'
   ELSE 'unsupported'
 END
 FROM public.schema_migrations")"
@@ -126,7 +128,8 @@ case "$ledger_profile" in
   bcv-0026) expected=26 ;;
   bcv-0027) expected=27 ;;
   bcv-0028) expected=28 ;;
-  *) echo "Backup migration ledger is not a complete supported 16-, 23-, 24-, 25-, 26-, 27- or 28-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+  bcv-0029) expected=29 ;;
+  *) echo "Backup migration ledger is not a complete supported 16-, 23-, 24-, 25-, 26-, 27- or 28- or 29-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
 tmpdir="$(mktemp -d)"
@@ -190,8 +193,11 @@ else
   if [[ "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0027_bcv_nonbusiness_day_effective_date.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0028" ]]; then
+  if [[ "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql"
+  fi
+  if [[ "$ledger_profile" == "bcv-0029" ]]; then
+    psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0029_catalog_import_batches.assertions.sql"
   fi
 fi
 

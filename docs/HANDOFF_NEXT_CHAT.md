@@ -19,7 +19,7 @@
 
 ## Evidencia y limitaciones
 
-- Modelo Python equivalente ejecutado en kernel aislado: 12/12 tests OK. No afirmar que se ejecutó localmente el módulo del checkout.
+- Primera ejecución equivalente aislada: 12/12. La suite versionada actual se amplió a 13 casos (incluye VES 2 decimales y exceso de escala); consultar CI del HEAD exacto. No afirmar que se ejecutó localmente el módulo del checkout.
 - No hay checkout local del repositorio disponible en este entorno; no se pudieron ejecutar localmente python3 tools/validate-agent-docs.py, unittest del validador, scripts del monorepo ni PostgreSQL real.
 - El workflow de PR #388 debe ejecutar las pruebas en PostgreSQL 18 efímero y el modelo Python. Consultar el HEAD exacto final y el 100 % de check-runs/workflow runs antes de informar cierre.
 - El runner PostgreSQL exige loopback y una base inventory_review_test*, usa tablas TEMP y ROLLBACK. Nunca pasar credenciales de Neon.

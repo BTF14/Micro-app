@@ -147,6 +147,8 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
   });
 
   beforeEach(async () => {
+    // Tests may deliberately downgrade this owner to cashier; restore the fixture role between cases.
+    await client.query("UPDATE organization_members SET role = 'owner' WHERE organization_id = $1 AND user_id = $2", [organizationId, userId]);
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
     const warehouse = await client.query<{ id: string }>(
       "INSERT INTO warehouses (organization_id, branch_id, code, name) VALUES ($1, $2, $3, 'Inventory Count Test Warehouse') RETURNING id",

@@ -170,6 +170,10 @@ BEGIN
    INSERT INTO iar_sale_snapshots VALUES ('fractional-a','unidad','fractional',1.250);
    RAISE EXCEPTION 'false unit_snapshot accepted';
  EXCEPTION WHEN check_violation THEN NULL; END;
+ BEGIN
+   INSERT INTO iar_sale_snapshots VALUES ('fractional-a','kg','integer',1.000);
+   RAISE EXCEPTION 'false quantity_mode_snapshot accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
  UPDATE iar_products SET unit='g' WHERE product_id='fractional-a';
  IF (SELECT unit_snapshot FROM iar_sale_snapshots WHERE product_id='fractional-a')<>'kg' THEN
    RAISE EXCEPTION 'historical unit snapshot changed after product edit';

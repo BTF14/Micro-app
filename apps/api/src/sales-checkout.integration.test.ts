@@ -1749,8 +1749,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
           saleId = inserted.rows[0]!.id;
           await runtimeClient.query(
             `INSERT INTO public.sale_items
-              (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
-             VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027-UNCOVERED',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
+              (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,unit_snapshot,quantity_mode_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
+             VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027-UNCOVERED','unidad','fractional',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
             [organizationId,saleId,productId,convertUsdToVes("1.0000",candidate.rate)],
           );
           await runtimeClient.query(
@@ -1824,7 +1824,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       await runtimeClient.query(
         `INSERT INTO public.sale_items
           (organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves)
-         VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
+         VALUES ($1,$2,$3,'Checkout Product','DIRECT-0027','unidad','fractional',1.000,1.0000,0.5000,1.0000,$4::numeric)`,
         [organizationId,saleId,productId,convertUsdToVes("1.0000","250.12345678")],
       );
       await runtimeClient.query(

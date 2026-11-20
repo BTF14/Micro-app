@@ -93,7 +93,7 @@ BEGIN
   INSERT INTO public.products(organization_id,sku,name,price_usd,cost_usd)
   VALUES ('11111111-1111-4111-8111-111111111111','RUNTIME-SKU','Runtime Product',10,2)
   RETURNING id INTO v_product;
-  UPDATE public.products SET price_usd=11,updated_at=pg_catalog.now()
+  UPDATE public.products SET price_usd=11,quantity_mode='integer',updated_at=pg_catalog.now()
    WHERE organization_id='11111111-1111-4111-8111-111111111111' AND id=v_product;
 
   -- Runtime can read and create draft sales/children for idempotency replay.
@@ -109,12 +109,12 @@ BEGIN
     '55555555-5555-4555-8555-555555555555','USD',pg_catalog.repeat('a',64)
   ) RETURNING id INTO v_sale;
   INSERT INTO public.sale_items (
-    organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,
+    organization_id,sale_id,product_id,product_name_snapshot,sku_snapshot,unit_snapshot,quantity_mode_snapshot,
     quantity,unit_price_usd,unit_cost_usd,line_total_usd,line_total_ves
-  ) VALUES (
-    '11111111-1111-4111-8111-111111111111',v_sale,v_product,'Runtime Product','RUNTIME-SKU',
+  ) SELECT
+    '11111111-1111-4111-8111-111111111111',v_sale,v_product,'Runtime Product','RUNTIME-SKU',p.unit,p.quantity_mode,
     1,1,1,1,1
-  );
+  FROM public.products p WHERE p.id=v_product;
   INSERT INTO public.payments (
     organization_id,sale_id,method,currency,amount,usd_equivalent_snapshot,received_by
   ) VALUES (

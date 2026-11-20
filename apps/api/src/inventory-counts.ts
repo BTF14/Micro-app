@@ -162,11 +162,15 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           if (!lockedWarehouses) return { kind: "not_found" as const };
 
           const productIds = input.lines.map((line) => line.productId);
-          const products = await tx.query<{ id: string }>(
-            `SELECT id FROM products WHERE organization_id = $1 AND id = ANY($2::uuid[])`,
+          const products = await tx.query<{ id: string; quantity_mode: "integer" | "fractional" }>(
+            `SELECT id, quantity_mode FROM products WHERE organization_id = $1 AND id = ANY($2::uuid[]) FOR SHARE`,
             [tenant.organizationId, productIds],
           );
           if (products.rows.length !== productIds.length) return { kind: "invalid_products" as const };
+          const modeByProduct = new Map(products.rows.map((product) => [product.id, product.quantity_mode]));
+          if (input.lines.some((line) => modeByProduct.get(line.productId) === "integer" && milliUnits(line.quantity) % 1000n !== 0n)) {
+            return { kind: "invalid_quantity" as const };
+          }
 
           const requestHash = await hashCountRequest({
             organizationId: tenant.organizationId, branchId: branch.branchId, warehouseId, countType,
@@ -238,6 +242,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
       if (result.kind === "not_found") return c.json({ error: "WAREHOUSE_NOT_FOUND", message: "El almacén no existe o está inactivo." }, 404);
       if (result.kind === "invalid_products") return c.json({ error: "INVALID_PRODUCTS", message: "Uno o más productos no pertenecen a la organización." }, 400);
+      if (result.kind === "invalid_quantity") return c.json({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE", message: "Los productos de unidad entera solo admiten cantidades enteras en el conteo." }, 400);
       if (result.kind === "idempotency_conflict") return c.json({ error: "IDEMPOTENCY_KEY_REUSED", message: "La clave de idempotencia ya fue utilizada con una solicitud diferente." }, 409);
       if (result.kind === "replayed") return c.json({ id: result.countId, status: result.status, count_type: result.countType, line_count: result.lineCount, replayed: true }, 200);
       return c.json({ id: result.countId, status: "draft", count_type: countType, line_count: result.lineCount }, 201);

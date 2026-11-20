@@ -37,7 +37,7 @@ const cases: Array<{
     path: `/api/orgs/${organizationId}/catalog/imports/preview`,
     scope: "catalog:import:preview",
     limit: 20,
-    body: { csv: "sku,name,price_usd\\nSKU-1,Product,1.00" },
+    body: { csv: "sku,name,price_usd\nSKU-1,Product,1.00" },
   },
   {
     name: "catalog import apply",
@@ -46,7 +46,7 @@ const cases: Array<{
     scope: "catalog:import:apply",
     limit: 10,
     headers: { "Idempotency-Key": "catalog-import-rate-limit-test" },
-    body: { csv: "sku,name,price_usd\\nSKU-1,Product,1.00" },
+    body: { csv: "sku,name,price_usd\nSKU-1,Product,1.00" },
   },
   {
     name: "catalog update",

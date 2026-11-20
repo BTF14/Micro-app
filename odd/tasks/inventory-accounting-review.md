@@ -64,6 +64,8 @@ Excluded:
 ## Technical decisions
 
 - Use Python decimal.Decimal with ROUND_HALF_UP as independent oracle for tie-away-from-zero semantics; reject Python float inputs. Do not import production TypeScript helper into the oracle.
+- Treat numeric precision by actual column: VES line/total/shift cash uses NUMERIC(16,2), but payments.amount is NUMERIC(14,4) shared by currencies with a VES-specific round-to-2 check; BCV rate is NUMERIC(18,8) after 0013.
+- Explicitly audit legacy products.stock_quantity from 0001 as a possible stale/alternate stock projection; 0006 introduces branch-scoped ledger/balances without legacy stock backfill.
 - Use PostgreSQL TEMP TABLE fixtures in an explicit transaction and ROLLBACK; no migration application and no persistent fixture.
 - Keep model mutations in memory and SQL mutations inside the temporary transaction. A mutation is test input, never a source patch.
 - Current schema contains movement types for transfer out/in, but reviewed domain model describes two-stage transfer dispatch/receipt as not yet implemented; report the distinction and do not implement it here.

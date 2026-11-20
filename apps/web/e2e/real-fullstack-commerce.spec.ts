@@ -454,6 +454,7 @@ test("real CSV catalog import persists through PostgreSQL 18 on mobile", async (
   await page.getByLabel("Buscar productos", { exact: true }).fill(sku);
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
   await expect(page.getByText("Producto CSV E2E", { exact: true })).toBeVisible();
-  await expect(page.locator(".catalog-product-meta")).toContainText(sku);
+  const importedProductRow = page.locator(".catalog-table tbody tr").filter({ hasText: "Producto CSV E2E" });
+  await expect(importedProductRow.locator(".catalog-product-meta")).toContainText(sku);
   await expectNoHorizontalOverflow(page, "mobile persisted CSV product");
 });

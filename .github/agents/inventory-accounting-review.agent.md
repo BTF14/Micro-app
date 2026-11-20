@@ -16,10 +16,10 @@ This profile adds an independent accounting-operational layer. It does not repla
 1. Append-only Kardex ↔ balances:
    - Reconstruct each balance from permitted opening/count/receipt/sale/transfer/reversal movements for the same organization, branch, warehouse and product.
    - Check movement immutability, reversal semantics, uniqueness/idempotency, projection coupling, non-negative on-hand/reserved quantities, concurrent writers and every path that could bypass ledger/database guards.
-   - A balance is a projection, never independent accounting truth.
+   - A balance is a projection, never independent accounting truth. Explicitly trace the legacy products.stock_quantity field from migration 0001 and prove it is not treated as branch stock or used as an alternate mutable inventory source after the 0006 ledger introduction.
 
 2. Exact decimal domains:
-   - Respect actual column precision/scale: quantity NUMERIC(14,3), USD price/cost/subtotal/line NUMERIC(14,4), VES money NUMERIC(16,2), BCV rate NUMERIC(18,8), unless verified schema says otherwise.
+   - Respect actual column precision/scale: quantity NUMERIC(14,3), USD price/cost/subtotal/line NUMERIC(14,4), VES totals/line/shift cash NUMERIC(16,2), BCV rate NUMERIC(18,8) after migration 0013. Contextual exception: payments.amount is NUMERIC(14,4) shared by currencies, with a database constraint that VES values equal round(amount, 2). Verify the exact column, migration and currency before asserting scale.
    - No JavaScript Number/binary floating-point arithmetic for money, quantity, rate or reconciliation. Keep decimal strings/BigInt in TypeScript and exact numeric in PostgreSQL.
    - Check range, scale, signs, overflow, tie rounding (half away from zero), multiplication-before-rounding, per-line rounding and aggregate overflow. Never silently coerce excess precision.
 

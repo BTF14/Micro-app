@@ -143,6 +143,7 @@ describe("headers and row validation", () => {
     expect(codes("sku,quantity_mode\nA,other")).toContain("INVALID_QUANTITY_MODE");
     expect(codes("sku,quantity_mode,minimum_stock\nA,integer,1.250")).toContain("FRACTIONAL_INTEGER_MINIMUM");
     expect(codes("sku,quantity_mode,minimum_stock\nA,fractional,1.250")).not.toContain("FRACTIONAL_INTEGER_MINIMUM");
+    expect(codes("sku,minimum_stock\nA,1.250")).not.toContain("FRACTIONAL_INTEGER_MINIMUM");
     expect(codes("sku,quantity_mode,minimum_stock\nA,integer,2.000")).not.toContain("FRACTIONAL_INTEGER_MINIMUM");
   });
 

@@ -290,7 +290,7 @@ function validateRow(
   }
 
   if (raw.has("minimum_stock") && result.minimum_stock !== undefined) {
-    const mode = result.quantity_mode ?? "integer";
+    const mode = result.quantity_mode;
     if (mode === "integer") {
       try {
         if (parseNumeric(result.minimum_stock, 14, 3) % 1000n !== 0n) {

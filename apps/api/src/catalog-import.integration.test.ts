@@ -103,7 +103,7 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
 
   beforeAll(async () => {
     client = new Client({ connectionString: databaseUrlAdmin });
-    await client.connect();
+    await client!.connect();
     organizationA = await createOrganization("Catalog Import A");
     organizationB = await createOrganization("Catalog Import B");
     fixtures.ownerA = await createMember(organizationA, "owner");
@@ -328,6 +328,46 @@ describe.skipIf(!databaseUrl)("catalog CSV import endpoints against PostgreSQL 1
     );
     expect(after.rows[0]!.count).toBe(before.rows[0]!.count);
     expect(after.rows[0]!.first).toBe("0");
+  });
+
+  it("rolls back earlier inserts when a late PostgreSQL 23505 occurs", async () => {
+    const suffix = crypto.randomUUID().replace(/-/g, "");
+    const functionName = "catalog_import_fail_late_" + suffix;
+    const triggerName = "catalog_import_fail_late_" + suffix;
+    await client!.query(
+      `CREATE FUNCTION public.${functionName}() RETURNS trigger
+       LANGUAGE plpgsql AS $
+       BEGIN
+         IF NEW.sku = 'IMPORT-ROLLBACK-TRIGGER' THEN
+           RAISE EXCEPTION 'simulated late unique collision' USING ERRCODE='23505';
+         END IF;
+         RETURN NEW;
+       END;
+       $`,
+    );
+    await client!.query(
+      `CREATE TRIGGER ${triggerName} BEFORE INSERT ON public.products
+       FOR EACH ROW EXECUTE FUNCTION public.${functionName}()`,
+    );
+    try {
+      const response = await request(fixtures.ownerA, organizationA, "apply", csv([
+        ["IMPORT-ROLLBACK-FIRST", "Must roll back", "2"],
+        ["IMPORT-ROLLBACK-TRIGGER", "Late database conflict", "3"],
+      ]), "rollback-sql-import-key");
+      expect(response.status).toBe(409);
+      await expect(response.json()).resolves.toMatchObject({ error: "PRODUCT_CONFLICT" });
+      const state = await client!.query<{ products: string; batches: string; audits: string }>(
+        `SELECT
+          (SELECT count(*) FROM products WHERE organization_id=$1 AND sku='IMPORT-ROLLBACK-FIRST')::text AS products,
+          (SELECT count(*) FROM catalog_import_batches WHERE organization_id=$1 AND idempotency_key='rollback-sql-import-key')::text AS batches,
+          (SELECT count(*) FROM audit_logs WHERE organization_id=$1 AND action='catalog.import.applied' AND entity_id=(SELECT id::text FROM catalog_import_batches WHERE organization_id=$1 AND idempotency_key='rollback-sql-import-key'))::text AS audits`,
+        [organizationA],
+      );
+      expect(state.rows[0]).toEqual({ products: "0", batches: "0", audits: "0" });
+    } finally {
+      await client!.query(`DROP TRIGGER IF EXISTS ${triggerName} ON public.products`);
+      await client!.query(`DROP FUNCTION IF EXISTS public.${functionName}()`);
+    }
   });
 
   it("enforces the 0028 fractional-to-integer guard in preview and apply", async () => {

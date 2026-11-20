@@ -58,7 +58,7 @@ Excluded:
 | Create agent and skill | Versioned specialist instructions | Existing frontmatter convention and Postgres skill structure | completed |
 | Implement independent model and mutants | Standard-library suite, each mutant killed | unittest output and mutation table | in progress |
 | Add PostgreSQL disposable harness | Temporary-table numeric/ledger/scope assertions | PostgreSQL 18 CI service + loopback local runner | in progress |
-| Synchronize canonical docs | Current state/handoff no longer claim Neon 0025 | Live evidence, PR and commit links | pending |
+| Synchronize canonical docs | Current state, handoff, journal, registry and plan reconciled | Live evidence, PR #388 and main/Neon checks | completed |
 | Review diff and exact-SHA CI | No forbidden file changed; Draft stays open | PR file list, check-runs/workflow runs | pending |
 
 ## Initial code/schema observations
@@ -81,8 +81,8 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pending
-- PR: pending final URL / OPEN-Draft
+- Final branch HEAD: query the live PR ref at handoff; do not treat this file's containing commit as a stable final SHA
+- PR: https://github.com/BTF14/Micro-app/pull/388 (OPEN / Draft; no merge or auto-merge)
 - Checks and exact outcomes: pending exact final SHA
 - Acceptance criteria met / unmet: pending
 - Limitations not verified: local checkout unavailable in this execution environment; no local command can be truthfully reported as run until an actual checkout is available. CI is required for repository validator and PostgreSQL workflow.

@@ -14,6 +14,7 @@ import {
   parseCatalogCsv,
   type CatalogCsvRow,
   type CatalogCsvRowError,
+  type CatalogCsvParseResult,
   type CsvDelimiter,
 } from "./catalog-csv";
 
@@ -92,10 +93,10 @@ async function hasValidMembershipOutsideOrganization(
         WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>pg_catalog.now()
           AND u.is_active=true AND m.is_active=true AND o.is_active=true
           AND m.organization_id<>$2
-     ) AS exists`,
+     ) AS has_membership`,
     [tokenHash, organizationId],
   );
-  return result.rows[0]?.exists === true;
+  return result.rows[0]?.has_membership === true;
 }
 
 function decimalEqual(field: string, left: string, right: string): boolean {
@@ -332,7 +333,7 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
         return c.json({ error: "INVALID_IDEMPOTENCY_KEY", message: "Se requiere una Idempotency-Key válida." }, 400);
       }
 
-      let parsed;
+      let parsed: CatalogCsvParseResult;
       try {
         parsed = parseCatalogCsv(payload.csv, payload.delimiter);
       } catch (error) {

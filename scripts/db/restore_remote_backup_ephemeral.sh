@@ -113,6 +113,8 @@ SELECT CASE
        AND count(DISTINCT version) = 26 AND bool_and(state = 'applied') THEN 'bcv-0026'
   WHEN count(*) = 27 AND min(version) = '0001' AND max(version) = '0027'
        AND count(DISTINCT version) = 27 AND bool_and(state = 'applied') THEN 'bcv-0027'
+  WHEN count(*) = 28 AND min(version) = '0001' AND max(version) = '0028'
+       AND count(DISTINCT version) = 28 AND bool_and(state = 'applied') THEN 'bcv-0028'
   ELSE 'unsupported'
 END
 FROM public.schema_migrations")"
@@ -123,14 +125,15 @@ case "$ledger_profile" in
   bcv-0025) expected=25 ;;
   bcv-0026) expected=26 ;;
   bcv-0027) expected=27 ;;
-  *) echo "Backup migration ledger is not a complete supported 16-, 23-, 24-, 25-, 26- or 27-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+  bcv-0028) expected=28 ;;
+  *) echo "Backup migration ledger is not a complete supported 16-, 23-, 24-, 25-, 26-, 27- or 28-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 # Main/paired-intent backups must use the immutable migration bundle from the
-# exact main baseline; BCV projection backups use the current checked-out 25-file
+# exact main baseline; BCV projection backups use the current checked-out migration
 # bundle. The helper below independently verifies every file checksum against
 # the restored schema_migrations ledger before extracting any ACL statement.
 if [[ "$ledger_profile" == "main" ]]; then
@@ -175,17 +178,20 @@ if [[ "$ledger_profile" == "main" ]]; then
 else
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0022_bcv_dedicated_producer_role.assertions.sql"
   psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0023_register_shift_runtime_operations.assertions.sql"
-  if [[ "$ledger_profile" == "bcv-0024" || "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" ]]; then
+  if [[ "$ledger_profile" == "bcv-0024" || "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0024_organization_structure_admin_operations.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" ]]; then
+  if [[ "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0025_inventory_receipts.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" ]]; then
+  if [[ "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0026_fx_contingency_management.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0027" ]]; then
+  if [[ "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0027_bcv_nonbusiness_day_effective_date.assertions.sql"
+  fi
+  if [[ "$ledger_profile" == "bcv-0028" ]]; then
+    psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql"
   fi
 fi
 

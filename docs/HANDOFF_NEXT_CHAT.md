@@ -5,8 +5,8 @@
 - main = c2fa2fe453af0c3dbb7dd95e8b79a59eed828234, posterior a PR #390 (0028), PR #391 (6A), PR #385 y PR #386; 0 PRs antiguas pendientes.
 - PR #390 y PR #391 están MERGED. Paso 5 / Carril B1 0028 está cerrado y Neon main fue migrado a 0028 por el propietario.
 - El propietario verificó HTTP 200 en /health y /api/exchange-rates/latest; esta ejecución no accedió a Neon ni a infraestructura privada.
-- Paso 6 se compone de PR #391 (6A, MERGED) y PR #392 (6B, OPEN / Draft). No fusionar ni marcar lista la PR #392 antes de revisar diff y todos los checks del SHA exacto.
-- Próximo trabajo tras integrar Paso 6: Paso 7 — PR 2: Importador CSV.
+- Paso 6 — Hardening B1 + 0027: CERRADO entre PR #391 (6A, MERGED) y esta PR #392 (6B, OPEN / Draft), desbloqueando el Paso 7. La PR #392 permanece Draft, sin merge ni auto-merge, hasta completar CI exact-SHA y revisión humana.
+- Siguiente paso habilitado: Paso 7 — PR 2: Importador CSV.
 
 ## Alcance de la PR #392
 

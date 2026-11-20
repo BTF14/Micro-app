@@ -83,10 +83,16 @@ BEGIN
     VALUES (actor,'catalog-import-'||pg_catalog.replace(actor::text,'-','')||'@example.invalid','Catalog import assertion actor');
   INSERT INTO public.organization_members (organization_id,user_id,role)
     VALUES (org_a,actor,'owner'),(org_b,actor,'owner');
-  INSERT INTO public.audit_logs (organization_id,actor_user_id,action,entity_type,entity_id,metadata)
-    VALUES (org_a,actor,'catalog.import.applied','catalog_import_batch','assertion-a','{}'::jsonb) RETURNING id INTO audit_a;
-  INSERT INTO public.audit_logs (organization_id,actor_user_id,action,entity_type,entity_id,metadata)
-    VALUES (org_b,actor,'catalog.import.applied','catalog_import_batch','assertion-b','{}'::jsonb) RETURNING id INTO audit_b;
+  -- Explicit identity values keep the assertion transaction sequence-neutral:
+  -- PostgreSQL sequence increments are not rolled back with the surrounding transaction.
+  SELECT COALESCE(pg_catalog.max(id),0)+1 INTO audit_a FROM public.audit_logs;
+  audit_b := audit_a+1;
+  INSERT INTO public.audit_logs (id,organization_id,actor_user_id,action,entity_type,entity_id,metadata)
+    OVERRIDING SYSTEM VALUE
+    VALUES (audit_a,org_a,actor,'catalog.import.applied','catalog_import_batch','assertion-a','{}'::jsonb);
+  INSERT INTO public.audit_logs (id,organization_id,actor_user_id,action,entity_type,entity_id,metadata)
+    OVERRIDING SYSTEM VALUE
+    VALUES (audit_b,org_b,actor,'catalog.import.applied','catalog_import_batch','assertion-b','{}'::jsonb);
 
   INSERT INTO public.catalog_import_batches
     (organization_id,idempotency_key,request_hash,status,total_rows,created_count,updated_count,unchanged_count,actor_user_id,audit_log_id,summary)

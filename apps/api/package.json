@@ -12,13 +12,13 @@
   },
   "dependencies": {
     "@micro-app/money": "workspace:*",
-    "@neondatabase/serverless": "^1.2.0",
-    "hono": "^4.13.17"
+    "@neondatabase/serverless": "^1.2.1",
+    "hono": "^4.13.19"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261109.1",
+    "@cloudflare/workers-types": "^5.20261117.1",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0",
-    "wrangler": "^4.158.0"
+    "wrangler": "^4.163.0"
   }
 }

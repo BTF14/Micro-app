@@ -68,11 +68,13 @@ DO $$ BEGIN
  IF (SELECT sum(amount) FROM iar_payments WHERE sale_id='sale-a' AND currency='USD')=(SELECT total_usd FROM iar_sales WHERE sale_id='sale-a')
  THEN RAISE EXCEPTION 'payment mutant not detected'; END IF;
 END $$;
-DO $ BEGIN
+DO $ves_check$
+BEGIN
  BEGIN
   INSERT INTO iar_payments VALUES ('sale-ves',1,'VES',1.2345);
   RAISE EXCEPTION 'VES payment scale constraint not enforced';
  EXCEPTION WHEN check_violation THEN NULL;
  END;
-END $;
+END
+$ves_check$;
 ROLLBACK;

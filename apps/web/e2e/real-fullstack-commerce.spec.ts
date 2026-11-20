@@ -21,7 +21,7 @@ const fixturePath = process.env.E2E_FIXTURE_PATH;
 if (!fixturePath) throw new Error("E2E_FIXTURE_PATH is required for the real full-stack browser test.");
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as Fixture;
 
-test.describe.configure({ retries: 0 });
+test.describe.configure({ mode: "serial", retries: 0 });
 
 async function readStock(page: import("@playwright/test").Page): Promise<{ status: number; onHand: string | null; available: string | null }> {
   const result = await page.evaluate(async ({ organizationId, branchId, warehouseId, productSku }) => {

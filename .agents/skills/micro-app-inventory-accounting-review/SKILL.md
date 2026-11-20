@@ -16,7 +16,7 @@ description: Independently test accounting and operational invariants across Mic
 ## Independent accounting invariants
 
 1. Decimal domain and rounding:
-   - Quantity NUMERIC(14,3); USD prices/costs/line values/totals NUMERIC(14,4); VES amounts NUMERIC(16,2); BCV rates NUMERIC(18,8).
+   - Quantity NUMERIC(14,3); USD prices/costs/line values/totals NUMERIC(14,4); VES totals/line/shift cash NUMERIC(16,2); BCV rates NUMERIC(18,8) after migration 0013. Contextual exception: payments.amount is NUMERIC(14,4) shared by USD/VES, and the VES-specific database check requires amount = round(amount, 2). Assert scale by actual column and currency, not by label alone.
    - Reject values outside precision/scale and binary floating-point inputs. Use decimal strings, BigInt or PostgreSQL numeric.
    - Round ties away from zero. Apply documented per-line USD and VES rounding before summing; do not recompute a document total through a different rounding path.
    - Check max positive/negative, zero, negatives, excess fractional digits, exponent notation, malformed strings, overflow on sums and positive-rate/quantity constraints.
@@ -29,7 +29,7 @@ description: Independently test accounting and operational invariants across Mic
    - Idempotent retries cannot create duplicate sales, payments or movements; same key with a different request hash is a conflict.
 
 3. Inventory ledger and projection:
-   - For each (organization, branch, warehouse, product), balance on-hand equals opening plus immutable movement deltas; reserved is non-negative and never exceeds on-hand.
+   - For each (organization, branch, warehouse, product), balance on-hand equals opening plus immutable movement deltas; reserved is non-negative and never exceeds on-hand. Trace legacy products.stock_quantity from migration 0001 and prove it is not an alternate mutable branch-stock source after the 0006 ledger introduction.
    - Every movement and projection row belongs to the same composite scope.
    - Count adjustments derive from a confirmed count and captured expected quantity/version. A stale physical count cannot overwrite an intervening movement.
    - Reversal is a new compensating event, never update/delete of the original.

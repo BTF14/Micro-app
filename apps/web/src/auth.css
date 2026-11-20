@@ -73,13 +73,25 @@
   display: grid;
   gap: 0.35rem;
 }
-.fx-contingency-panel input,
+.fx-contingency-panel input:not([type="checkbox"]),
 .fx-contingency-panel select,
 .fx-contingency-panel textarea {
   width: 100%;
   min-height: 2.5rem;
 }
 .fx-contingency-panel textarea { min-height: 5rem; }
+.fx-contingency-panel label.fx-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fx-contingency-panel input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  min-height: 0;
+  margin: 0;
+  flex-shrink: 0;
+}
 .fx-contingency-panel button {
   justify-self: start;
 }

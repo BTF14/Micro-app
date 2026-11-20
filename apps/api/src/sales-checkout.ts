@@ -422,6 +422,54 @@ async function findExistingSale(
 }
 
 export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): void {
+
+  app.get("/api/orgs/:organizationId/branches/:branchId/sales/:saleId", async (c) => {
+    c.header("Cache-Control", "private, no-store");
+    const organizationId = c.req.param("organizationId");
+    const branchId = c.req.param("branchId");
+    const saleId = c.req.param("saleId");
+    if (![organizationId, branchId, saleId].every((value) => UUID_PATTERN.test(value))) {
+      return c.json({ error: "INVALID_RESOURCE_ID", message: "El identificador del recurso no es válido." }, 400);
+    }
+    const sessionToken = getCookie(c, "microapp_session");
+    if (!sessionToken || sessionToken.length > 128) {
+      clearSessionCookie(c);
+      return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+    }
+    try {
+      const result = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
+        withDatabaseTransaction(client, async (tx) => {
+          const authorization = await authorizeBranchOperation(
+            tx, sessionToken, organizationId, branchId, "reports.sales.own_shift",
+          );
+          if (!authorization.allowed) {
+            if (authorization.reason === "operation_denied") return { kind: "forbidden" as const };
+            if (authorization.reason === "branch_out_of_scope") return { kind: "branch_denied" as const };
+            return { kind: "unauthenticated" as const };
+          }
+          const canReadBranchSales = authorization.context.organizationRole === "owner"
+            || authorization.context.organizationRole === "admin";
+          const scopedSale = await tx.query<{ id: string }>(
+            `SELECT id FROM public.sales
+              WHERE organization_id=$1 AND branch_id=$2 AND id=$3
+                AND ($4::boolean OR created_by=$5)`,
+            [organizationId, branchId, saleId, canReadBranchSales, authorization.context.userId],
+          );
+          if (!scopedSale.rows[0]) return { kind: "not_found" as const };
+          const sale = await loadSaleResponse(tx, organizationId, saleId);
+          return sale ? { kind: "ok" as const, sale } : { kind: "not_found" as const };
+        }),
+      );
+      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
+      if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar ventas." }, 403);
+      if (result.kind === "branch_denied") return c.json({ error: "BRANCH_FORBIDDEN", message: "No tienes acceso a esta sucursal." }, 403);
+      if (result.kind === "not_found") return c.json({ error: "SALE_NOT_FOUND", message: "No se encontró la venta." }, 404);
+      return c.json(result.sale, 200);
+    } catch {
+      return c.json({ error: "SALE_READ_FAILED", message: "No se pudo consultar la venta." }, 500);
+    }
+  });
+
   app.post("/api/orgs/:organizationId/branches/:branchId/checkout", async (c) => {
     c.header("Cache-Control", "private, no-store");
     const organizationId = c.req.param("organizationId");

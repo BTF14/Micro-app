@@ -603,6 +603,15 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(replayAfterCatalogEdit.status).toBe(200);
     const historicalReplay = await replayAfterCatalogEdit.json() as { lines: Array<{ unit_snapshot: string; quantity_mode_snapshot: string }> };
     expect(historicalReplay.lines[0]).toMatchObject({ unit_snapshot: "unidad", quantity_mode_snapshot: "fractional" });
+    const detail = await app.fetch(new Request(
+      "https://api.example/api/orgs/" + organizationId + "/branches/" + branchId + "/sales/" + sale.id,
+      { headers: { Cookie: "microapp_session=" + token } },
+    ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN });
+    expect(detail.status).toBe(200);
+    const detailBody = await detail.json() as { lines: Array<Record<string, unknown>> };
+    expect(detailBody.lines[0]).toMatchObject({ unit_snapshot: "unidad", quantity_mode_snapshot: "fractional" });
+    expect(detailBody.lines[0]).not.toHaveProperty("unit_cost_usd");
+    expect(detailBody.lines[0]).not.toHaveProperty("cost_usd");
     expect(sale.total_ves).toBe(convertUsdToVes("29.8125", "250.12345678"));
 
     const balance = await readBalance();

@@ -35,7 +35,7 @@ Excluded:
 - [ ] AC-2 — sale_items conserva unit_snapshot y quantity_mode_snapshot inmutables y verificados contra products al insertar.
 - [ ] AC-3 — conteos y recepciones rechazan cantidades fraccionarias para productos integer en API y base de datos.
 - [ ] AC-4 — checkout rechaza fracciones para integer, persiste snapshots y nunca expone costes a rutas de venta/cajero.
-- [ ] AC-5 — cambio fractional → integer devuelve 409 si existen saldos fraccionarios.
+- [ ] AC-5 — cambio fractional → integer devuelve 409 si existen mínimos de stock, saldos o conteos pendientes fraccionarios.
 - [ ] AC-6 — frontend comunica el modo, autocompleta unidades métricas sin sobrescribir selección manual y aplica pasos/teclado correctos.
 - [ ] AC-7 — pruebas unitarias, integración PostgreSQL 18, reconciliación y mutantes cubren los invariantes; no hay regresión de ventas/pagos/ledger/turnos.
 - [ ] AC-8 — validadores y revisiones independientes backend-data-review, security-review e inventory-accounting-review completados con evidencia exact-SHA.
@@ -45,7 +45,7 @@ Excluded:
 
 | Risk | Severity | Mitigation / gate / evidence |
 |---|---|---|
-| Productos históricos con saldos o movimientos fraccionarios | critical | Backfill conservador a fractional; no modificar 0001–0027; assertions de migración |
+| Productos históricos con saldos o movimientos fraccionarios | critical | Backfill conservador a fractional (unidades, mínimos, balances, movimientos legacy y ledger); no modificar 0001–0027; assertions de migración |
 | Snapshot falso o mutable en SQL directo | critical | Trigger SECURITY DEFINER de INSERT, propietario migrator, search_path pg_catalog, sin EXECUTE público |
 | Decimal convertido a Number | high | Mantener strings/BigInt y NUMERIC exacto |
 | Conteos/recepciones fuera del checkout | high | Validación API + triggers DB en tablas reales |

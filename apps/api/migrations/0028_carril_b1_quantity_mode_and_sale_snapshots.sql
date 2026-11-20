@@ -39,6 +39,11 @@ UPDATE public.products p
       AND m.quantity_delta <> pg_catalog.trunc(m.quantity_delta)
  )
  OR EXISTS (
+   SELECT 1 FROM public.inventory_movements legacy_m
+    WHERE legacy_m.organization_id=p.organization_id AND legacy_m.product_id=p.id
+      AND legacy_m.quantity_delta <> pg_catalog.trunc(legacy_m.quantity_delta)
+ )
+ OR EXISTS (
    SELECT 1 FROM public.inventory_count_lines l
     WHERE l.organization_id=p.organization_id AND l.product_id=p.id
       AND l.counted_quantity <> pg_catalog.trunc(l.counted_quantity)

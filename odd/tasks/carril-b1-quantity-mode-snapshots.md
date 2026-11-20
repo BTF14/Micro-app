@@ -79,10 +79,12 @@ Excluded:
 
 ## Closure and handoff
 
-- Final commit SHA: pendiente
-- PR: pendiente
-- Checks and exact outcomes: pendientes; no hay checkout local ni PostgreSQL local en este entorno.
-- Acceptance criteria met / unmet: pendiente
-- Limitations not verified: tests locales, PostgreSQL 18 efímero y builds/typecheck no disponibles desde este entorno; deben ejecutarse en CI sobre el SHA final.
-- Residual risks: migración y rutas comerciales críticas requieren revisión independiente y CI completo.
-- Next step: completar implementación, ejecutar los workflows reales de GitHub y mantener Draft.
+- PR #390: MERGED en main; merge commit 495f9fd637507715acea4054c461aa5d08b8f5ee.
+- SHA final de PR #390: 371aeff35db965802318228664d2ed767001e048.
+- CI exact-SHA de PR #390: 22/22 check-runs y 15/15 workflows completados en success.
+- Verificación post-merge en el merge commit 495f9fd637507715acea4054c461aa5d08b8f5ee: 20/20 check-runs y 14/14 workflows en success.
+- Base main vigente c2fa2fe453af0c3dbb7dd95e8b79a59eed828234: 15/15 check-runs y 10/10 workflows en success.
+- Neon main: el propietario confirmó la migración a 0028; no se accedió ni se modificó Neon durante esta tarea.
+- Acceptance criteria: Paso 5 / Carril B1 (0028) CERRADO Y MIGRADO.
+- Residual risks: ninguno pendiente dentro del alcance de Paso 5; los gates globales de producción permanecen vigentes.
+- Next step único: Paso 6 — Hardening B1 + 0027 (Micro-PR 6A + Micro-PR 6B).

@@ -633,6 +633,125 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(legacyStock.rows[0].stock_quantity).toBe(legacyStockBefore);
   });
 
+  it("reads completed sale snapshots only for the originating cashier and authorized roles", async () => {
+    await seedBalance("10.000");
+    const checkout = await request(checkoutBody("1.250", "29.8125"), "sale-read-" + crypto.randomUUID());
+    expect(checkout.status).toBe(201);
+    const created = await checkout.json() as { id: string };
+    const readSale = (session: string, org = organizationId, branch = branchId) =>
+      app.fetch(new Request(
+        "https://api.example/api/orgs/" + org + "/branches/" + branch + "/sales/" + created.id,
+        { headers: { Cookie: "microapp_session=" + session } },
+      ), { DATABASE_URL: databaseUrl, FRONTEND_ORIGIN });
+
+    const originalRead = await readSale(token);
+    expect(originalRead.status).toBe(200);
+    const original = await originalRead.json() as {
+      operation_date: string; exchange_rate_effective_date: string; fx_receipt_label: string;
+      lines: Array<Record<string, unknown>>;
+    };
+    expect(original).toMatchObject({
+      operation_date: rateDate, exchange_rate_effective_date: rateDate, fx_receipt_label: "Tasa BCV",
+    });
+    expect(original.lines[0]).toMatchObject({
+      unit_snapshot: "unidad", quantity_mode_snapshot: "fractional", unit_price_usd: "23.8500",
+    });
+    for (const key of ["cost_usd", "unit_cost_usd"]) {
+      expect(original).not.toHaveProperty(key);
+      expect(original.lines[0]).not.toHaveProperty(key);
+    }
+
+    await client.query(
+      "UPDATE public.products SET unit='g',price_usd=99.9900 WHERE organization_id=$1 AND id=$2",
+      [organizationId, productId],
+    );
+    const reread = await readSale(token);
+    expect(reread.status).toBe(200);
+    const historical = await reread.json() as {
+      operation_date: string; exchange_rate_effective_date: string; fx_receipt_label: string;
+      lines: Array<Record<string, unknown>>;
+    };
+    expect(historical).toMatchObject({
+      operation_date: original.operation_date,
+      exchange_rate_effective_date: original.exchange_rate_effective_date,
+      fx_receipt_label: original.fx_receipt_label,
+    });
+    expect(historical.lines[0]).toMatchObject({
+      unit_snapshot: "unidad", quantity_mode_snapshot: "fractional", unit_price_usd: "23.8500",
+    });
+    for (const key of ["cost_usd", "unit_cost_usd"]) {
+      expect(historical).not.toHaveProperty(key);
+      expect(historical.lines[0]).not.toHaveProperty(key);
+    }
+
+    const secondCashierToken = "checkout-cashier-session-" + suffix;
+    const inventoryToken = "checkout-inventory-read-" + suffix + "-" + crypto.randomUUID();
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(inventoryToken));
+    const inventoryTokenHash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+    let otherBranchId = "";
+    let foreignBranchId = "";
+    try {
+      await client.query(
+        "INSERT INTO public.branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",
+        [organizationId, branchId, unauthorizedUserId],
+      );
+      await client.query(
+        "INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",
+        [inventoryUserId, inventoryTokenHash],
+      );
+      const secondCashierRead = await readSale(secondCashierToken);
+      expect(secondCashierRead.status).toBe(404);
+      expect((await secondCashierRead.json() as { error: string }).error).toBe("SALE_NOT_FOUND");
+      const inventoryRead = await readSale(inventoryToken);
+      expect(inventoryRead.status).toBe(403);
+      expect((await inventoryRead.json() as { error: string }).error).toBe("FORBIDDEN");
+
+      const otherBranch = await client.query<{ id: string }>(
+        "INSERT INTO public.branches(organization_id,name,slug) VALUES($1,'Sales Read Other Branch',$2) RETURNING id",
+        [organizationId, "sales-read-other-" + suffix],
+      );
+      otherBranchId = otherBranch.rows[0]!.id;
+      const branchRead = await readSale(token, organizationId, otherBranchId);
+      expect([401, 403, 404]).toContain(branchRead.status);
+      expect(branchRead.status).not.toBe(200);
+
+      const foreignOrg = await client.query<{ id: string }>(
+        "INSERT INTO public.organizations(name,slug) VALUES($1,$2) RETURNING id",
+        ["Foreign Sales Read " + suffix, "foreign-sales-read-" + suffix],
+      );
+      foreignOrganizationId = foreignOrg.rows[0]!.id;
+      const foreignBranch = await client.query<{ id: string }>(
+        "INSERT INTO public.branches(organization_id,name,slug) VALUES($1,'Foreign Sales Read Branch',$2) RETURNING id",
+        [foreignOrganizationId, "foreign-sales-read-" + suffix],
+      );
+      foreignBranchId = foreignBranch.rows[0]!.id;
+      const tenantRead = await readSale(token, foreignOrganizationId, foreignBranchId);
+      expect([401, 403, 404]).toContain(tenantRead.status);
+      expect(tenantRead.status).not.toBe(200);
+
+      await client.query("ALTER TABLE public.sales DISABLE TRIGGER ALL");
+      try {
+        await client.query("UPDATE public.sales SET status='draft' WHERE organization_id=$1 AND id=$2", [organizationId, created.id]);
+        const draftRead = await readSale(token);
+        expect(draftRead.status).toBe(404);
+        expect((await draftRead.json() as { error: string }).error).toBe("SALE_NOT_FOUND");
+      } finally {
+        await client.query("UPDATE public.sales SET status='completed' WHERE organization_id=$1 AND id=$2", [organizationId, created.id]);
+        await client.query("ALTER TABLE public.sales ENABLE TRIGGER ALL");
+      }
+    } finally {
+      await client.query(
+        "DELETE FROM public.branch_memberships WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",
+        [organizationId, branchId, unauthorizedUserId],
+      );
+      await client.query("DELETE FROM public.auth_sessions WHERE user_id=$1 AND token_hash=$2", [inventoryUserId, inventoryTokenHash]);
+      if (otherBranchId) await client.query("DELETE FROM public.branches WHERE organization_id=$1 AND id=$2", [organizationId, otherBranchId]);
+      if (foreignBranchId && foreignOrganizationId) {
+        await client.query("DELETE FROM public.branches WHERE organization_id=$1 AND id=$2", [foreignOrganizationId, foreignBranchId]);
+      }
+    }
+  });
+
   it("replays an identical idempotency key and rejects a changed payload without consuming stock twice", async () => {
     await seedBalance("5.000");
     const key = "replay-" + crypto.randomUUID();

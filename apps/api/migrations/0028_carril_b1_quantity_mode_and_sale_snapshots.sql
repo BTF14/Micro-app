@@ -70,6 +70,12 @@ ALTER TABLE public.sale_items
   ADD COLUMN unit_snapshot text,
   ADD COLUMN quantity_mode_snapshot text;
 
+-- Backfill existing sale lines without weakening the append-only lifecycle.
+-- The existing row triggers reject UPDATE by design; disable only these two
+-- triggers inside this transaction and restore them immediately afterward.
+ALTER TABLE public.sale_items DISABLE TRIGGER sale_items_checkout_lifecycle_guard;
+ALTER TABLE public.sale_items DISABLE TRIGGER sale_items_completed_reconciliation;
+
 UPDATE public.sale_items si
    SET unit_snapshot = COALESCE(p.unit, 'unidad'),
        quantity_mode_snapshot = CASE
@@ -87,6 +93,9 @@ UPDATE public.sale_items
          quantity_mode_snapshot,
          CASE WHEN quantity <> pg_catalog.trunc(quantity) THEN 'fractional' ELSE 'integer' END
        );
+
+ALTER TABLE public.sale_items ENABLE TRIGGER sale_items_checkout_lifecycle_guard;
+ALTER TABLE public.sale_items ENABLE TRIGGER sale_items_completed_reconciliation;
 
 ALTER TABLE public.sale_items
   ALTER COLUMN unit_snapshot SET NOT NULL,

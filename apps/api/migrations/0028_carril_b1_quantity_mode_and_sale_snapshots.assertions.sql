@@ -41,6 +41,15 @@ BEGIN
     WHERE tgrelid='public.sale_items'::regclass AND tgname='sale_items_checkout_lifecycle_guard'
       AND NOT tgisinternal AND tgenabled='O')
      OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger
+    WHERE tgrelid='public.sale_items'::regclass AND tgname='sale_items_completed_reconciliation'
+      AND NOT tgisinternal AND tgenabled='O')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger
+    WHERE tgrelid='public.sales'::regclass AND tgname='sales_completed_reconciliation'
+      AND NOT tgisinternal AND tgenabled='O')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger
+    WHERE tgrelid='public.payments'::regclass AND tgname='payments_completed_reconciliation'
+      AND NOT tgisinternal AND tgenabled='O')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger
     WHERE tgrelid='public.sale_items'::regclass AND tgname='zzz_sale_items_quantity_snapshot_guard'
       AND NOT tgisinternal AND tgenabled='O')
      OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger

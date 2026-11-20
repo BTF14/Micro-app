@@ -5,7 +5,7 @@
 - **7A — PR #393 MERGED:** `e0801e29e093a17bcc9e4c7116e8081a8d12c41b`. SDD reconciliado, parser CSV seguro y 31 pruebas unitarias.
 - **7B — PR #396:** `03d872bdba0c70bb1cf52cba75e5193d662d48c1`. Migración aditiva 0029, assertions y harness CI/backup; Neon `main` reportado por el propietario como migrado a 0029. Esta tarea no accedió ni escribió Neon.
 - **7C — PR #397 MERGED:** `f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`. Endpoints preview/apply, validación de tenant, hash canónico, transacción e idempotencia.
-- **7D — esta PR:** rama `feat/csv-importer-7d-ui-e2e-closure-20261120`, OPEN / Draft. SHA final se registra tras crear el commit; no se inventa SHA de merge futuro.
+- **7D — PR #398 OPEN / Draft:** rama `feat/csv-importer-7d-ui-e2e-closure-20261120`; sin merge ni auto-merge. SHA final se registra tras crear el commit; no se inventa SHA de merge futuro.
 - **Implementación 7D:** UI de selección/validación UTF-8 y 256 KiB; resumen/detalle por fila; confirmación con clave idempotente estable durante reintentos; manejo de errores 400/409; refresco del catálogo; cobertura jsdom; escenario Playwright real PostgreSQL 18; copy de tienda sin códigos internos.
 - **Criterios cumplidos a nivel de implementación:** control de permisos UI; límite y decodificación estricta del archivo; preview/apply y hash esperado; detalle de errores; persistencia de clave en reintento; refresh tras 200; layout móvil y escenario E2E sin mocks. La evidencia de ejecución queda pendiente de GitHub Actions exact-SHA.
 - **Criterios de integración pendientes:** todos los check-runs/workflows de la punta exacta deben terminar; revisión humana; merge independiente autorizado y comprobación de main post-merge. Paso 7 no se declara integrado mientras esta PR permanezca Draft.

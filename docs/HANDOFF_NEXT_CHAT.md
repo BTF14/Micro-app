@@ -3,7 +3,7 @@
 ## Estado y continuidad
 - Repositorio `BTF14/Micro-app`; base exacta verificada `f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`.
 - 7A PR #393 MERGED (`e0801e29e093a17bcc9e4c7116e8081a8d12c41b`); 7B PR #396 (`03d872bdba0c70bb1cf52cba75e5193d662d48c1`), Neon main reportado 0029; 7C PR #397 MERGED (`f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`).
-- 7D en `feat/csv-importer-7d-ui-e2e-closure-20261120`, OPEN / Draft. Verificar HEAD vivo y todos los checks exact-SHA; no merge/auto-merge.
+- 7D PR #398 OPEN / Draft, rama `feat/csv-importer-7d-ui-e2e-closure-20261120`. Verificar HEAD vivo y todos los checks exact-SHA; no merge/auto-merge.
 - UI: archivo CSV, validación 256 KiB y UTF-8 estricto, resumen/detalle por fila, apply con clave idempotente reutilizable en reintentos y refresco de catálogo. Tests jsdom y E2E real PostgreSQL 18 añadidos; ejecución CI pendiente.
 - **Paso 7 solo se cierra tras integrar 7D**. Siguiente: **PR 3 — Scanner móvil / Carril B2**. PR 4 — Cierres/Reportes/Exportación sigue después.
 - **Tour Visual E2E ($0)** permanece después de CSV 7D + PR 3 + PR 4 y antes de Pre-prod Audit; nueve secciones, 390×844 y 1280×800, screenshots temporales y revisión visual.

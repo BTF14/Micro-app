@@ -172,6 +172,17 @@ describe("SalesPanel", () => {
     ]);
   });
 
+  it("blocks checkout when an integer product quantity contains decimals", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render();
+    await act(async () => { click("Agregar producto A"); });
+    const qtyInput = container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto A"]')!;
+    await act(async () => { setInputValue(qtyInput, "0.5"); });
+    expect(qtyInput.value).toBe("0.5");
+    expect(container.textContent).toContain("Este producto solo admite cantidades enteras.");
+    expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
+  });
+
   it("allows keyboard fractional quantities with comma or dot and blocks charging while quantity is empty", async () => {
     vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
     await render();

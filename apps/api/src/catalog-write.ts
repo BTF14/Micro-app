@@ -456,8 +456,8 @@ export function registerCatalogWriteRoutes(app: Hono<{ Bindings: Bindings }>): v
       if (result.kind === "fractional_balance_conflict") return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo fraccionario en algún almacén." }, 409);
       return c.json(result.product, 200);
     } catch (error) {
-      if (postgresCode(error) === "23514" && (postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE") || postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_MINIMUM_STOCK"))) {
-        return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo fraccionario en algún almacén." }, 409);
+      if (postgresCode(error) === "23514" && (postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_INVENTORY_BALANCE") || postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_MINIMUM_STOCK") || postgresMessage(error).includes("INTEGER_PRODUCT_HAS_FRACTIONAL_PENDING_COUNT"))) {
+        return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "No se puede cambiar a unidad entera mientras exista saldo, mínimo o conteo pendiente fraccionario." }, 409);
       }
       if (postgresCode(error) === "23505") {
         return c.json({ error: "PRODUCT_CONFLICT", message: "Ya existe un producto con ese SKU o código de barras." }, 409);

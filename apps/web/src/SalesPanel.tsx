@@ -249,7 +249,7 @@ export default function SalesPanel({
 
   function addProduct(product: QuickLookupProduct) {
     const available = quantityUnits(product.available_quantity);
-    const step = product.quantity_mode === "integer" ? 1000n : 1n;
+    const step = 1000n;
     if (available <= 0n) {
       setNotice(product.name + " está agotado en este almacén y no se agregó.");
       return;
@@ -476,7 +476,7 @@ export default function SalesPanel({
                       <div className="sales-cart-product"><strong>{line.product.name}</strong><small>{line.product.sku} · {usd(line.product.price_usd)} c/u</small></div>
                       <label className="sales-quantity"><span>Cantidad</span><input aria-label={`Cantidad de ${line.product.name}`} inputMode={line.product.quantity_mode === "integer" ? "numeric" : "decimal"} step={line.product.quantity_mode === "integer" ? "1" : "0.001"} value={line.quantityInput} onChange={(event) => updateQuantity(line.product.product_id, event.target.value)} onBlur={() => commitQuantityBlur(line.product.product_id)} /></label>
                       <div className="sales-line-total"><strong>{usd(line.lineUsd)}</strong><small>{line.lineVes ? ves(line.lineVes) : "Conversión no disponible"}</small></div>
-                      <div className="sales-line-actions"><button type="button" disabled={quantityUnits(line.quantity) <= (line.product.quantity_mode === "integer" ? 1000n : 1n)} onClick={() => updateQuantity(line.product.product_id, formatNumeric(quantityUnits(line.quantity) - (line.product.quantity_mode === "integer" ? 1000n : 1n), 14, 3))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
+                      <div className="sales-line-actions"><button type="button" disabled={quantityUnits(line.quantity) <= 1000n} onClick={() => updateQuantity(line.product.product_id, formatNumeric(quantityUnits(line.quantity) - 1000n, 14, 3))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
                     </article>)}
                   </div>
                 )}

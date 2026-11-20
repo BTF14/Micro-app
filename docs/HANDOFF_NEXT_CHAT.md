@@ -1,3 +1,31 @@
+# Handoff vigente — Cierre Paso 6 Hardening B1 + 0027 — 2026-11-20
+
+## Punto de partida verificado
+
+- main = c2fa2fe453af0c3dbb7dd95e8b79a59eed828234, posterior a PR #390 (0028), PR #391 (6A), PR #385 y PR #386; 0 PRs antiguas pendientes.
+- PR #390 y PR #391 están MERGED. Paso 5 / Carril B1 0028 está cerrado y Neon main fue migrado a 0028 por el propietario.
+- El propietario verificó HTTP 200 en /health y /api/exchange-rates/latest; esta ejecución no accedió a Neon ni a infraestructura privada.
+- Paso 6 se compone de PR #391 (6A, MERGED) y PR #392 (6B, OPEN / Draft). No fusionar ni marcar lista la PR #392 antes de revisar diff y todos los checks del SHA exacto.
+- Próximo trabajo tras integrar Paso 6: Paso 7 — PR 2: Importador CSV.
+
+## Alcance de la PR #392
+
+- Una única PR Draft desde la base exacta indicada, con seis archivos autorizados.
+- Cobertura PostgreSQL 18 del GET de detalle de venta: snapshots inmutables después de modificar catálogo, metadatos BCV/recibo, ausencia de costes, aislamiento de otro cashier, bloqueo inventory, y rechazos cross-tenant / otra sucursal / draft.
+- ODD hardening-b1-0027.md, cierre del registro de Carril B1 y bloques vigentes al inicio de CURRENT_STATE, HANDOFF_NEXT_CHAT y PROJECT_PLAN.
+- Sin cambios de código productivo, frontend, migraciones, Neon, secretos, DNS, Cloudflare, ni configuración/gates.
+
+## Evidencia y limitaciones
+
+- Base GitHub exacta: c2fa2fe453af0c3dbb7dd95e8b79a59eed828234.
+- PR #391 merged commit: 94f27defa1a4b4faca4c0fc0adefd199c31180d4.
+- PR #392: OPEN / Draft; validar su HEAD exacto y esperar el 100 % de workflows y check-runs reales.
+- No hay checkout local ni PostgreSQL local en esta ejecución. No afirmar ejecución local de validadores, tests, typecheck o build.
+- No reutilizar checks de la base, PR #390 ni PR #391 como evidencia de PR #392.
+- Gates: AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; BCV_SYNC_ENABLED=false; PRODUCTION: NOT READY; presupuesto objetivo USD 0.
+
+---
+
 # Handoff vigente — PR #390 / Paso 5 Carril B1 — 2026-11-20
 
 ## Punto de partida verificado

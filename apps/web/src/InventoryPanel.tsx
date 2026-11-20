@@ -168,7 +168,13 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     const quantity = normalizeDecimalInput(receiptQuantity);
     const unitCost = normalizeDecimalInput(receiptCost);
     try {
-      if (parseNumeric(quantity, 14, 3) <= 0n || parseNumeric(unitCost, 14, 4) < 0n) throw new Error("La cantidad debe ser mayor que cero y el costo no puede ser negativo.");
+      const quantityUnits = parseNumeric(quantity, 14, 3);
+      if (quantityUnits <= 0n || parseNumeric(unitCost, 14, 4) < 0n) throw new Error("La cantidad debe ser mayor que cero y el costo no puede ser negativo.");
+      const selectedProduct = manageableProducts.find((item) => item.product_id === selectedProductId);
+      if (selectedProduct?.quantity_mode === "integer" && quantityUnits % 1000n !== 0n) {
+        setError("Los productos de unidad entera solo admiten cantidades enteras en la recepción.");
+        return;
+      }
     } catch {
       setError("Usa una cantidad válida (hasta 3 decimales) y un costo USD válido (hasta 4 decimales).");
       return;
@@ -195,7 +201,13 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     if (!branchId || !warehouseId || !selectedProductId) return;
     const countedQuantity = normalizeDecimalInput(countQuantity);
     try {
-      if (parseNumeric(countedQuantity, 14, 3) < 0n) throw new Error("El conteo no puede ser negativo.");
+      const quantityUnits = parseNumeric(countedQuantity, 14, 3);
+      if (quantityUnits < 0n) throw new Error("El conteo no puede ser negativo.");
+      const selectedProduct = manageableProducts.find((item) => item.product_id === selectedProductId);
+      if (selectedProduct?.quantity_mode === "integer" && quantityUnits % 1000n !== 0n) {
+        setError("Los productos de unidad entera solo admiten cantidades enteras en el conteo.");
+        return;
+      }
     } catch {
       setError("Usa una cantidad válida de hasta 3 decimales, sin valores negativos.");
       return;

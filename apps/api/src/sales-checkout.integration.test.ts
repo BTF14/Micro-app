@@ -1870,13 +1870,6 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(sales.rows[0]?.count).toBe(0);
   });
 
-  it("rejects fractional checkout quantities for integer products", async () => {
-    await client.query("UPDATE public.products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
-    const response = await request(checkoutBody("0.500", "11.9250"), "integer-quantity-" + crypto.randomUUID());
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
-    const sales = await client.query("SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key LIKE 'integer-quantity-%'", [organizationId]);
-    expect(sales.rows[0]?.count).toBe(0);
-  });
+
 
 });

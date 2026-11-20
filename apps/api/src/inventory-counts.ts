@@ -161,14 +161,15 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           const lockedWarehouses = await lockInventoryWarehouses(tx, tenant.organizationId, [{ warehouseId, branchId: branch.branchId }]);
           if (!lockedWarehouses) return { kind: "not_found" as const };
 
-          const productIds = input.lines.map((line) => line.productId);
+          const orderedLines = [...input.lines].sort((a, b) => a.productId.localeCompare(b.productId));
+          const productIds = orderedLines.map((line) => line.productId);
           const products = await tx.query<{ id: string; quantity_mode: "integer" | "fractional" }>(
-            `SELECT id, quantity_mode FROM products WHERE organization_id = $1 AND id = ANY($2::uuid[]) FOR SHARE`,
+            `SELECT id, quantity_mode FROM products WHERE organization_id = $1 AND id = ANY($2::uuid[]) ORDER BY id ASC FOR SHARE`,
             [tenant.organizationId, productIds],
           );
           if (products.rows.length !== productIds.length) return { kind: "invalid_products" as const };
           const modeByProduct = new Map(products.rows.map((product) => [product.id, product.quantity_mode]));
-          if (input.lines.some((line) => modeByProduct.get(line.productId) === "integer" && milliUnits(line.quantity) % 1000n !== 0n)) {
+          if (orderedLines.some((line) => modeByProduct.get(line.productId) === "integer" && milliUnits(line.quantity) % 1000n !== 0n)) {
             return { kind: "invalid_quantity" as const };
           }
 
@@ -215,7 +216,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
           const capturedByProduct = new Map(capturedBalances.map((balance) => [balance.product_id, balance]));
 
           const countId = inserted.rows[0].id;
-          for (const line of input.lines) {
+          for (const line of orderedLines) {
             await tx.query(
               `INSERT INTO inventory_count_lines
                 (organization_id, branch_id, warehouse_id, count_id, product_id, counted_quantity, unit_cost_usd,
@@ -246,7 +247,12 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "idempotency_conflict") return c.json({ error: "IDEMPOTENCY_KEY_REUSED", message: "La clave de idempotencia ya fue utilizada con una solicitud diferente." }, 409);
       if (result.kind === "replayed") return c.json({ id: result.countId, status: result.status, count_type: result.countType, line_count: result.lineCount, replayed: true }, 200);
       return c.json({ id: result.countId, status: "draft", count_type: countType, line_count: result.lineCount }, 201);
-    } catch {
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : undefined;
+      const message = error instanceof Error ? error.message : "";
+      if (code === "23514" && message.includes("INTEGER_PRODUCT_COUNT_QUANTITY_MUST_BE_WHOLE")) {
+        return c.json({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE", message: "Los productos de unidad entera solo admiten cantidades enteras en el conteo." }, 400);
+      }
       return c.json({ error: "INVENTORY_COUNT_CREATE_FAILED", message: "No se pudo registrar el conteo." }, 500);
     }
   });

@@ -15,10 +15,10 @@ vi.mock("./QuickProductLookup", () => ({
       })}>Agregar producto A</button>
       <button type="button" onClick={() => onSelect({
         product_id: "00000000-0000-4000-8000-000000000002", is_active: true, sku: "B-1",
-        barcode: null, name: "Producto B", unit: "unidad", price_usd: "0.0002", available_quantity: "1.000",
+        barcode: null, name: "Producto B", unit: "unidad", quantity_mode: "integer", price_usd: "0.0002", available_quantity: "1.000",
       })}>Agregar producto B</button>
       <button type="button" onClick={() => onSelect({ product_id: "00000000-0000-4000-8000-000000000003", is_active: true, sku: "C-1", barcode: null, name: "Producto C", unit: "kg", quantity_mode: "fractional", price_usd: "1000.0000", available_quantity: "5.000" })}>Agregar producto C</button>
-      <button type="button" onClick={() => onSelect({ product_id: "00000000-0000-4000-8000-000000000004", is_active: true, sku: "D-1", barcode: null, name: "Producto D", unit: "kg", price_usd: "10.0000", available_quantity: "0.500" })}>Agregar producto D</button>
+      <button type="button" onClick={() => onSelect({ product_id: "00000000-0000-4000-8000-000000000004", is_active: true, sku: "D-1", barcode: null, name: "Producto D", unit: "kg", quantity_mode: "fractional", price_usd: "10.0000", available_quantity: "0.500" })}>Agregar producto D</button>
     </div>
   ),
 }));
@@ -142,7 +142,7 @@ describe("SalesPanel", () => {
     const receipt = {
       sale_number: "V-000043", created_at: "2026-11-14T15:05:00Z", currency: "VES",
       subtotal_usd: "1000.0000", total_usd: "1000.0000", total_ves: "36500.00", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null,
-      lines: [{ product_name_snapshot: "Producto C", sku_snapshot: "C-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "1000.0000", line_total_usd: "1000.0000", line_total_ves: "36500.00" }],
+      lines: [{ product_name_snapshot: "Producto C", sku_snapshot: "C-1", unit_snapshot: "kg", quantity_mode_snapshot: "fractional", quantity: "1.000", unit_price_usd: "1000.0000", line_total_usd: "1000.0000", line_total_ves: "36500.00" }],
       payments: [
         { method: "mobile_payment", currency: "VES", amount: "20000.00", reference: "REF-12345" },
         { method: "cash", currency: "VES", amount: "16500.00", reference: null },

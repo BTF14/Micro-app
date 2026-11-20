@@ -446,7 +446,7 @@ test("real CSV catalog import persists through PostgreSQL 18 on mobile", async (
   const applyResponse = await applyPromise;
   expect(applyResponse.status()).toBe(200);
   expect(applyResponse.request().headers()["idempotency-key"]).toMatch(/^csv-/);
-  await expect(page.getByRole("status")).toContainText("Importación completada");
+  await expect(page.locator(".catalog-import-success")).toContainText("Importación completada");
   await expectNoHorizontalOverflow(page, "mobile CSV applied");
 
   await page.reload();

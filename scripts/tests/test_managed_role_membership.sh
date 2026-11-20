@@ -49,9 +49,9 @@ ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep
 export MIGRATION_DATABASE_URL="$bcv_migrator_url"
 bash scripts/db/migrate.sh
 
-# BCV profile: all 27 migrations, automatic creator edges, and the full 0022-0027 assertion chain.
+# BCV profile: all 28 migrations, automatic creator edges, and the full 0022-0028 assertion chain.
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
-  "SELECT count(*)=27 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+  "SELECT count(*)=28 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*)=2 FROM pg_catalog.pg_auth_members m
    JOIN pg_catalog.pg_roles granted_role ON granted_role.oid=m.roleid
@@ -70,6 +70,7 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0025_inventory_receipts.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0026_fx_contingency_management.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql"
 
 expect_failure() {
   local label="$1" marker="$2"
@@ -186,4 +187,4 @@ test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='bcv-membership-sentinel'")" = "1"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$main_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='main-membership-sentinel'")" = "1"
-echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0027; main 0001-0016; positive and fail-closed cases)"
+echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0028; main 0001-0016; positive and fail-closed cases)"

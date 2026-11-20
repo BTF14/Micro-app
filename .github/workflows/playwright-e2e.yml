@@ -138,10 +138,12 @@ jobs:
         run: bash scripts/db/migrate.sh
       - name: Assert the complete migration ledger
         run: |
-          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM public.schema_migrations WHERE state = 'applied'")" = "27"
-          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT min(version) || ':' || max(version) FROM public.schema_migrations")" = "0001:0027"
+          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM public.schema_migrations WHERE state = 'applied'")" = "28"
+          test "$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT min(version) || ':' || max(version) FROM public.schema_migrations")" = "0001:0028"
       - name: Verify BCV 0027 SQL security and effective-date contract
         run: psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
+      - name: Verify Carril B1 0028 quantity-mode and sale-snapshot contract
+        run: psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql
       - name: Run BCV 0027 PostgreSQL 18 effective-date matrix
         run: pnpm --filter @micro-app/api test:bcv-0027
       - name: Install pinned Playwright runner in an isolated temporary directory

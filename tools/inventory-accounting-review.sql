@@ -12,7 +12,7 @@ CREATE TEMP TABLE iar_balances (
 );
 CREATE TEMP TABLE iar_sales(sale_id text PRIMARY KEY,subtotal_usd numeric(14,4) NOT NULL,total_usd numeric(14,4) NOT NULL);
 CREATE TEMP TABLE iar_sale_lines(sale_id text,line_no int,quantity numeric(14,3),unit_price_usd numeric(14,4),line_total_usd numeric(14,4),PRIMARY KEY(sale_id,line_no));
-CREATE TEMP TABLE iar_payments(sale_id text,payment_no int,amount_usd numeric(14,4),PRIMARY KEY(sale_id,payment_no));
+CREATE TEMP TABLE iar_payments(sale_id text,payment_no int,currency text,amount numeric(14,4),PRIMARY KEY(sale_id,payment_no),CHECK(currency<>'VES' OR amount=round(amount,2)));
 
 DO $$
 BEGIN
@@ -56,16 +56,23 @@ END $$;
 
 INSERT INTO iar_sales VALUES ('sale-a',29.8125,29.8125);
 INSERT INTO iar_sale_lines VALUES ('sale-a',1,1.250,23.8500,29.8125);
-INSERT INTO iar_payments VALUES ('sale-a',1,29.8125);
+INSERT INTO iar_payments VALUES ('sale-a',1,'USD',29.8125),('sale-a',2,'VES',12.34);
 DO $$ DECLARE ls numeric(14,4); ps numeric(14,4); BEGIN
  SELECT sum(line_total_usd) INTO ls FROM iar_sale_lines WHERE sale_id='sale-a';
- SELECT sum(amount_usd) INTO ps FROM iar_payments WHERE sale_id='sale-a';
+ SELECT sum(amount) INTO ps FROM iar_payments WHERE sale_id='sale-a' AND currency='USD';
  IF ls<>(SELECT subtotal_usd FROM iar_sales WHERE sale_id='sale-a') OR ls<>(SELECT total_usd FROM iar_sales WHERE sale_id='sale-a') OR ps<>(SELECT total_usd FROM iar_sales WHERE sale_id='sale-a')
  THEN RAISE EXCEPTION 'baseline sale/payment reconciliation failed'; END IF;
 END $$;
-UPDATE iar_payments SET amount_usd=amount_usd-0.0001 WHERE sale_id='sale-a';
+UPDATE iar_payments SET amount=amount-0.0001 WHERE sale_id='sale-a' AND currency='USD';
 DO $$ BEGIN
- IF (SELECT sum(amount_usd) FROM iar_payments WHERE sale_id='sale-a')=(SELECT total_usd FROM iar_sales WHERE sale_id='sale-a')
+ IF (SELECT sum(amount) FROM iar_payments WHERE sale_id='sale-a' AND currency='USD')=(SELECT total_usd FROM iar_sales WHERE sale_id='sale-a')
  THEN RAISE EXCEPTION 'payment mutant not detected'; END IF;
 END $$;
+DO $ BEGIN
+ BEGIN
+  INSERT INTO iar_payments VALUES ('sale-ves',1,'VES',1.2345);
+  RAISE EXCEPTION 'VES payment scale constraint not enforced';
+ EXCEPTION WHEN check_violation THEN NULL;
+ END;
+END $;
 ROLLBACK;

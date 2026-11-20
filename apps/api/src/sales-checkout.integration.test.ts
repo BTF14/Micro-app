@@ -407,8 +407,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
   beforeEach(async () => {
     const product = await client.query<{ id: string }>(
-      `INSERT INTO public.products(organization_id,sku,name,price_usd,cost_usd)
-       VALUES($1,$2,'Checkout Product',23.85,2.00) RETURNING id`,
+      `INSERT INTO public.products(organization_id,sku,name,price_usd,cost_usd,quantity_mode)
+       VALUES($1,$2,'Checkout Product',23.85,2.00,'fractional') RETURNING id`,
       [organizationId, "CHECKOUT-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12)],
     );
     productId = product.rows[0]!.id;
@@ -592,7 +592,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     expect(sale.total_usd).toBe("29.8125");
     expect(sale.bcv_rate).toBe("250.12345678");
     expect(sale.lines[0]).toMatchObject({
-      quantity: "1.250", line_total_usd: "29.8125",
+      quantity: "1.250", unit_snapshot: "unidad", quantity_mode_snapshot: "fractional", line_total_usd: "29.8125",
       line_total_ves: convertUsdToVes("29.8125", "250.12345678"),
     });
     expect(sale.lines[0]).not.toHaveProperty("unit_cost_usd");
@@ -1843,6 +1843,15 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     );
     expect(counts.rows[0]).toEqual({ completed_sales: 0, payments: 0, movements: 0, audits: 0 });
     expect((await readBalance()).on_hand_quantity).toBe("10.000");
+  });
+
+  it("rejects fractional checkout quantities for integer products", async () => {
+    await client.query("UPDATE public.products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const response = await request(checkoutBody("0.500", "11.9250"), "integer-quantity-" + crypto.randomUUID());
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    const sales = await client.query("SELECT count(*)::int AS count FROM public.sales WHERE organization_id=$1 AND idempotency_key LIKE 'integer-quantity-%'", [organizationId]);
+    expect(sales.rows[0]?.count).toBe(0);
   });
 
 });

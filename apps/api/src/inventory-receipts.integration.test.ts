@@ -93,7 +93,7 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
     const suffix = crypto.randomUUID().replace(/-/g,"").slice(0,12);
     const warehouse = await admin.query<{id:string}>("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Receipt test warehouse') RETURNING id",[organizationId,branchId,"rcpt-"+suffix]);
     warehouseId = warehouse.rows[0]!.id;
-    const product = await admin.query<{id:string}>("INSERT INTO products(organization_id,sku,name,price_usd) VALUES($1,$2,'Receipt test product',1) RETURNING id",[organizationId,"RECEIPT-"+suffix]);
+    const product = await admin.query<{id:string}>("INSERT INTO products(organization_id,sku,name,price_usd,quantity_mode) VALUES($1,$2,'Receipt test product',1,'fractional') RETURNING id",[organizationId,"RECEIPT-"+suffix]);
     productId = product.rows[0]!.id;
   });
 
@@ -215,4 +215,14 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
       [organizationId,branchId,warehouseId,productId],
     )).rejects.toMatchObject({code:"42501"});
   });
+  it("rejects fractional receipt quantities in integer mode and accepts fractional mode", async () => {
+    await admin.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const rejected = await post(root(), body("0.500"));
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    await admin.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const accepted = await post(root(), body("1.250"));
+    expect(accepted.status).toBe(201);
+  });
+
 });

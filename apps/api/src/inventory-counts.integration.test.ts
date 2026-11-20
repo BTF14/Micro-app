@@ -154,7 +154,7 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     );
     warehouseId = warehouse.rows[0]!.id;
     const product = await client.query<{ id: string }>(
-      "INSERT INTO products (organization_id, sku, name, price_usd) VALUES ($1, $2, 'Inventory Count Test Product', 1) RETURNING id",
+      "INSERT INTO products (organization_id, sku, name, price_usd, quantity_mode) VALUES ($1, $2, 'Inventory Count Test Product', 1, 'fractional') RETURNING id",
       [organizationId, "INV-COUNT-" + suffix],
     );
     productId = product.rows[0]!.id;
@@ -1149,4 +1149,14 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     const countRead = await get(`/api/orgs/${organizationId}/branches/${branchId}/warehouses/${warehouseId}/counts`);
     expect(countRead.status).toBe(403);
   });
+  it("rejects fractional counts in integer mode and accepts fractional mode", async () => {
+    await client.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const rejected = await request(root() + "/counts/physical", { reason: "Integer mode rejects halves", lines: [{ product_id: productId, counted_quantity: "0.500" }] });
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
+    await client.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
+    const accepted = await request(root() + "/counts/physical", { reason: "Fractional mode accepts grams", lines: [{ product_id: productId, counted_quantity: "1.250" }] });
+    expect(accepted.status).toBe(201);
+  });
+
 });

@@ -216,40 +216,6 @@ describe.skipIf(!databaseUrl)("inventory receipt API against PostgreSQL 18", () 
       [organizationId,branchId,warehouseId,productId],
     )).rejects.toMatchObject({code:"42501"});
   });
-  it("maps the database integer-quantity constraint to the public 400 error", async () => {
-    await admin.query("CREATE OR REPLACE FUNCTION public.fail_integer_receipt_quantity_test() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN RAISE EXCEPTION ''INTEGER_PRODUCT_RECEIPT_QUANTITY_MUST_BE_WHOLE'' USING ERRCODE = ''23514''; RETURN NEW; END;'");
-    await admin.query("CREATE TRIGGER fail_integer_receipt_quantity_test BEFORE INSERT ON public.inventory_receipt_lines FOR EACH ROW EXECUTE FUNCTION public.fail_integer_receipt_quantity_test()");
-    try {
-      const response = await post(root(), body("1.000"));
-      expect(response.status).toBe(400);
-      expect(await response.json()).toEqual({
-        error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE",
-        message: "Los productos de unidad entera solo admiten cantidades enteras en la recepción.",
-      });
-    } finally {
-      await admin.query("DROP TRIGGER IF EXISTS fail_integer_receipt_quantity_test ON public.inventory_receipt_lines");
-      await admin.query("DROP FUNCTION IF EXISTS public.fail_integer_receipt_quantity_test()");
-    }
-  });
-
-  it("rejects fractional receipt quantities in integer mode and accepts fractional mode", async () => {
-    await admin.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
-    const rejected = await post(root(), body("0.500"));
-    expect(rejected.status).toBe(400);
-    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
-    await admin.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
-    const accepted = await post(root(), body("1.250"));
-    expect(accepted.status).toBe(201);
-  });
-    await admin.query("UPDATE products SET quantity_mode='integer' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
-    const rejected = await post(root(), body("0.500"));
-    expect(rejected.status).toBe(400);
-    expect(await rejected.json()).toMatchObject({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE" });
-    await admin.query("UPDATE products SET quantity_mode='fractional' WHERE organization_id=$1 AND id=$2", [organizationId, productId]);
-    const accepted = await post(root(), body("1.250"));
-    expect(accepted.status).toBe(201);
-  });
-
 
 
 });

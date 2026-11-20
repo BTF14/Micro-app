@@ -43,7 +43,7 @@ This profile adds an independent accounting-operational layer. It does not repla
 
 ## Review protocol
 
-- Verify live GitHub HEAD/base/PR and inspect the complete diff. Read migrations 0001–0027 in order where relevant; do not alter them.
+- Verify live GitHub HEAD/base/PR and inspect the complete diff. Read migrations 0001–0028 in order where relevant. Never edit historical migrations 0001–0027; review the additive 0028 migration and its assertions as part of an explicitly authorized Carril B1 ODD task.
 - Define an independent invariant matrix before reading implementation assertions.
 - Run the versioned skill and disposable PostgreSQL harness. Mutants exist only in copied in-memory objects or temporary tables/copies; every critical mutation must be killed by a named assertion.
 - Review application tests and SQL assertions separately. Model tests do not prove production SQL; migration assertions do not prove application reconciliation.
@@ -54,7 +54,7 @@ This profile adds an independent accounting-operational layer. It does not repla
 
 - Budget USD 0. No paid service, dependency, external database or hosted mutation service.
 - Never use Neon main, production data, secrets, Cloudflare settings or live Worker configuration for tests.
-- Do not modify product logic, migrations 0001–0027, or implement Carril B1 (0028+, quantity_mode, sale_items changes or commercial routes).
+- Do not modify historical migrations 0001–0027. Carril B1 (0028+, quantity_mode, sale_items snapshots and quantity-aware commercial routes) is reviewable/implementable only when an explicit ODD task authorizes the dedicated branch; never infer production or merge authority from this profile.
 - Do not merge, enable auto-merge, or mark a specifically Draft PR ready.
 - Preserve AC-6 OPEN, FX_CONTINGENCY_ENABLED=false, Issue #53 OPEN/P0, freeze v1.1, PRODUCTION: NOT READY and Worker BCV_SYNC_ENABLED=false.
 - Do not claim a delegated subagent ran unless the runtime confirms execution. The Tech Lead remains accountable.

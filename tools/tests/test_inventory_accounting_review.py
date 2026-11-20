@@ -3,7 +3,7 @@ from dataclasses import replace
 from decimal import Decimal
 import unittest
 from tools.inventory_accounting_review import (
-    exact, reference_ledger, reference_sale, reference_shift, rounded,
+    exact, payment_amount, reference_ledger, reference_sale, reference_shift, rounded,
     validate_actor_scope, validate_ledger, validate_sale, validate_shift,
     InvariantViolation,
 )
@@ -20,6 +20,14 @@ class InventoryAccountingReviewTests(unittest.TestCase):
         for malformed in ("1e3", " 1.0000", "1.0000 ", "+1.0000", "01.0000"):
             with self.subTest(malformed=malformed), self.assertRaises(ValueError):
                 exact(malformed,14,4)
+
+    def test_contextual_payment_precision_usd_vs_ves(self):
+        self.assertEqual(Decimal("1.2345"), payment_amount("USD", "1.2345"))
+        self.assertEqual(Decimal("1.23"), payment_amount("VES", "1.23"))
+        with self.assertRaisesRegex(ValueError, "two decimal"):
+            payment_amount("VES", "1.234")
+        with self.assertRaisesRegex(ValueError, "unsupported"):
+            payment_amount("EUR", "1.00")
 
     def test_ties_round_away_from_zero(self):
         self.assertEqual(Decimal("1.2345"),rounded(Decimal("1.23445"),4))

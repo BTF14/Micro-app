@@ -272,4 +272,27 @@ describe.skipIf(!databaseUrl)("catalog product creation against PostgreSQL", () 
     expect(persisted.rows[0]).toEqual({ products: "0", audits: "0" });
   });
 
+  it("defaults new products to integer mode and accepts explicit fractional mode", async () => {
+    const defaultResponse = await createRequest(fixtures.owner, organizationA, {
+      sku: "MODE-DEFAULT", name: "Default integer", price_usd: "1.00",
+    });
+    expect(defaultResponse.status).toBe(201);
+    expect(await defaultResponse.json()).toMatchObject({ quantity_mode: "integer" });
+
+    const fractionalResponse = await createRequest(fixtures.owner, organizationA, {
+      sku: "MODE-FRACTIONAL", name: "Fractional product", price_usd: "1.00",
+      quantity_mode: "fractional", minimum_stock: "0.500",
+    });
+    expect(fractionalResponse.status).toBe(201);
+    expect(await fractionalResponse.json()).toMatchObject({
+      quantity_mode: "fractional", minimum_stock: "0.500",
+    });
+
+    const invalidIntegerMinimum = await createRequest(fixtures.owner, organizationA, {
+      sku: "MODE-INVALID", name: "Invalid integer minimum", price_usd: "1.00",
+      minimum_stock: "0.500",
+    });
+    expect(invalidIntegerMinimum.status).toBe(400);
+  });
+
 });

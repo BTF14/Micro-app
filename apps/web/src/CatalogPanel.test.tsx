@@ -196,7 +196,7 @@ describe("catalog CSV import", () => {
     await renderPanel(props);
     await act(async () => { container.querySelector<HTMLButtonElement>(".catalog-import-open")?.click(); });
   }
-  async function chooseCsv(contents: string | Uint8Array) {
+  async function chooseCsv(contents: string | ArrayBuffer) {
     const input = container.querySelector<HTMLInputElement>('.catalog-import input[type="file"]');
     if (!input) throw new Error("CSV file input missing");
     const file = new File([contents], "catalogo.csv", { type: "text/csv" });
@@ -235,7 +235,9 @@ describe("catalog CSV import", () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
     await openImporter();
     const before = vi.mocked(fetch).mock.calls.length;
-    await chooseCsv(new Uint8Array([0xc3, 0x28]));
+    const invalidUtf8 = new ArrayBuffer(2);
+    new Uint8Array(invalidUtf8).set([0xc3, 0x28]);
+    await chooseCsv(invalidUtf8);
     await previewCsv();
     expect(container.textContent).toContain("UTF-8 válido");
     expect(vi.mocked(fetch).mock.calls).toHaveLength(before);

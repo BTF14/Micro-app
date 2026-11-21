@@ -149,20 +149,27 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     const ownerBody = await owner.json() as {items:Array<Record<string,unknown>>};
     const valued = ownerBody.items.find((item) => item.product_id === productId);
     expect(valued).toHaveProperty("on_hand","5.000");
+    expect(valued).toHaveProperty("retail_valuation_usd","100.0000");
     expect(valued).toHaveProperty("cost_usd","12.3400");
     expect(valued).toHaveProperty("cost_valuation_usd","61.7000");
     expect(ownerBody).toHaveProperty("total_cost_valuation_usd","61.7000");
+    const ownerCsv = await request("owner",orgPath()+"/reports/inventory.csv");
+    expect(ownerCsv.status).toBe(200);
+    expect(await ownerCsv.text()).toContain("61.7000");
     expect(ownerBody.items.some((item) => item.branch_id === secondBranchId && item.product_id === secondProductId)).toBe(true);
     for (const role of ["admin","inventory"] as const) {
       const response = await request(role,orgPath()+"/reports/inventory");
       expect(response.status).toBe(200);
       const body = await response.json() as {items:Array<Record<string,unknown>>};
+      expect(body.items[0]).toHaveProperty("retail_valuation_usd");
       expect(body.items[0]).not.toHaveProperty("cost_usd");
       expect(body.items[0]).not.toHaveProperty("cost_valuation_usd");
       const csv = await request(role,orgPath()+"/reports/inventory.csv");
       expect(csv.status).toBe(200);
       const csvText = await csv.text();
       expect(csvText).not.toContain("cost_valuation_usd");
+      expect(csvText).not.toContain("valor_costo_usd");
+      expect(csvText).not.toContain("12.3400");
       expect(csvText).toContain("\"'=CMD(1+1)-");
       expect(csvText).toContain("\"' +SUM(1,1)\"");
     }

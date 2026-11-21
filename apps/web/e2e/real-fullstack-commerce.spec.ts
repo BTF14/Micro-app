@@ -402,6 +402,43 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await cashierPage.reload();
   await navigateByKeyboard(cashierPage, "Ventas");
   await expect(cashierPage.getByRole("heading", { name: "Abre tu turno antes de vender" })).toBeVisible();
+
+  // 7. Cashier sees only their own closed shift and sales in Reports.
+  await navigateByKeyboard(cashierPage, "Reportes");
+  await expect(cashierPage.getByRole("heading", { name: "Reportes" })).toBeVisible();
+  await expect(cashierPage.getByRole("button", { name: "Mis ventas", exact: true })).toBeVisible();
+  await expect(cashierPage.getByRole("button", { name: "Inventario", exact: true })).toHaveCount(0);
+  await expectNoHorizontalOverflow(cashierPage, "mobile cashier reports");
+  await expect(cashierPage.getByLabel("Turno reciente")).toHaveValue(/.+/);
+  await expect(cashierPage.getByText("Diferencia USD", { exact: true })).toBeVisible();
+  await expect(cashierPage.locator(".reports-cards")).toContainText("−10,00");
+  await expectNoHorizontalOverflow(cashierPage, "mobile cashier closure summary");
+  await cashierPage.getByRole("button", { name: "Mis ventas", exact: true }).click();
+  const cashierSalesResponse = await cashierPage.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith("/reports/sales") && response.request().method() === "GET");
+  expect(cashierSalesResponse.status()).toBe(200);
+  const cashierCsvResponsePromise = cashierPage.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith("/reports/sales.csv") && response.request().method() === "GET");
+  const cashierDownloadPromise = cashierPage.waitForEvent("download");
+  await cashierPage.getByRole("button", { name: "Exportar CSV", exact: true }).click();
+  const cashierCsvResponse = await cashierCsvResponsePromise;
+  expect(cashierCsvResponse.status()).toBe(200);
+  const cashierCsv = await cashierCsvResponse.text();
+  expect(cashierCsv.startsWith("\uFEFF")).toBe(true);
+  expect(cashierCsv).toContain("fecha_completada");
+  expect(cashierCsv).toContain("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
+  await cashierDownloadPromise;
+  await expectNoHorizontalOverflow(cashierPage, "mobile cashier sales report");
+
+  // Owner can see the valuation projection; it is never exposed in the cashier UI.
+  await navigateByKeyboard(page, "Reportes");
+  await expect(page.getByRole("heading", { name: "Reportes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Inventario y valoración", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Inventario y valoración", exact: true }).click();
+  await expect(page.getByText("Valoración al costo", { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page, "mobile owner inventory valuation");
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expectNoHorizontalOverflow(page, "desktop owner reports");
   await cashierContext.close();
 
   // Every application API request used the real same-origin proxy; no page.route

@@ -18,7 +18,6 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
   let runtime: Client;
   let organizationId: string;
   let branchId: string;
-  let warehouseId: string;
   let cashierShiftId: string;
   const actors = new Map<Role, Actor>();
 
@@ -42,7 +41,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       await admin.query("INSERT INTO auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",[userId,await hash(token)]);
       actors.set(role,{role,userId,token});
     }
-    warehouseId = (await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Main warehouse') RETURNING id",[organizationId,branchId,"main-"+suffix])).rows[0].id;
+    await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Main warehouse')",[organizationId,branchId,"main-"+suffix]);
     const productId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd) VALUES($1,$2,'Test product','unidad',12.3400,20.0000) RETURNING id",[organizationId,"SKU-"+suffix])).rows[0].id;
     await admin.query("INSERT INTO inventory_balances(organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity) VALUES($1,$2,$3,$4,0,0)",[organizationId,branchId,warehouseId,productId]);
     const cashier = actors.get("cashier")!;

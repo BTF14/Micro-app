@@ -23,6 +23,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
   let secondCashier: Actor;
   let bcvProducer: Client;
   let rateId: string;
+  let futureRateId: string | null = null;
   let rateDate: string;
   let originalRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
   let rateWasCreated = false;
@@ -89,6 +90,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     );
     const secondCashierUserId = (await admin.query("INSERT INTO app_users(email,display_name) VALUES($1,'Second cashier') RETURNING id",["cashier-second-"+suffix+"@example.invalid"])).rows[0].id;
     await admin.query("INSERT INTO organization_members(organization_id,user_id,role) VALUES($1,$2,'cashier')",[organizationId,secondCashierUserId]);
+    await admin.query("INSERT INTO branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",[organizationId,branchId,secondCashierUserId]);
     const secondCashierToken = "reports-second-cashier-" + crypto.randomUUID();
     await admin.query("INSERT INTO auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",[secondCashierUserId,await hash(secondCashierToken)]);
     secondCashier = {role:"cashier",userId:secondCashierUserId,token:secondCashierToken};
@@ -121,6 +123,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       await admin.query("ALTER TABLE bcv_sync_success_observations DISABLE TRIGGER bcv_sync_success_observations_10_append_only_rows");
       if (observationAttemptIds.length) await admin.query("DELETE FROM bcv_sync_success_observations WHERE attempt_id=ANY($1::uuid[])",[observationAttemptIds]);
       await admin.query("ALTER TABLE bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+      if (futureRateId) await admin.query("DELETE FROM exchange_rates WHERE id=$1",[futureRateId]);
       if (rateWasCreated && rateId) await admin.query("DELETE FROM exchange_rates WHERE id=$1",[rateId]);
       else if (rateId && originalRate) await admin.query("UPDATE exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1",[rateId,originalRate.rate,originalRate.validation_status,originalRate.fetched_at]);
     }
@@ -194,13 +197,15 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       {method:"other",currency:"USD",amount:"10.0000",reference:"+SUM(2,2)"},
     ]);
     expect(usdCheckout.status,await usdCheckout.clone().text()).toBe(201);
-    const usdSale = await usdCheckout.json() as {id:string;exchange_rate_snapshot:string};
-    expect(usdSale.exchange_rate_snapshot).toBe("35.00000000");
+    const usdSale = await usdCheckout.json() as {id:string};
+    const usdSnapshot = await admin.query("SELECT exchange_rate_snapshot::text FROM sales WHERE id=$1",[usdSale.id]);
+    expect(usdSnapshot.rows[0].exchange_rate_snapshot).toBe("35.00000000");
 
     const vesCheckout = await checkout([{method:"cash",currency:"VES",amount:"700.00"}]);
     expect(vesCheckout.status,await vesCheckout.clone().text()).toBe(201);
-    const vesSale = await vesCheckout.json() as {id:string;exchange_rate_snapshot:string};
-    expect(vesSale.exchange_rate_snapshot).toBe("35.00000000");
+    const vesSale = await vesCheckout.json() as {id:string};
+    const vesSnapshot = await admin.query("SELECT exchange_rate_snapshot::text FROM sales WHERE id=$1",[vesSale.id]);
+    expect(vesSnapshot.rows[0].exchange_rate_snapshot).toBe("35.00000000");
 
     const voidCheckout = await checkout([{method:"cash",currency:"USD",amount:"20.0000"}]);
     expect(voidCheckout.status,await voidCheckout.clone().text()).toBe(201);
@@ -208,9 +213,10 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
 
     const tomorrow = (await admin.query("SELECT ($1::date+1)::text AS day",[rateDate])).rows[0].day;
     await admin.query(
-      "INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',40.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid')",
+      "INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',40.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid') RETURNING id",
       [tomorrow],
     );
+    futureRateId = (await admin.query("SELECT id FROM exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[tomorrow])).rows[0].id;
     const adjustmentDate = await admin.query(
       "SELECT ($1::date::timestamp AT TIME ZONE 'UTC')+interval '4 hours' AS caracas_midnight",
       [rateDate],
@@ -272,7 +278,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     expect(csvText).not.toContain("\"'20.0000\"");
 
     expect((await request("inventory",orgPath()+"/reports/sales")).status).toBe(403);
-    expect((await app.fetch(new Request("https://api.example"+orgPath()+"/reports/sales")),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example"})).status).toBe(401);
+    expect((await app.fetch(new Request("https://api.example"+orgPath()+"/reports/sales"),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example"})).status).toBe(401);
     const crossTenant = await request("owner","/api/orgs/00000000-0000-4000-8000-000000000001/reports/sales");
     expect(crossTenant.status).toBe(403);
   });

@@ -42,7 +42,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       actors.set(role,{role,userId,token});
     }
     const warehouseId = (await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Main warehouse') RETURNING id",[organizationId,branchId,"main-"+suffix])).rows[0].id;
-    const productId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd) VALUES($1,$2,'Test product','unidad',12.3400,20.0000) RETURNING id",[organizationId,"SKU-"+suffix])).rows[0].id;
+    const productId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd) VALUES($1,$2,' +SUM(1,1)','unidad',12.3400,20.0000) RETURNING id",[organizationId,"=CMD(1+1)-"+suffix])).rows[0].id;
     await admin.query("INSERT INTO inventory_balances(organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity) VALUES($1,$2,$3,$4,0,0)",[organizationId,branchId,warehouseId,productId]);
     const cashier = actors.get("cashier")!;
     const registerId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Front',$3) RETURNING id",[organizationId,branchId,"front-"+suffix])).rows[0].id;
@@ -69,7 +69,10 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       expect(body.items[0]).not.toHaveProperty("cost_valuation_usd");
       const csv = await request(role,orgPath()+"/reports/inventory.csv");
       expect(csv.status).toBe(200);
-      expect(await csv.text()).not.toContain("cost_valuation_usd");
+      const csvText = await csv.text();
+      expect(csvText).not.toContain("cost_valuation_usd");
+      expect(csvText).toContain("\"'=CMD(1+1)-");
+      expect(csvText).toContain("\"' +SUM(1,1)\"");
     }
     expect((await request("cashier",orgPath()+"/reports/inventory")).status).toBe(403);
   });

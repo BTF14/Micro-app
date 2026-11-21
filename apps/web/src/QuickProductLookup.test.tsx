@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import QuickProductLookup from "./QuickProductLookup";
+vi.mock("./BarcodeScanner",()=>({default:({onDetected,onClose}:{onDetected:(code:string)=>void;onClose:()=>void})=>
+ createElement("div",{role:"dialog","aria-modal":"true"},
+  createElement("button",{type:"button",onClick:()=>onDetected("750123")},"Simular lectura"),
+  createElement("button",{type:"button",onClick:onClose},"Cerrar"))}));
 let container:HTMLDivElement,root:Root;
 const ORG="11111111-2222-4333-8444-555555555555",BRANCH="22222222-3333-4444-8555-666666666666",WAREHOUSE="33333333-4444-4555-8666-777777777777";
 const product={product_id:"00000000-0000-4000-8000-000000000001",is_active:true,sku:"SKU-1",barcode:"750123",name:"Café molido",unit:"bolsa",quantity_mode:"fractional",price_usd:"4.2500",available_quantity:"0.000",cost_usd:"0.7500"};
@@ -48,4 +52,22 @@ describe("QuickProductLookup",()=>{
   expect(container.querySelector(".quick-lookup-scope select")).not.toBeNull();
   expect(container.textContent).not.toContain("storage blocked");
  });
+ it("opens the scanner and immediately searches without a duplicate debounce request",async()=>{
+  vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]})).mockResolvedValueOnce(json({items:[product],nextCursor:null,limit:30}));
+  await render("current","36.50000000");
+  const scan=container.querySelector<HTMLButtonElement>(".quick-lookup-scan-button")!;
+  expect(scan.disabled).toBe(false);await act(async()=>scan.click());
+  expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+  await act(async()=>container.querySelector<HTMLButtonElement>('[role="dialog"] button')!.click());
+  await settle();
+  expect(container.querySelector<HTMLInputElement>("#quick-product-search")!.value).toBe("750123");
+  expect(container.querySelector('[role="dialog"]')).toBeNull();expect(fetch).toHaveBeenCalledTimes(3);
+  const url=String(vi.mocked(fetch).mock.calls[2]?.[0]);expect(url).toContain("q=750123");expect(url).toContain("sort=relevance");
+  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,230));});expect(fetch).toHaveBeenCalledTimes(3);
+ });
+ it("disables Escanear without an active warehouse",async()=>{
+  vi.mocked(fetch).mockResolvedValueOnce(json({branches:[{id:BRANCH,name:"Central",slug:"central"}]})).mockResolvedValueOnce(json({warehouses:[]}));
+  await render("unavailable",null);expect(container.querySelector<HTMLButtonElement>(".quick-lookup-scan-button")?.disabled).toBe(true);
+ });
+
 });

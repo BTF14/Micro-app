@@ -3,6 +3,7 @@ import { convertUsdToVes, parseNumeric } from "@micro-app/money";
 import { formatLocalizedDecimal } from "./decimal";
 import { apiRequest } from "./auth";
 import "./catalog.css";
+import BarcodeScanner from "./BarcodeScanner";
 
 type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
 type Branch = { id: string; name: string; slug: string };
@@ -95,10 +96,12 @@ export default function QuickProductLookup({
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const requestSequence = useRef(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimer = useRef<number | null>(null);
   const previousResetSignal = useRef(resetSignal);
+  const skipNextQueryDebounce = useRef<string | null>(null);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
   const warehouseStorageKey = branchId
@@ -107,9 +110,11 @@ export default function QuickProductLookup({
 
   useEffect(() => {
     let active = true;
+    setScannerOpen(false);
     setBranches([]);
     setBranchId(lockedBranchId ?? "");
     setBranchesLoaded(false);
+    setScannerOpen(false);
     setWarehouses([]);
     setWarehouseId("");
     setWarehousesLoaded(false);
@@ -145,6 +150,7 @@ export default function QuickProductLookup({
 
   useEffect(() => {
     let active = true;
+    setScannerOpen(false);
     setWarehouses([]);
     setWarehouseId("");
     setWarehousesLoaded(false);
@@ -252,6 +258,12 @@ export default function QuickProductLookup({
       return;
     }
 
+    if (skipNextQueryDebounce.current !== null) {
+      const isScannedValue = skipNextQueryDebounce.current === normalizedTerm;
+      skipNextQueryDebounce.current = null;
+      if (isScannedValue) return;
+    }
+
     const timer = window.setTimeout(() => {
       debounceTimer.current = null;
       void search(normalizedTerm);
@@ -266,6 +278,8 @@ export default function QuickProductLookup({
   }, [query, search, warehouseId]);
 
   const clearSearch = () => {
+    setScannerOpen(false);
+    skipNextQueryDebounce.current = null;
     if (debounceTimer.current !== null) window.clearTimeout(debounceTimer.current);
     debounceTimer.current = null;
     requestSequence.current += 1;
@@ -284,6 +298,7 @@ export default function QuickProductLookup({
     }
   }, [resetSignal]);
   const selectBranch = (value: string) => {
+    setScannerOpen(false);
     requestSequence.current += 1;
     setBranchId(value);
     setWarehouseId("");
@@ -291,6 +306,7 @@ export default function QuickProductLookup({
   };
 
   const selectWarehouse = (value: string) => {
+    setScannerOpen(false);
     requestSequence.current += 1;
     setWarehouseId(value);
     clearSearch();
@@ -299,6 +315,17 @@ export default function QuickProductLookup({
   useEffect(() => {
     if (warehouseId) searchInputRef.current?.focus();
   }, [warehouseId]);
+
+  const handleScannedBarcode = (scannedCode: string) => {
+    setScannerOpen(false);
+    if (debounceTimer.current !== null) window.clearTimeout(debounceTimer.current);
+    debounceTimer.current = null;
+    skipNextQueryDebounce.current = query.trim() === scannedCode.trim() ? null : scannedCode.trim();
+    setHasSearched(false);
+    setQuery(scannedCode);
+    void search(scannedCode);
+    searchInputRef.current?.focus();
+  };
 
   const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;
 
@@ -388,6 +415,10 @@ export default function QuickProductLookup({
               if (event.key === "Escape") clearSearch();
             }}
           />
+          <button type="button" className="quick-lookup-scan-button" disabled={!warehouseId}
+            aria-haspopup="dialog" aria-expanded={scannerOpen} onClick={() => setScannerOpen(true)}>
+            Escanear
+          </button>
           {query && (
             <button type="button" className="catalog-search-clear" onClick={clearSearch}>
               Limpiar
@@ -395,6 +426,8 @@ export default function QuickProductLookup({
           )}
         </div>
       </form>
+
+      {scannerOpen && <BarcodeScanner onDetected={handleScannedBarcode} onClose={() => setScannerOpen(false)} />}
 
       {loading && <p className="quick-lookup-status" role="status">Buscando productos…</p>}
       {!loading && hasSearched && !error && query.trim() && items.length === 0 && (

@@ -1,3 +1,18 @@
+# Corte vigente — Micro-PR 3B Escáner móvil — 2026-11-21
+
+- **Base exacta verificada:** `main` = `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`; GitHub compare: `identical`.
+- **PR #398 — Importador CSV 7D:** MERGED en `04a6c325f87d0a854ffccc0a962704c7cf11b878`; Paso 7 integrado.
+- **PR #399 — Micro-PR 3A:** MERGED en `841145efb7da16e61e742bf331eda5ad04adb3b6`; SDD, ODD y helpers puros del escáner.
+- **PR #400 — Hotfix BCV fin de semana:** MERGED en `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`; crons vespertinos/fin de semana, captura de tasa futura lunes y fixtures fuera de ventana 0027. El cuerpo histórico Draft está supersedido por el estado real.
+- **Micro-PR 3B:** visor de cámara local, `camera=(self)`, integración QuickProductLookup en Consultar precio y Ventas, tests jsdom y E2E móvil 390×844 contra API/PostgreSQL 18. Rama `feat/mobile-barcode-scanner-3b-20261121`; **PR #401 OPEN / Draft**, sin merge/auto-merge: https://github.com/BTF14/Micro-app/pull/401.
+- **Privacidad:** frames/video permanecen en el dispositivo; solo el texto normalizado se entrega a la búsqueda existente. Sin automatizar selección, carrito, venta ni checkout.
+- **Alcance:** exactamente once archivos; sin SQL/migraciones, API/backend, packages, workflows, package.json ni nuevas dependencias.
+- **Gates intactos:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; **PRODUCTION: NOT READY**; USD 0.
+- **Validación:** implementación SHA `e1b4a739a3fa7d11d77b33c3cb9bdc852c94ab22`: 17/17 check-runs y 13/13 workflows GitHub Actions exitosos. La reconciliación documental final debe validarse otra vez sobre el HEAD vivo de PR #401. Sin ejecución local declarada.
+- **Siguiente:** PR 4 — Cierres/Reportes/Exportación CSV → Tour Visual E2E (9 vistas, 390×844 y 1280×800) → Pre-prod Audit → `ve-fx-compliance-review` → AC-6 → Issue #53.
+
+---
+
 # Corte vigente — Paso 7D UI CSV + E2E — 2026-11-20
 
 - **Base exacta verificada:** `main` = `f1aeea6d71cfe674ba2c7e879fe3cf0653f6c28a`, merge commit de PR #397.

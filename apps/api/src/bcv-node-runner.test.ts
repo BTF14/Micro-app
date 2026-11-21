@@ -72,7 +72,7 @@ describe("BCV Node runner Caracas schedule preflight", () => {
   it("skips a valid same-day rate on a weekday morning", async () => {
     const mock = mockDatabase("inserted", [{ id: "today", validation_status: "valid" }]);
     await expect(shouldSkipBcvNodeSync(
-      "postgres://unused", false, new Date("2026-11-20T15:00:00.000Z"), mock.createClient,
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-20T15:00:00.000Z"), mock.createClient,
     )).resolves.toBe(true);
     expect(mock.statements[1]).toContain("effective_date = $2::date");
     expect(mock.statements[1]).not.toContain("effective_date > $2::date");
@@ -81,7 +81,7 @@ describe("BCV Node runner Caracas schedule preflight", () => {
   it("does not skip a weekday evening with only today's valid rate", async () => {
     const mock = mockDatabase("unchanged", [{ id: "today", validation_status: "valid" }]);
     await expect(shouldSkipBcvNodeSync(
-      "postgres://unused", false, new Date("2026-11-20T22:23:00.000Z"), mock.createClient,
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-20T22:23:00.000Z"), mock.createClient,
     )).resolves.toBe(false);
     expect(mock.statements[1]).toContain("effective_date > $2::date");
     expect(mock.statements[1]).toContain("effective_date <= ($2::date + 5)");
@@ -90,7 +90,7 @@ describe("BCV Node runner Caracas schedule preflight", () => {
   it("skips a weekday evening after a valid future rate has been captured", async () => {
     const mock = mockDatabase("inserted", [{ id: "monday", validation_status: "valid" }]);
     await expect(shouldSkipBcvNodeSync(
-      "postgres://unused", false, new Date("2026-11-20T22:23:00.000Z"), mock.createClient,
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-20T22:23:00.000Z"), mock.createClient,
     )).resolves.toBe(true);
     expect(mock.statements[1]).toContain("effective_date > $2::date");
   });
@@ -98,7 +98,7 @@ describe("BCV Node runner Caracas schedule preflight", () => {
   it("recovers on Saturday when no future valid rate exists", async () => {
     const mock = mockDatabase("unchanged", []);
     await expect(shouldSkipBcvNodeSync(
-      "postgres://unused", false, new Date("2026-11-21T11:17:00.000Z"), mock.createClient,
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-21T11:17:00.000Z"), mock.createClient,
     )).resolves.toBe(false);
     expect(mock.statements[1]).toContain("effective_date > $2::date");
   });
@@ -106,7 +106,7 @@ describe("BCV Node runner Caracas schedule preflight", () => {
   it("skips on Saturday once Monday's valid rate is already present", async () => {
     const mock = mockDatabase("unchanged", [{ id: "monday", validation_status: "valid" }]);
     await expect(shouldSkipBcvNodeSync(
-      "postgres://unused", false, new Date("2026-11-21T11:17:00.000Z"), mock.createClient,
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-21T11:17:00.000Z"), mock.createClient,
     )).resolves.toBe(true);
     expect(mock.statements[1]).toContain("effective_date > $2::date");
   });

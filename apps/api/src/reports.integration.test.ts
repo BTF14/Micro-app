@@ -20,7 +20,6 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
   let organizationId: string;
   let branchId: string;
   let cashierShiftId: string;
-  let salesShiftId: string;
   let secondCashier: Actor;
   let bcvProducer: Client;
   let rateId: string;
@@ -101,8 +100,6 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
     const cashier = actors.get("cashier")!;
     const registerId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Front',$3) RETURNING id",[organizationId,branchId,"front-"+suffix])).rows[0].id;
     cashierShiftId = (await admin.query("INSERT INTO register_shifts(organization_id,branch_id,register_id,cashier_user_id,opening_cash_usd,opening_cash_ves) VALUES($1,$2,$3,$4,10.0000,100.00) RETURNING id",[organizationId,branchId,registerId,cashier.userId])).rows[0].id;
-    const salesRegisterId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Sales register',$3) RETURNING id",[organizationId,branchId,"sales-"+suffix])).rows[0].id;
-    salesShiftId = (await admin.query("INSERT INTO register_shifts(organization_id,branch_id,register_id,cashier_user_id,opening_cash_usd,opening_cash_ves) VALUES($1,$2,$3,$4,10.0000,100.00) RETURNING id",[organizationId,branchId,salesRegisterId,cashier.userId])).rows[0].id;
     rateDate = (await admin.query("SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS day")).rows[0].day;
     const state = await admin.query("SELECT attempt_id::text,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date::text,updated_at FROM bcv_sync_state WHERE singleton=true");
     previousBcvState = state.rows[0];
@@ -199,12 +196,6 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
     expect(body.expected_cash_ves).toBe("100.00");
     expect(body.difference_cash_usd).toBeNull();
     expect(body.disclaimer).toBe("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
-    await admin.query("UPDATE register_shifts SET closed_at=now(),closing_cash_usd=9.0000,closing_cash_ves=120.00,closed_by_user_id=$2 WHERE id=$1",[cashierShiftId,actors.get("cashier")!.userId]);
-    const closed = await request("cashier",orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary");
-    const closedBody = await closed.json() as Record<string,unknown>;
-    expect(closed.status).toBe(200);
-    expect(closedBody.difference_cash_usd).toBe("-1.0000");
-    expect(closedBody.difference_cash_ves).toBe("20.00");
     expect(await request("inventory",orgPath()+"/register-shifts")).toHaveProperty("status",403);
   });
   it("executes completed sales, closure, Caracas-midnight and CSV queries under microapp_runtime", async () => {
@@ -257,8 +248,8 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
     const stored = await admin.query("SELECT exchange_rate_snapshot::text,status FROM sales WHERE id=$1",[usdSale.id]);
     expect(stored.rows[0]).toEqual({exchange_rate_snapshot:"35.00000000",status:"completed"});
 
-    await admin.query("UPDATE register_shifts SET closed_at=now(),closing_cash_usd=20.0000,closing_cash_ves=800.00,closed_by_user_id=$2 WHERE id=$1",[salesShiftId,actors.get("cashier")!.userId]);
-    const summary = await request("cashier",orgPath()+"/branches/"+branchId+"/register-shifts/"+salesShiftId+"/closure-summary");
+    await admin.query("UPDATE register_shifts SET closed_at=now(),closing_cash_usd=20.0000,closing_cash_ves=800.00,closed_by_user_id=$2 WHERE id=$1",[cashierShiftId,actors.get("cashier")!.userId]);
+    const summary = await request("cashier",orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary");
     expect(summary.status).toBe(200);
     const closure = await summary.json() as Record<string,any>;
     expect(closure.completed_sales_count).toBe("2");
@@ -275,7 +266,7 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
     expect(closure.sale_snapshots).toEqual(expect.arrayContaining([
       expect.objectContaining({exchange_rate_snapshot:"35.00000000"}),
     ]));
-    const secondCashierSummary = await app.fetch(new Request("https://api.example"+orgPath()+"/branches/"+branchId+"/register-shifts/"+salesShiftId+"/closure-summary",{
+    const secondCashierSummary = await app.fetch(new Request("https://api.example"+orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary",{
       headers:{Cookie:"microapp_session="+secondCashier.token},
     }),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example"});
     expect(secondCashierSummary.status).toBe(403);

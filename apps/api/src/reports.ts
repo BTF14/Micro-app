@@ -86,9 +86,6 @@ function pgCode(error: unknown): string | undefined {
   return error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : undefined;
 }
 function failure(c: Context<{ Bindings: Bindings }>, error: unknown) {
-  if ((c.env as Bindings & { REPORTS_TEST_DEBUG?: string }).REPORTS_TEST_DEBUG === "true") {
-    return c.json({ error: "REPORTS_READ_FAILED", debug: error instanceof Error ? error.message : String(error) }, 500);
-  }
   const code = pgCode(error);
   if (code && ["42P01", "42883", "42703", "42501"].includes(code)) {
     return c.json({ error: "REPORTS_NOT_ENABLED", message: "Los reportes todavía no están habilitados en esta base de datos." }, 503);
@@ -332,7 +329,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
              JOIN public.branches b ON b.organization_id=ib.organization_id AND b.id=ib.branch_id
              JOIN public.warehouses w ON w.organization_id=ib.organization_id AND w.branch_id=ib.branch_id AND w.id=ib.warehouse_id
              JOIN public.products p ON p.organization_id=ib.organization_id AND p.id=ib.product_id
-            WHERE ib.organization_id=$1 AND ($3::uuid IS NULL OR ib.branch_id=$3) ${membershipFilter}
+            WHERE ib.organization_id=$1 AND $2::uuid IS NOT NULL AND ($3::uuid IS NULL OR ib.branch_id=$3) ${membershipFilter}
             ORDER BY b.name,w.name,p.name,p.id`,
           [organizationId,auth.context.userId,branchId??null]);
         const totalRetail=sumNumeric(rows.rows.map((row:any)=>row.retail_valuation_usd),38,4);

@@ -458,3 +458,95 @@ test("real CSV catalog import persists through PostgreSQL 18 on mobile", async (
   await expect(importedProductRow.locator(".catalog-product-meta")).toContainText(sku);
   await expectNoHorizontalOverflow(page, "mobile persisted CSV product");
 });
+
+
+test("mobile barcode scanner searches a real PostgreSQL product without sending camera frames", async ({ page, context, browser, baseURL }) => {
+  test.setTimeout(90_000);
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  await page.setViewportSize({ width: 390, height: 844 });
+  const barcode = `750${crypto.randomUUID().replace(/\D/g, "").slice(0, 10).padEnd(10, "0")}`;
+  const sku = `SCAN-E2E-${crypto.randomUUID().slice(0, 8)}`;
+  const productName = "Producto escáner E2E";
+  await page.addInitScript((scannedBarcode) => {
+    const state = window as typeof window & { __barcodeDelivered?: boolean; __allowBarcodeDetection?: boolean; __scannerTrackStopCount?: number };
+    state.__barcodeDelivered = false; state.__allowBarcodeDetection = false; state.__scannerTrackStopCount = 0;
+    class BrowserBarcodeDetector {
+      static async getSupportedFormats() { return ["ean_13"]; }
+      async detect() {
+        if (!state.__allowBarcodeDetection || state.__barcodeDelivered) return [];
+        state.__barcodeDelivered = true;
+        return [{ rawValue: scannedBarcode, format: "ean_13" }];
+      }
+    }
+    Object.defineProperty(window, "BarcodeDetector", { configurable: true, value: BrowserBarcodeDetector });
+    const stream = new MediaStream();
+    const track = { stop: () => { state.__scannerTrackStopCount = (state.__scannerTrackStopCount ?? 0) + 1; } } as MediaStreamTrack;
+    Object.defineProperty(stream, "getTracks", { configurable: true, value: () => [track] });
+    const mediaDevices = navigator.mediaDevices ?? {};
+    if (!navigator.mediaDevices) Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: mediaDevices });
+    Object.defineProperty(mediaDevices, "getUserMedia", { configurable: true, value: async () => stream });
+    Object.defineProperty(HTMLMediaElement.prototype, "readyState", { configurable: true, get: () => 4 });
+    Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: () => Promise.resolve() });
+  }, barcode);
+  await context.addCookies([{ name: "microapp_session", value: fixture.ownerSessionToken, url: baseURL, httpOnly: true, secure: false, sameSite: "Lax" }]);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: `Hola, ${fixture.ownerDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await navigateByKeyboard(page, "Productos");
+  await page.getByRole("button", { name: "Nuevo producto", exact: true }).click();
+  await page.getByLabel("SKU", { exact: true }).fill(sku);
+  await page.getByLabel("Nombre", { exact: true }).fill(productName);
+  await page.getByLabel("Código de barras", { exact: true }).fill(barcode);
+  await page.getByLabel("Unidad", { exact: true }).fill("unidad");
+  await page.getByLabel("Descripción", { exact: true }).fill("Producto sintético para E2E del escáner.");
+  await page.getByLabel(/Precio USD/).fill("12.5000");
+  await page.getByLabel(/Costo USD/).fill("5.0000");
+  await page.getByLabel(/Stock mínimo/).fill("0");
+  const createResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith("/catalog") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Crear producto", exact: true }).click();
+  expect((await createResponse).status()).toBe(201);
+  await navigateByKeyboard(page, "Consultar precio");
+  const scanButton = page.getByRole("button", { name: "Escanear", exact: true });
+  await expect(scanButton).toBeEnabled(); await scanButton.click();
+  const dialog = page.getByRole("dialog", { name: "Escanear código de barras" });
+  await expect(dialog).toBeVisible(); await expect(dialog.getByRole("heading", { name: "Escanear código de barras" })).toBeVisible();
+  await expect(dialog).not.toContainText("NotAllowedError");
+  await page.evaluate(() => { (window as typeof window & { __allowBarcodeDetection?: boolean }).__allowBarcodeDetection = true; });
+  const result = page.locator(".quick-lookup-result").filter({ hasText: productName });
+  await expect(result).toBeVisible(); await expect(result).toContainText("US$"); await expect(result).toContainText("Bs."); await expect(result).toContainText("Agotado");
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __scannerTrackStopCount?: number }).__scannerTrackStopCount ?? 0)).toBe(1);
+  await expectNoHorizontalOverflow(page, "mobile barcode lookup");
+  // Sales exposes QuickProductLookup only after the cashier has an open shift and an active warehouse.
+  // Open the shift through the real UI, but do not add a product or create a sale from the scan.
+  const cashierContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await cashierContext.addCookies([{
+    name: "microapp_session", value: fixture.cashierSessionToken, url: baseURL,
+    httpOnly: true, secure: false, sameSite: "Lax",
+  }]);
+  const cashierPage = await cashierContext.newPage();
+  await cashierPage.addInitScript(() => { Reflect.deleteProperty(window, "BarcodeDetector"); });
+  await cashierPage.goto("/");
+  await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await navigateByKeyboard(cashierPage, "Caja y turnos");
+  await expect(cashierPage.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
+  const branchSelect = cashierPage.locator("select").filter({ has: cashierPage.locator(`option[value="${fixture.branchId}"]`) });
+  const registerSelect = cashierPage.locator("select").filter({ has: cashierPage.locator(`option[value="${fixture.registerId}"]`) });
+  await expect(branchSelect).toHaveValue(fixture.branchId);
+  await expect(registerSelect).toHaveValue(fixture.registerId);
+  await cashierPage.getByLabel("Fondo inicial USD", { exact: true }).fill("50.0000");
+  await cashierPage.getByLabel("Fondo inicial VES", { exact: true }).fill("1000.00");
+  const openShift = cashierPage.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith("/register-shifts") && response.request().method() === "POST");
+  await cashierPage.getByRole("button", { name: "Abrir turno", exact: true }).click();
+  expect((await openShift).status()).toBe(201);
+  await navigateByKeyboard(cashierPage, "Ventas");
+  await expect(cashierPage.getByRole("heading", { name: "Ventas" })).toBeVisible();
+  const salesScan = cashierPage.getByRole("button", { name: "Escanear", exact: true });
+  await expect(salesScan).toBeVisible(); await expect(salesScan).toBeEnabled(); await salesScan.click();
+  const salesDialog = cashierPage.getByRole("dialog", { name: "Escanear código de barras" });
+  await expect(salesDialog).toBeVisible();
+  await expect(salesDialog.getByRole("button", { name: "Volver a la búsqueda manual" })).toBeVisible();
+  await salesDialog.getByRole("button", { name: "Volver a la búsqueda manual" }).click();
+  await expectNoHorizontalOverflow(cashierPage, "mobile sales scanner");
+  await cashierContext.close();
+});

@@ -1,3 +1,20 @@
+# Handoff vigente — Micro-PR 3B Escáner móvil — 2026-11-21
+
+## Punto de partida
+- Repositorio `BTF14/Micro-app`; `main` exacto `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`.
+- PR #398 (CSV 7D) MERGED: `04a6c325f87d0a854ffccc0a962704c7cf11b878`.
+- PR #399 (Micro-PR 3A) MERGED: `841145efb7da16e61e742bf331eda5ad04adb3b6`; SDD/ODD/helpers puros.
+- PR #400 (hotfix BCV) MERGED: `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`; captura de tasa futura y recuperación vespertina/fin de semana. No tratar su cuerpo Draft histórico como estado actual.
+- Micro-PR 3B: rama `feat/mobile-barcode-scanner-3b-20261121`; visor, headers, QuickProductLookup (Consultar precio + Ventas), jsdom y E2E real PostgreSQL 18 en 390×844. PR Draft sin merge/auto-merge.
+- Once archivos autorizados. Sin backend, SQL, migraciones, workflows, dependencias, Neon, secretos ni deploy. Frames/video locales; solo código reconocido llega a la búsqueda existente.
+
+## Gates y siguiente orden
+- AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; USD 0.
+- Siguiente: PR 4 — Cierres/Reportes/Exportación CSV; Tour Visual E2E de nueve vistas en 390×844 y 1280×800; Pre-prod Audit; `ve-fx-compliance-review`; AC-6; Issue #53.
+- Verificar todos los check-runs/workflows sobre el SHA final exacto. Sin terminal local no afirmar tests/build/typecheck/Playwright/validador documental. No pedir datos ya documentados ni capturas/reconexiones sin necesidad demostrable.
+
+---
+
 # Handoff vigente — PR 7D Importador CSV — 2026-11-20
 
 ## Estado y continuidad

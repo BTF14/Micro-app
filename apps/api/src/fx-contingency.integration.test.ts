@@ -535,9 +535,10 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     await setCurrentRateStale();
     const branch = await createBranch("PG28");
     const authId = await createAuthorization(branch, "101.00000000");
+    const outOfWindowDate = caracasDate(6);
     const existingFuture = await admin.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
       "SELECT id,rate::text,validation_status,fetched_at FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
-      [SOURCE, tomorrow],
+      [SOURCE, outOfWindowDate],
     );
     if (existingFuture.rows[0]) {
       previousFutureRate = existingFuture.rows[0];
@@ -546,15 +547,15 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     } else {
       const future = await admin.query<{ id: string }>(
         "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
-        [SOURCE, tomorrow],
+        [SOURCE, outOfWindowDate],
       );
       futureRateIds.push(future.rows[0]!.id); futureRateCreated = true;
     }
     const auth = await admin.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
     const oldSuccess = new Date(auth.rows[0]!.starts_at.getTime() - 24 * 60 * 60 * 1000);
-    const attemptId = await updateSync("inserted", tomorrow, oldSuccess);
+    const attemptId = await updateSync("inserted", outOfWindowDate, oldSuccess);
     const observation = await admin.query("SELECT observed_at,last_effective_date,validation_status FROM public.bcv_sync_success_observations WHERE attempt_id=$1", [attemptId]);
-    expect(observation.rows[0].last_effective_date.toISOString?.() ?? String(observation.rows[0].last_effective_date)).toContain(tomorrow);
+    expect(observation.rows[0].last_effective_date.toISOString?.() ?? String(observation.rows[0].last_effective_date)).toContain(outOfWindowDate);
     await expect(runtime.query("SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,'owner','future rate must not restore')", [organizationId, branch, authId, ownerId]))
       .rejects.toThrow(/FX_BCV_RECOVERY_NOT_ELIGIBLE/);
     const stillActive = await admin.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);

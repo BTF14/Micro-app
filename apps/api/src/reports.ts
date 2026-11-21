@@ -161,7 +161,9 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const auth = await authorizeBranchOperation(tx, token, organizationId, branchId, "reports.sales.organization", false);
         const cashierAuth = auth.allowed ? null : await authorizeBranchOperation(tx, token, organizationId, branchId, "reports.sales.own_shift", false);
         const context = auth.allowed ? auth.context : cashierAuth?.allowed ? cashierAuth.context : null;
-        if (!context) return { kind: auth.reason === "unauthenticated_or_out_of_scope" || cashierAuth?.reason === "unauthenticated_or_out_of_scope" ? "unauthenticated" as const : "forbidden" as const };
+        if (!context) return { kind: (!auth.allowed && auth.reason === "unauthenticated_or_out_of_scope") ||
+          (cashierAuth !== null && cashierAuth !== undefined && !cashierAuth.allowed && cashierAuth.reason === "unauthenticated_or_out_of_scope")
+          ? "unauthenticated" as const : "forbidden" as const };
         const rows = await tx.query<any>(
           `SELECT rs.id, rs.branch_id, b.name AS branch_name, rs.register_id, r.name AS register_name,
                   rs.cashier_user_id, u.display_name AS cashier_name, rs.opened_at::text AS opened_at,
@@ -239,7 +241,9 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const ownerAuth=await authorizeTenantOperation(tx,token,organizationId,"reports.sales.organization",false);
         const ownAuth=ownerAuth.allowed?null:await authorizeTenantOperation(tx,token,organizationId,"reports.sales.own_shift",false);
         const context=ownerAuth.allowed?ownerAuth.context:ownAuth?.allowed?ownAuth.context:null;
-        if(!context)return {kind: ownerAuth.reason === "unauthenticated_or_out_of_scope" || ownAuth?.reason === "unauthenticated_or_out_of_scope" ? "unauthenticated" as const : "forbidden" as const};
+        if(!context)return {kind: (!ownerAuth.allowed && ownerAuth.reason === "unauthenticated_or_out_of_scope") ||
+          (ownAuth !== null && ownAuth !== undefined && !ownAuth.allowed && ownAuth.reason === "unauthenticated_or_out_of_scope")
+          ? "unauthenticated" as const : "forbidden" as const};
         if(asCsv&&!isCommercialOperationAllowed(context.role,"exports.allowed_data"))return {kind:"forbidden" as const};
         if(branchId){
           const branchAuth=await authorizeBranchOperation(tx,token,organizationId,branchId,

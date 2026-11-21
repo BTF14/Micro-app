@@ -1,6 +1,6 @@
 import { getCookie } from "hono/cookie";
 import type { Context, Hono } from "hono";
-import { formatDecimal, formatNumeric, parseNumeric, sumNumeric } from "@micro-app/money";
+import { formatNumeric, parseNumeric, sumNumeric } from "@micro-app/money";
 import type { Bindings } from "./bindings";
 import { clearSessionCookie } from "./auth";
 import { authorizeBranchOperation, authorizeCommercialOperation, authorizeTenantOperation, isCommercialOperationAllowed } from "./authorization";
@@ -188,7 +188,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
           [organizationId, branchId, shiftId],
         );
         const payments = await tx.query<any>(
-          `SELECT p.method,p.currency,sum(p.amount)::numeric(14,4)::text AS amount,
+          `SELECT p.method,p.currency,CASE WHEN p.currency='VES' THEN sum(p.amount)::numeric(16,2)::text ELSE sum(p.amount)::numeric(14,4)::text END AS amount,
                   sum(p.usd_equivalent_snapshot)::numeric(14,4)::text AS usd_equivalent_snapshot
              FROM public.payments p JOIN public.sales s ON s.organization_id=p.organization_id AND s.id=p.sale_id
             WHERE s.organization_id=$1 AND s.branch_id=$2 AND s.register_shift_id=$3 AND s.status='completed'

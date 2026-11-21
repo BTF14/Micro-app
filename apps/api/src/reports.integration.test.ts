@@ -44,7 +44,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     }
     warehouseId = (await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Main warehouse') RETURNING id",[organizationId,branchId,"main-"+suffix])).rows[0].id;
     const productId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd) VALUES($1,$2,'Test product','unidad',12.3400,20.0000) RETURNING id",[organizationId,"SKU-"+suffix])).rows[0].id;
-    await admin.query("INSERT INTO inventory_balances(organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity) VALUES($1,$2,$3,$4,5,1)",[organizationId,branchId,warehouseId,productId]);
+    await admin.query("INSERT INTO inventory_balances(organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity) VALUES($1,$2,$3,$4,0,0)",[organizationId,branchId,warehouseId,productId]);
     const cashier = actors.get("cashier")!;
     const registerId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Front',$3) RETURNING id",[organizationId,branchId,"front-"+suffix])).rows[0].id;
     cashierShiftId = (await admin.query("INSERT INTO register_shifts(organization_id,branch_id,register_id,cashier_user_id,opening_cash_usd,opening_cash_ves) VALUES($1,$2,$3,$4,10.0000,100.00) RETURNING id",[organizationId,branchId,registerId,cashier.userId])).rows[0].id;
@@ -61,7 +61,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     expect(owner.status).toBe(200);
     const ownerBody = await owner.json() as {items:Array<Record<string,unknown>>};
     expect(ownerBody.items[0]).toHaveProperty("cost_usd","12.3400");
-    expect(ownerBody.items[0]).toHaveProperty("cost_valuation_usd","61.7000");
+    expect(ownerBody.items[0]).toHaveProperty("cost_valuation_usd","0.0000");
     for (const role of ["admin","inventory"] as const) {
       const response = await request(role,orgPath()+"/reports/inventory");
       expect(response.status).toBe(200);

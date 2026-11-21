@@ -2,7 +2,7 @@
 
 - **Base exacta verificada:** `main` = `10d24105c49f7d5c240ef298c353b782f0cca255`, merge commit post-PR #401.
 - **PR #401 — Escáner móvil 3B:** integrado en main; el SHA base contiene el merge commit de #401. Las referencias históricas que la describían como Draft están supersedidas.
-- **Micro-PR 4A:** rama `feat/reports-shift-closure-4a-20261121`, implementación backend de lista de turnos, resumen de cierre, reportes y CSV; RBAC Owner-only para valoración. PR pendiente de apertura/validación exact-SHA.
+- **Micro-PR 4A:** rama `feat/reports-shift-closure-4a-20261121`, **PR #402 OPEN / Draft** (https://github.com/BTF14/Micro-app/pull/402); backend de lista de turnos, resumen de cierre, reportes y CSV; RBAC Owner-only para valoración. Sin merge ni auto-merge.
 - **Alcance previsto:** exactamente 11 archivos autorizados. Sin migraciones, grants, `apps/web/**`, `packages/**`, workflows, dependencias ni `package.json`.
 - **Diseño:** `register_shifts` sigue siendo una sesión `opened_at` → `closed_at`, sin corte automático a medianoche. Reportes Caracas usan intervalos semiabiertos UTC-4; `completed_at` selecciona ventas completadas; montos/snapshots FX son históricos y exactos.
 - **Siguiente:** Micro-PR 4B UI Cierres/Reportes/CSV + leyenda FISC-01 + E2E → Tour Visual + `favicon.svg` + `docs/USER_MANUAL.md` → gates finales.

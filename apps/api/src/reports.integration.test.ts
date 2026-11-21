@@ -84,7 +84,14 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     const body = await summary.json() as Record<string,unknown>;
     expect(body.expected_cash_usd).toBe("10.0000");
     expect(body.expected_cash_ves).toBe("100.00");
+    expect(body.difference_cash_usd).toBeNull();
     expect(body.disclaimer).toBe("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
+    await admin.query("UPDATE register_shifts SET closed_at=now(),closing_cash_usd=9.0000,closing_cash_ves=120.00,closed_by_user_id=$2 WHERE id=$1",[cashierShiftId,actors.get("cashier")!.userId]);
+    const closed = await request("cashier",orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary");
+    const closedBody = await closed.json() as Record<string,unknown>;
+    expect(closed.status).toBe(200);
+    expect(closedBody.difference_cash_usd).toBe("-1.0000");
+    expect(closedBody.difference_cash_ves).toBe("20.00");
     expect(await request("inventory",orgPath()+"/register-shifts")).toHaveProperty("status",403);
   });
   it("executes sales report queries under the runtime role and denies Inventory", async () => {

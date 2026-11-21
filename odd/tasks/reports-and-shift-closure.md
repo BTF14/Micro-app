@@ -2,7 +2,7 @@
 
 - Status: 4A integrated; 4B implementation in Draft pending exact-SHA validation
 - 4A: [PR #402 — MERGED](https://github.com/BTF14/Micro-app/pull/402), merge commit `37cab712cb2ced5c08cbf9f762a7e05c935fe422`
-- 4B branch: `feat/reports-shift-closure-4b-ui-20261121`
+- 4B: [PR #403 — OPEN / Draft](https://github.com/BTF14/Micro-app/pull/403), branch `feat/reports-shift-closure-4b-ui-20261121`
 - Started: 2026-11-21; risk: high
 
 ## Objective and authorization

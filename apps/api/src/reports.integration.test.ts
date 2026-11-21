@@ -14,16 +14,19 @@ if (env?.CI && (!adminUrl || !runtimeUrl || !bcvUrl)) throw new Error("CI requir
 
 type Role = "owner" | "admin" | "inventory" | "cashier";
 type Actor = { role: Role; userId: string; token: string };
-describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQL runtime login", () => {
+describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricted PostgreSQL runtime login", () => {
   let admin: Client;
   let runtime: Client;
   let organizationId: string;
   let branchId: string;
   let cashierShiftId: string;
+  let salesShiftId: string;
   let secondCashier: Actor;
   let bcvProducer: Client;
   let rateId: string;
   let futureRateId: string | null = null;
+  let futureRatePrevious: {rate:string;validation_status:string;fetched_at:Date} | null = null;
+  let futureRateWasCreated = false;
   let rateDate: string;
   let originalRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
   let rateWasCreated = false;
@@ -97,6 +100,8 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     const cashier = actors.get("cashier")!;
     const registerId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Front',$3) RETURNING id",[organizationId,branchId,"front-"+suffix])).rows[0].id;
     cashierShiftId = (await admin.query("INSERT INTO register_shifts(organization_id,branch_id,register_id,cashier_user_id,opening_cash_usd,opening_cash_ves) VALUES($1,$2,$3,$4,10.0000,100.00) RETURNING id",[organizationId,branchId,registerId,cashier.userId])).rows[0].id;
+    const salesRegisterId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Sales register',$3) RETURNING id",[organizationId,branchId,"sales-"+suffix])).rows[0].id;
+    salesShiftId = (await admin.query("INSERT INTO register_shifts(organization_id,branch_id,register_id,cashier_user_id,opening_cash_usd,opening_cash_ves) VALUES($1,$2,$3,$4,10.0000,100.00) RETURNING id",[organizationId,branchId,salesRegisterId,cashier.userId])).rows[0].id;
     rateDate = (await admin.query("SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS day")).rows[0].day;
     const state = await admin.query("SELECT attempt_id::text,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date::text,updated_at FROM bcv_sync_state WHERE singleton=true");
     previousBcvState = state.rows[0];
@@ -123,7 +128,10 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       await admin.query("ALTER TABLE bcv_sync_success_observations DISABLE TRIGGER bcv_sync_success_observations_10_append_only_rows");
       if (observationAttemptIds.length) await admin.query("DELETE FROM bcv_sync_success_observations WHERE attempt_id=ANY($1::uuid[])",[observationAttemptIds]);
       await admin.query("ALTER TABLE bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
-      if (futureRateId) await admin.query("DELETE FROM exchange_rates WHERE id=$1",[futureRateId]);
+      if (futureRateId) {
+        if (futureRateWasCreated) await admin.query("DELETE FROM exchange_rates WHERE id=$1",[futureRateId]);
+        else if (futureRatePrevious) await admin.query("UPDATE exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1",[futureRateId,futureRatePrevious.rate,futureRatePrevious.validation_status,futureRatePrevious.fetched_at]);
+      }
       if (rateWasCreated && rateId) await admin.query("DELETE FROM exchange_rates WHERE id=$1",[rateId]);
       else if (rateId && originalRate) await admin.query("UPDATE exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1",[rateId,originalRate.rate,originalRate.validation_status,originalRate.fetched_at]);
     }
@@ -219,11 +227,15 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     const voidSale = await voidCheckout.json() as {id:string};
 
     const tomorrow = (await admin.query("SELECT ($1::date+1)::text AS day",[rateDate])).rows[0].day;
-    await admin.query(
-      "INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',40.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid') RETURNING id",
-      [tomorrow],
-    );
-    futureRateId = (await admin.query("SELECT id FROM exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[tomorrow])).rows[0].id;
+    const existingFutureRate = await admin.query("SELECT id,rate::text,validation_status,fetched_at FROM exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[tomorrow]);
+    if (existingFutureRate.rows[0]) {
+      futureRateId = existingFutureRate.rows[0].id;
+      futureRatePrevious = existingFutureRate.rows[0];
+      await admin.query("UPDATE exchange_rates SET rate=40.00000000,validation_status='valid',fetched_at=now() WHERE id=$1",[futureRateId]);
+    } else {
+      futureRateId = (await admin.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',40.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid') RETURNING id",[tomorrow])).rows[0].id;
+      futureRateWasCreated = true;
+    }
     const adjustmentDate = await admin.query(
       "SELECT ($1::date::timestamp AT TIME ZONE 'UTC')+interval '4 hours' AS caracas_midnight",
       [rateDate],
@@ -244,8 +256,8 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     const stored = await admin.query("SELECT exchange_rate_snapshot::text,status FROM sales WHERE id=$1",[usdSale.id]);
     expect(stored.rows[0]).toEqual({exchange_rate_snapshot:"35.00000000",status:"completed"});
 
-    await admin.query("UPDATE register_shifts SET closed_at=now(),closing_cash_usd=20.0000,closing_cash_ves=800.00,closed_by_user_id=$2 WHERE id=$1",[cashierShiftId,actors.get("cashier")!.userId]);
-    const summary = await request("cashier",orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary");
+    await admin.query("UPDATE register_shifts SET closed_at=now(),closing_cash_usd=20.0000,closing_cash_ves=800.00,closed_by_user_id=$2 WHERE id=$1",[salesShiftId,actors.get("cashier")!.userId]);
+    const summary = await request("cashier",orgPath()+"/branches/"+branchId+"/register-shifts/"+salesShiftId+"/closure-summary");
     expect(summary.status).toBe(200);
     const closure = await summary.json() as Record<string,any>;
     expect(closure.completed_sales_count).toBe("2");
@@ -262,7 +274,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     expect(closure.sale_snapshots).toEqual(expect.arrayContaining([
       expect.objectContaining({exchange_rate_snapshot:"35.00000000"}),
     ]));
-    const secondCashierSummary = await app.fetch(new Request("https://api.example"+orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary",{
+    const secondCashierSummary = await app.fetch(new Request("https://api.example"+orgPath()+"/branches/"+branchId+"/register-shifts/"+salesShiftId+"/closure-summary",{
       headers:{Cookie:"microapp_session="+secondCashier.token},
     }),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example"});
     expect(secondCashierSummary.status).toBe(403);

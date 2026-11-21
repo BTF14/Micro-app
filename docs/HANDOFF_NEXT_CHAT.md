@@ -1,3 +1,26 @@
+# Handoff vigente — Micro-PR 4A Cierres/Reportes/CSV backend — 2026-11-21
+
+## Punto de partida
+- Repositorio `BTF14/Micro-app`; base exacta `main` = `10d24105c49f7d5c240ef298c353b782f0cca255` (post-PR #401).
+- PR #401 quedó integrada en el merge commit de la base; encabezados históricos que la llamaban Draft están supersedidos.
+- Rama de trabajo: `feat/reports-shift-closure-4a-20261121`; Micro-PR 4A, backend de turnos/cierre/reportes/CSV y permiso de valoración Owner-only.
+- La PR 4A debe quedar OPEN / Draft, sin merge ni auto-merge; validar todos los check-runs/workflows en el SHA final exacto.
+- Sin checkout local: no afirmar ejecución local de tests, build, typecheck, PostgreSQL 18 ni `python3 tools/validate-agent-docs.py`.
+
+## Alcance y gates
+- Once archivos autorizados; cero migraciones/SQL, `apps/web/**`, `packages/**`, workflows, dependencias o `package.json`.
+- AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
+- No Neon main, secretos, producción, DNS, Cloudflare ni deploy.
+- `register_shifts` es una sesión que puede cruzar medianoche; cortes calendario Caracas son separados y semiabiertos.
+
+## Orden siguiente
+1. Cerrar CI exact-SHA y revisión de Micro-PR 4A.
+2. **Micro-PR 4B:** UI `ReportsPanel`, resumen de cierre en `RegisterShiftsPanel`, leyenda FISC-01 en `SalesPanel` y E2E Playwright.
+3. Tour Visual E2E + `favicon.svg` + `docs/USER_MANUAL.md`.
+4. Gates finales independientes; CI verde no cierra AC-6 ni Issue #53.
+
+---
+
 # Handoff vigente — Micro-PR 3B Escáner móvil — 2026-11-21
 
 ## Punto de partida

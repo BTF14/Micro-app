@@ -1610,6 +1610,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     );
     const beyondWindowDate = beyondWindowResult.rows[0]!.beyond_window_date;
     let beyondWindowRateId: string | null = null;
+    let beyondWindowAttemptId: string | null = null;
     let previousBeyondWindowRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
     try {
       const existingFuture = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
@@ -1628,7 +1629,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         beyondWindowRateId = future.rows[0]!.id;
       }
       const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
-      await recordFxBcvSuccess("inserted", beyondWindowDate, new Date(auth.rows[0]!.starts_at.getTime() - 24 * 60 * 60 * 1000));
+      beyondWindowAttemptId = await recordFxBcvSuccess("inserted", beyondWindowDate, new Date(auth.rows[0]!.starts_at.getTime() - 24 * 60 * 60 * 1000));
 
       const response = await request({
         ...checkoutBody("1.000", "23.8500"),
@@ -1649,6 +1650,14 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
             [beyondWindowRateId, previousBeyondWindowRate.rate, previousBeyondWindowRate.validation_status, previousBeyondWindowRate.fetched_at],
           );
         } else {
+          if (beyondWindowAttemptId) {
+            await client.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER bcv_sync_success_observations_10_append_only_rows");
+            try {
+              await client.query("DELETE FROM public.bcv_sync_success_observations WHERE attempt_id=$1::uuid", [beyondWindowAttemptId]);
+            } finally {
+              await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+            }
+          }
           await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [beyondWindowRateId]);
         }
       }

@@ -6,7 +6,7 @@ import "./register-shifts.css";
 type Branch = { id: string; name: string; slug: string };
 type Register = { id: string; name: string; code: string };
 type Shift = { id: string; organizationId: string; branchId: string; registerId: string; cashierUserId: string; openedAt: string; openingCashUsd: string; openingCashVes: string };
-type RegisterShiftsPanelProps = { organizationId: string; userName: string };
+type RegisterShiftsPanelProps = { organizationId: string; userName: string; onOpenShiftClosure?: (branchId: string, shiftId: string) => void };
 
 function money(value: string): string {
   try { return formatLocalizedDecimal(value, 18, 4, 2); }
@@ -25,7 +25,8 @@ function normalizeOpenedShift(value: Record<string, unknown>): Shift {
   };
 }
 
-export default function RegisterShiftsPanel({ organizationId, userName }: RegisterShiftsPanelProps) {
+export default function RegisterShiftsPanel({ organizationId, userName, onOpenShiftClosure }: RegisterShiftsPanelProps) {
+  const [lastClosedShift, setLastClosedShift] = useState<{ branchId: string; id: string } | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState("");
   const [registers, setRegisters] = useState<Register[]>([]);
@@ -111,7 +112,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts/${encodeURIComponent(shift.id)}/close`,
         { method: "POST", body: JSON.stringify({ closing_cash_usd: normalizeDecimalInput(closingUsd), closing_cash_ves: normalizeDecimalInput(closingVes) }) },
       );
-      setShift(null); setConfirmClose(false); setNotice("Turno cerrado y registrado en auditoría.");
+      setLastClosedShift({ branchId, id: shift.id }); setShift(null); setConfirmClose(false); setNotice("Turno cerrado y registrado en auditoría.");
       await loadBranchState(branchId);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo cerrar el turno."); }
     finally { setSaving(false); }
@@ -126,6 +127,7 @@ export default function RegisterShiftsPanel({ organizationId, userName }: Regist
       {loadError && <p className="register-shifts-alert error" role="alert">{loadError}</p>}
       {error && <p className="register-shifts-alert error" role="alert">{error}</p>}
       {notice && <p className="register-shifts-alert success" role="status">{notice}</p>}
+      {notice === "Turno cerrado y registrado en auditoría." && lastClosedShift && onOpenShiftClosure && <button type="button" className="register-shifts-refresh" onClick={() => onOpenShiftClosure(lastClosedShift.branchId, lastClosedShift.id)}>Ver resumen del cierre</button>}
       {loading ? <p className="register-shifts-loading">Consultando sucursales y estado del turno…</p> : (
         <>
           {branches.length > 0 && <label className="register-shifts-field"><span>Sucursal</span><select value={branchId} onChange={(event) => void changeBranch(event.target.value)} disabled={saving || Boolean(shift)}>{branches.map((branch) => <option value={branch.id} key={branch.id}>{branch.name}</option>)}</select></label>}

@@ -1,7 +1,7 @@
 # ODD task: Micro-PR 4A — backend de cierres, reportes y exportación CSV
 
 - Status: in progress
-- Issue / PR: Micro-PR 4A; PR por crear en Draft
+- Issue / PR: [PR #402 — OPEN / Draft](https://github.com/BTF14/Micro-app/pull/402)
 - Owner / reviewer: propietario del producto / revisión técnica independiente
 - Started: 2026-11-21
 - Risk: high

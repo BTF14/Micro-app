@@ -150,8 +150,13 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
   }
   const orgPath = () => "/api/orgs/"+organizationId;
   it("returns inventory valuation only to Owner; Admin and Inventory SQL projections omit cost", async () => {
+    const projection = await runtime.query(
+      "SELECT ib.on_hand_quantity::text AS on_hand,(ib.on_hand_quantity*p.price_usd)::numeric(38,4)::text AS retail_valuation_usd,(ib.on_hand_quantity*p.cost_usd)::numeric(38,4)::text AS cost_valuation_usd FROM inventory_balances ib JOIN products p ON p.organization_id=ib.organization_id AND p.id=ib.product_id WHERE ib.organization_id=$1 AND ib.branch_id=$2 AND ib.product_id=$3",
+      [organizationId,branchId,productId],
+    );
+    expect(projection.rows[0]).toEqual({on_hand:"5.000",retail_valuation_usd:"100.0000",cost_valuation_usd:"61.7000"});
     const owner = await request("owner",orgPath()+"/reports/inventory");
-    expect(owner.status).toBe(200);
+    expect(owner.status,await owner.clone().text()).toBe(200);
     const ownerBody = await owner.json() as {items:Array<Record<string,unknown>>};
     const valued = ownerBody.items.find((item) => item.product_id === productId);
     expect(valued).toHaveProperty("on_hand","5.000");
@@ -281,8 +286,9 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
 
     const csv = await request("owner",orgPath()+"/reports/sales.csv?period=daily&date="+rateDate);
     expect(csv.status).toBe(200);
-    const csvText = await csv.text();
-    expect(csvText.charCodeAt(0)).toBe(0xFEFF);
+    const csvBytes = new Uint8Array(await csv.arrayBuffer());
+    expect(Array.from(csvBytes.slice(0,3))).toEqual([0xEF,0xBB,0xBF]);
+    const csvText = new TextDecoder().decode(csvBytes.slice(3));
     expect(csvText).toContain("\"'+SUM(2,2)\"");
     expect(csvText).toContain("20.0000");
     expect(csvText).toContain("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");

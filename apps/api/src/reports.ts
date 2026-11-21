@@ -186,7 +186,8 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
                   COALESCE(sum(s.total_usd) FILTER (WHERE s.status='completed'),0)::numeric(38,4)::text AS total_usd,
                   COALESCE(sum(s.total_ves_snapshot) FILTER (WHERE s.status='completed'),0)::numeric(38,2)::text AS total_ves_snapshot,
                   COALESCE(jsonb_agg(jsonb_build_object('settlement_currency',s.settlement_currency,'fx_source',s.fx_source,
-                    'total_usd',s.total_usd::text,'total_ves_snapshot',s.total_ves_snapshot::text))
+                    'total_usd',s.total_usd::text,'total_ves_snapshot',s.total_ves_snapshot::text,
+                    'exchange_rate_snapshot',s.exchange_rate_snapshot::text,'exchange_rate_effective_date',s.exchange_rate_effective_date))
                     FILTER (WHERE s.status='completed'),'[]'::jsonb) AS sale_snapshots,
                   COALESCE((SELECT jsonb_agg(jsonb_build_object('settlement_currency',fx.settlement_currency,
                     'fx_source',fx.fx_source,'sales_count',fx.sales_count::text,'total_usd',fx.total_usd,
@@ -282,11 +283,11 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
       if(result.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);
       if(result.kind!=="ok")return c.json({error:"FORBIDDEN"},403);
       if(asCsv){
-        const data=[["fecha_completada","sucursal","cajero","venta","moneda_liquidacion","total_usd","total_ves","tasa_snapshot","origen_fx","pagos","leyenda"]];
+        const data=[["fecha_completada","sucursal","cajero","venta","moneda_liquidacion","total_usd","total_ves","tasa_snapshot","origen_fx","pagos","referencias_pago","leyenda"]];
         for(const row of result.items)data.push([row.completed_at,formatSafeCsvCell(row.branch_name),formatSafeCsvCell(row.cashier_name),
           formatSafeCsvCell(row.sale_number),formatSafeCsvCell(row.settlement_currency),formatCsvNumericCell(row.total_usd),
           formatCsvNumericCell(row.total_ves_snapshot),formatCsvNumericCell(row.exchange_rate_snapshot),formatSafeCsvCell(row.fx_source),
-          formatSafeCsvCell(JSON.stringify(row.payments)),formatSafeCsvCell(DISCLAIMER)]);
+          formatSafeCsvCell(JSON.stringify(row.payments)),formatSafeCsvCell(row.payments.map((payment:any)=>payment.reference??"").filter(Boolean).join(" | ")),formatSafeCsvCell(DISCLAIMER)]);
         data.push(["","","","","","","","","","",""]);
         data.push(["","","","","","","","","","",formatSafeCsvCell(DISCLAIMER)]);
         return csvResponse(c,`reporte-ventas-${period}.csv`,data);

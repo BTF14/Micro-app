@@ -4,7 +4,7 @@
 - PR #398 — Importador CSV 7D: MERGED, `04a6c325f87d0a854ffccc0a962704c7cf11b878`.
 - PR #399 — Micro-PR 3A: MERGED, `841145efb7da16e61e742bf331eda5ad04adb3b6`; SDD/ODD/helpers puros.
 - PR #400 — Hotfix BCV fin de semana: MERGED, `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`.
-- Micro-PR 3B — visor/integración cámara, QuickProductLookup, headers, jsdom y E2E móvil real PostgreSQL 18: rama `feat/mobile-barcode-scanner-3b-20261121`, PR Draft sin merge/auto-merge; validar HEAD/checks exactos.
+- Micro-PR 3B — visor/integración cámara, QuickProductLookup, headers, jsdom y E2E móvil real PostgreSQL 18: rama `feat/mobile-barcode-scanner-3b-20261121`, **PR #401 OPEN / Draft** (https://github.com/BTF14/Micro-app/pull/401), sin merge/auto-merge. Implementación SHA `e1b4a739a3fa7d11d77b33c3cb9bdc852c94ab22`: 17/17 check-runs y 13/13 workflows verdes; revalidar el HEAD tras reconciliación documental.
 
 ## Siguiente roadmap
 1. **PR 4 — Cierres / Reportes / Exportación CSV.**

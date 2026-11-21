@@ -284,7 +284,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
       if(result.kind!=="ok")return c.json({error:"FORBIDDEN"},403);
       if(asCsv){
         const data=[["fecha_completada","sucursal","cajero","venta","moneda_liquidacion","total_usd","total_ves","tasa_snapshot","origen_fx","pagos","referencias_pago","leyenda"]];
-        for(const row of result.items)data.push([row.completed_at,formatSafeCsvCell(row.branch_name),formatSafeCsvCell(row.cashier_name),
+        for(const row of result.items)data.push([formatSafeCsvCell(row.completed_at),formatSafeCsvCell(row.branch_name),formatSafeCsvCell(row.cashier_name),
           formatSafeCsvCell(row.sale_number),formatSafeCsvCell(row.settlement_currency),formatCsvNumericCell(row.total_usd),
           formatCsvNumericCell(row.total_ves_snapshot),formatCsvNumericCell(row.exchange_rate_snapshot),formatSafeCsvCell(row.fx_source),
           formatSafeCsvCell(JSON.stringify(row.payments)),formatSafeCsvCell(row.payments.map((payment:any)=>payment.reference??"").filter(Boolean).join(" | ")),formatSafeCsvCell(DISCLAIMER)]);
@@ -317,7 +317,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const membershipFilter=auth.context.role==="inventory"?
           "AND EXISTS(SELECT 1 FROM public.branch_memberships bm WHERE bm.organization_id=ib.organization_id AND bm.branch_id=ib.branch_id AND bm.user_id=$2 AND bm.is_active=true)":"";
         const costColumns=includeValuation?
-          ",p.cost_usd::text AS cost_usd,(ib.on_hand_quantity*p.cost_usd)::numeric(18,4)::text AS cost_valuation_usd": "";
+          ",p.cost_usd::text AS cost_usd,(ib.on_hand_quantity*p.cost_usd)::numeric(38,4)::text AS cost_valuation_usd": "";
         const rows=await tx.query<any>(
           `SELECT ib.branch_id,b.name AS branch_name,ib.warehouse_id,w.name AS warehouse_name,
                   p.id AS product_id,p.sku,p.barcode,p.name AS product_name,p.unit,p.price_usd::text AS price_usd,

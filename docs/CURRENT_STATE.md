@@ -1,3 +1,16 @@
+# Corte vigente — Micro-PR 4A Cierres/Reportes/CSV backend — 2026-11-21
+
+- **Base exacta verificada:** `main` = `10d24105c49f7d5c240ef298c353b782f0cca255`, merge commit post-PR #401.
+- **PR #401 — Escáner móvil 3B:** integrado en main; el SHA base contiene el merge commit de #401. Las referencias históricas que la describían como Draft están supersedidas.
+- **Micro-PR 4A:** rama `feat/reports-shift-closure-4a-20261121`, implementación backend de lista de turnos, resumen de cierre, reportes y CSV; RBAC Owner-only para valoración. PR pendiente de apertura/validación exact-SHA.
+- **Alcance previsto:** exactamente 11 archivos autorizados. Sin migraciones, grants, `apps/web/**`, `packages/**`, workflows, dependencias ni `package.json`.
+- **Diseño:** `register_shifts` sigue siendo una sesión `opened_at` → `closed_at`, sin corte automático a medianoche. Reportes Caracas usan intervalos semiabiertos UTC-4; `completed_at` selecciona ventas completadas; montos/snapshots FX son históricos y exactos.
+- **Siguiente:** Micro-PR 4B UI Cierres/Reportes/CSV + leyenda FISC-01 + E2E → Tour Visual + `favicon.svg` + `docs/USER_MANUAL.md` → gates finales.
+- **Gates intactos:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; **PRODUCTION: NOT READY**; USD 0.
+- **Validación:** sin checkout local; no declarar ejecución local de verify/Vitest/PG18/validador. Requerir 100 % de checks/workflows en SHA final exacto.
+
+---
+
 # Corte vigente — Micro-PR 3B Escáner móvil — 2026-11-21
 
 - **Base exacta verificada:** `main` = `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`; GitHub compare: `identical`.

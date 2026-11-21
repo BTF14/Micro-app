@@ -150,6 +150,7 @@ export default function QuickProductLookup({
 
   useEffect(() => {
     let active = true;
+    setScannerOpen(false);
     setWarehouses([]);
     setWarehouseId("");
     setWarehousesLoaded(false);
@@ -257,9 +258,10 @@ export default function QuickProductLookup({
       return;
     }
 
-    if (skipNextQueryDebounce.current === normalizedTerm) {
+    if (skipNextQueryDebounce.current !== null) {
+      const isScannedValue = skipNextQueryDebounce.current === normalizedTerm;
       skipNextQueryDebounce.current = null;
-      return;
+      if (isScannedValue) return;
     }
 
     const timer = window.setTimeout(() => {
@@ -318,7 +320,7 @@ export default function QuickProductLookup({
     setScannerOpen(false);
     if (debounceTimer.current !== null) window.clearTimeout(debounceTimer.current);
     debounceTimer.current = null;
-    skipNextQueryDebounce.current = scannedCode.trim();
+    skipNextQueryDebounce.current = query.trim() === scannedCode.trim() ? null : scannedCode.trim();
     setHasSearched(false);
     setQuery(scannedCode);
     void search(scannedCode);

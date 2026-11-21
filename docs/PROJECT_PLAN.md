@@ -1,3 +1,26 @@
+# Plan vigente — Micro-PR 4A Cierres/Reportes/CSV backend — 2026-11-21
+
+## Estado integrado y trabajo actual
+- **main:** `10d24105c49f7d5c240ef298c353b782f0cca255`, post-merge PR #401.
+- **PR #401 — Scanner móvil 3B:** incorporada en la base actual.
+- **Micro-PR 4A:** rama `feat/reports-shift-closure-4a-20261121`; **PR #402 OPEN / Draft** (https://github.com/BTF14/Micro-app/pull/402); backend de cierres, reportes, CSV y RBAC Owner-only para valoración. Sin merge ni auto-merge; validar en SHA final exacto.
+- Alcance: 11 archivos autorizados; sin migraciones, frontend, packages, workflows, dependencias o cambios a gates.
+- No hay checkout local; no afirmar pruebas locales ni ejecución manual de PostgreSQL 18.
+
+## Roadmap siguiente
+1. **Cerrar Micro-PR 4A:** revisión de diff, integración PG18 y 100 % check-runs/workflows exact-SHA.
+2. **Micro-PR 4B:** UI Cierres/Reportes/CSV, leyenda FISC-01 en SalesPanel y E2E Playwright.
+3. **Tour Visual E2E + `favicon.svg` + `docs/USER_MANUAL.md`.**
+4. Pre-prod Audit, `ve-fx-compliance-review`, AC-6 e Issue #53 por procesos independientes.
+
+## Gates invariables
+AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
+
+## Validación
+No acceder a Neon main, secretos, DNS, Cloudflare ni producción. Sin checkout local no declarar verify/Vitest/build/typecheck/Playwright/validador local. Exigir checks/workflows reales sobre SHA final exacto.
+
+---
+
 # Plan vigente — Micro-PR 3B Escáner móvil — 2026-11-21
 
 ## Estado integrado

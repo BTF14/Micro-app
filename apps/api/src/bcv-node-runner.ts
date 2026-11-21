@@ -14,6 +14,23 @@ export type BcvNodeSyncResult =
   | { status: "skipped"; outcome: "inserted" | "unchanged" }
   | { status: "synced"; outcome: "inserted" | "unchanged" | "older" | "superseded" };
 
+export function caracasHour(now = new Date()): number {
+  const hour = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now).find((part) => part.type === "hour")?.value;
+  return Number(hour ?? "0");
+}
+
+export function isCaracasWeekend(now = new Date()): boolean {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Caracas",
+    weekday: "short",
+  }).format(now);
+  return weekday === "Sat" || weekday === "Sun";
+}
+
 export function caracasCalendarDate(now = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Caracas",
@@ -66,20 +83,32 @@ export async function shouldSkipBcvNodeSync(
 ): Promise<boolean> {
   if (forceSync) return false;
   const today = caracasCalendarDate(now);
+  const useFutureRate = isCaracasWeekend(now) || caracasHour(now) >= 16;
   return withDatabaseClient(databaseUrl, async (client) => {
     const state = await client.query<StateRow>(
       "SELECT singleton, last_outcome FROM public.bcv_sync_state WHERE singleton = true",
     );
-    const rate = await client.query<RateRow>(
-      `SELECT id, validation_status
-         FROM public.exchange_rates
-        WHERE source = $1 AND effective_date = $2::date
-        LIMIT 1`,
-      [BCV_SOURCE_ID, today],
-    );
     const outcome = state.rows[0]?.last_outcome;
-    const validRateExists = rate.rows.some((row) => row.validation_status === "valid");
-    return (outcome === "inserted" || outcome === "unchanged") && validRateExists;
+    if (outcome !== "inserted" && outcome !== "unchanged") return false;
+
+    const rate = useFutureRate
+      ? await client.query<RateRow>(
+          `SELECT id, validation_status
+             FROM public.exchange_rates
+            WHERE source = $1
+              AND effective_date > $2::date
+              AND effective_date <= ($2::date + 5)
+            LIMIT 1`,
+          [BCV_SOURCE_ID, today],
+        )
+      : await client.query<RateRow>(
+          `SELECT id, validation_status
+             FROM public.exchange_rates
+            WHERE source = $1 AND effective_date = $2::date
+            LIMIT 1`,
+          [BCV_SOURCE_ID, today],
+        );
+    return rate.rows.some((row) => row.validation_status === "valid");
   }, createClient);
 }
 
@@ -91,10 +120,11 @@ export async function runBcvNodeSync(
   databaseUrl: string | undefined,
   forceSync = false,
   createClient?: DatabaseClientFactory,
+  now = new Date(),
 ): Promise<BcvNodeSyncResult> {
   if (!databaseUrl) throw new Error("BCV_SYNC_DATABASE_URL_MISSING");
   const verifiedFactory = createVerifiedBcvDatabaseClientFactory(createClient);
-  const shouldSkip = await shouldSkipBcvNodeSync(databaseUrl, forceSync, new Date(), verifiedFactory);
+  const shouldSkip = await shouldSkipBcvNodeSync(databaseUrl, forceSync, now, verifiedFactory);
   if (shouldSkip) {
     const state = await withDatabaseClient(databaseUrl, async (client) =>
       client.query<StateRow>(

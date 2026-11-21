@@ -102,9 +102,9 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     if (existingRate.rows[0]) {
       rateId = existingRate.rows[0].id;
       originalRate = existingRate.rows[0];
-      await admin.query("UPDATE exchange_rates SET rate=40.00000000,validation_status='valid',fetched_at=now() WHERE id=$1",[rateId]);
+      await admin.query("UPDATE exchange_rates SET rate=35.00000000,validation_status='valid',fetched_at=now() WHERE id=$1",[rateId]);
     } else {
-      rateId = (await admin.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',40.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid') RETURNING id",[rateDate])).rows[0].id;
+      rateId = (await admin.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',35.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid') RETURNING id",[rateDate])).rows[0].id;
       rateWasCreated = true;
     }
     const attemptId = crypto.randomUUID();
@@ -188,12 +188,92 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     expect(closedBody.difference_cash_ves).toBe("20.00");
     expect(await request("inventory",orgPath()+"/register-shifts")).toHaveProperty("status",403);
   });
-  it("executes sales report queries under the runtime role and denies Inventory", async () => {
-    const owner = await request("owner",orgPath()+"/reports/sales?period=daily&date=2026-11-21");
-    expect(owner.status).toBe(200);
-    expect((await owner.json() as {items:unknown[]}).items).toEqual([]);
-    const cashier = await request("cashier",orgPath()+"/reports/sales?period=daily&date=2026-11-21");
-    expect(cashier.status).toBe(200);
+  it("executes completed sales, closure, Caracas-midnight and CSV queries under microapp_runtime", async () => {
+    const usdCheckout = await checkout([
+      {method:"cash",currency:"USD",amount:"10.0000"},
+      {method:"other",currency:"USD",amount:"10.0000",reference:"+SUM(2,2)"},
+    ]);
+    expect(usdCheckout.status,await usdCheckout.clone().text()).toBe(201);
+    const usdSale = await usdCheckout.json() as {id:string;exchange_rate_snapshot:string};
+    expect(usdSale.exchange_rate_snapshot).toBe("35.00000000");
+
+    const vesCheckout = await checkout([{method:"cash",currency:"VES",amount:"700.00"}]);
+    expect(vesCheckout.status,await vesCheckout.clone().text()).toBe(201);
+    const vesSale = await vesCheckout.json() as {id:string;exchange_rate_snapshot:string};
+    expect(vesSale.exchange_rate_snapshot).toBe("35.00000000");
+
+    const voidCheckout = await checkout([{method:"cash",currency:"USD",amount:"20.0000"}]);
+    expect(voidCheckout.status,await voidCheckout.clone().text()).toBe(201);
+    const voidSale = await voidCheckout.json() as {id:string};
+
+    const tomorrow = (await admin.query("SELECT ($1::date+1)::text AS day",[rateDate])).rows[0].day;
+    await admin.query(
+      "INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',40.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid')",
+      [tomorrow],
+    );
+    const adjustmentDate = await admin.query(
+      "SELECT ($1::date::timestamp AT TIME ZONE 'UTC')+interval '4 hours' AS caracas_midnight",
+      [rateDate],
+    );
+    const midnight = adjustmentDate.rows[0].caracas_midnight as Date;
+    const beforeMidnight = new Date(midnight.getTime()-1000);
+    const afterMidnight = new Date(midnight.getTime()+1000);
+    await admin.query("ALTER TABLE sales DISABLE TRIGGER sales_checkout_lifecycle_guard");
+    await admin.query("ALTER TABLE sales DISABLE TRIGGER sales_completed_reconciliation");
+    try {
+      await admin.query("UPDATE sales SET created_at=$2::timestamptz-interval '1 day',completed_at=$3::timestamptz WHERE id=$1",[usdSale.id,midnight,afterMidnight]);
+      await admin.query("UPDATE sales SET completed_at=$2::timestamptz WHERE id=$1",[vesSale.id,beforeMidnight]);
+      await admin.query("UPDATE sales SET status='void',created_at=$2::timestamptz,completed_at=NULL WHERE id=$1",[voidSale.id,afterMidnight]);
+    } finally {
+      await admin.query("ALTER TABLE sales ENABLE TRIGGER sales_completed_reconciliation");
+      await admin.query("ALTER TABLE sales ENABLE TRIGGER sales_checkout_lifecycle_guard");
+    }
+    const stored = await admin.query("SELECT exchange_rate_snapshot::text,status FROM sales WHERE id=$1",[usdSale.id]);
+    expect(stored.rows[0]).toEqual({exchange_rate_snapshot:"35.00000000",status:"completed"});
+
+    await admin.query("UPDATE register_shifts SET closed_at=now(),closing_cash_usd=20.0000,closing_cash_ves=800.00,closed_by_user_id=$2 WHERE id=$1",[cashierShiftId,actors.get("cashier")!.userId]);
+    const summary = await request("cashier",orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary");
+    expect(summary.status).toBe(200);
+    const closure = await summary.json() as Record<string,any>;
+    expect(closure.completed_sales_count).toBe("2");
+    expect(closure.non_completed_sales_count).toBe("1");
+    expect(closure.expected_cash_usd).toBe("20.0000");
+    expect(closure.expected_cash_ves).toBe("800.00");
+    expect(closure.difference_cash_usd).toBe("0.0000");
+    expect(closure.difference_cash_ves).toBe("0.00");
+    expect(closure.payments).toEqual(expect.arrayContaining([
+      expect.objectContaining({method:"cash",currency:"USD",amount:"10.0000"}),
+      expect.objectContaining({method:"other",currency:"USD",amount:"10.0000"}),
+      expect.objectContaining({method:"cash",currency:"VES",amount:"700.00"}),
+    ]));
+    expect(closure.sale_snapshots).toEqual(expect.arrayContaining([
+      expect.objectContaining({exchange_rate_snapshot:"35.00000000"}),
+    ]));
+    const secondCashierSummary = await app.fetch(new Request("https://api.example"+orgPath()+"/branches/"+branchId+"/register-shifts/"+cashierShiftId+"/closure-summary",{
+      headers:{Cookie:"microapp_session="+secondCashier.token},
+    }),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example"});
+    expect(secondCashierSummary.status).toBe(403);
+
+    const daily = await request("owner",orgPath()+"/reports/sales?period=daily&date="+rateDate);
+    expect(daily.status).toBe(200);
+    const dailyBody = await daily.json() as {items:Array<{id:string}>;excluded_non_completed_count:string};
+    expect(dailyBody.items.map((item)=>item.id)).toContain(usdSale.id);
+    expect(dailyBody.items.map((item)=>item.id)).not.toContain(vesSale.id);
+    expect(dailyBody.items.map((item)=>item.id)).not.toContain(voidSale.id);
+    expect(dailyBody.excluded_non_completed_count).toBe("1");
+
+    const csv = await request("owner",orgPath()+"/reports/sales.csv?period=daily&date="+rateDate);
+    expect(csv.status).toBe(200);
+    const csvText = await csv.text();
+    expect(csvText.charCodeAt(0)).toBe(0xFEFF);
+    expect(csvText).toContain("\"'+SUM(2,2)\"");
+    expect(csvText).toContain("20.0000");
+    expect(csvText).toContain("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
+    expect(csvText).not.toContain("\"'20.0000\"");
+
     expect((await request("inventory",orgPath()+"/reports/sales")).status).toBe(403);
+    expect((await app.fetch(new Request("https://api.example"+orgPath()+"/reports/sales")),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example"})).status).toBe(401);
+    const crossTenant = await request("owner","/api/orgs/00000000-0000-4000-8000-000000000001/reports/sales");
+    expect(crossTenant.status).toBe(403);
   });
 });

@@ -423,8 +423,9 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await cashierPage.getByRole("button", { name: "Exportar CSV", exact: true }).click();
   const cashierCsvResponse = await cashierCsvResponsePromise;
   expect(cashierCsvResponse.status()).toBe(200);
-  const cashierCsv = await cashierCsvResponse.text();
-  expect(cashierCsv.startsWith("\uFEFF")).toBe(true);
+  const cashierCsvBytes = await cashierCsvResponse.body();
+  expect([...cashierCsvBytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+  const cashierCsv = cashierCsvBytes.toString("utf8");
   expect(cashierCsv).toContain("fecha_completada");
   expect(cashierCsv).toContain("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
   await cashierDownloadPromise;

@@ -31,10 +31,12 @@ function isoCaracas(ms: number): string {
 function parseCustomDate(value: string): number | null {
   if (dateParts(value)) return caracasMidnight(value);
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?$/.test(value)) {
+    if (!dateParts(value.slice(0, 10))) return null;
     const ms = Date.parse(value + "-04:00");
     return Number.isFinite(ms) ? ms : null;
   }
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null;
+  if (!dateParts(value.slice(0, 10))) return null;
   const ms = Date.parse(value);
   return Number.isFinite(ms) ? ms : null;
 }
@@ -159,7 +161,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const auth = await authorizeBranchOperation(tx, token, organizationId, branchId, "reports.sales.organization", false);
         const cashierAuth = auth.allowed ? null : await authorizeBranchOperation(tx, token, organizationId, branchId, "reports.sales.own_shift", false);
         const context = auth.allowed ? auth.context : cashierAuth?.allowed ? cashierAuth.context : null;
-        if (!context) return { kind: "forbidden" as const };
+        if (!context) return { kind: auth.reason === "unauthenticated_or_out_of_scope" || cashierAuth?.reason === "unauthenticated_or_out_of_scope" ? "unauthenticated" as const : "forbidden" as const };
         const rows = await tx.query<any>(
           `SELECT rs.id, rs.branch_id, b.name AS branch_name, rs.register_id, r.name AS register_name,
                   rs.cashier_user_id, u.display_name AS cashier_name, rs.opened_at::text AS opened_at,
@@ -213,6 +215,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
           differenceVes: shift.closed_at ? subtractNumeric(shift.closing_cash_ves,expectedVes,38,2) : null };
       }));
       if (result.kind === "not_found") return c.json({ error: "SHIFT_NOT_FOUND" }, 404);
+      if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED" }, 401);
       if (result.kind !== "ok") return c.json({ error: "FORBIDDEN" }, 403);
       return c.json({ shift: result.shift, ...result.sales, payments: result.payments,
         expected_cash_usd: result.expectedUsd, expected_cash_ves: result.expectedVes,
@@ -236,7 +239,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const ownerAuth=await authorizeTenantOperation(tx,token,organizationId,"reports.sales.organization",false);
         const ownAuth=ownerAuth.allowed?null:await authorizeTenantOperation(tx,token,organizationId,"reports.sales.own_shift",false);
         const context=ownerAuth.allowed?ownerAuth.context:ownAuth?.allowed?ownAuth.context:null;
-        if(!context)return {kind:"forbidden" as const};
+        if(!context)return {kind: ownerAuth.reason === "unauthenticated_or_out_of_scope" || ownAuth?.reason === "unauthenticated_or_out_of_scope" ? "unauthenticated" as const : "forbidden" as const};
         if(asCsv&&!isCommercialOperationAllowed(context.role,"exports.allowed_data"))return {kind:"forbidden" as const};
         if(branchId){
           const branchAuth=await authorizeBranchOperation(tx,token,organizationId,branchId,
@@ -272,6 +275,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
           totalUsd:sumNumeric(rows.rows.map((row:any)=>row.total_usd),38,4),
           totalVes:sumNumeric(rows.rows.map((row:any)=>row.total_ves_snapshot),38,2)};
       }));
+      if(result.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);
       if(result.kind!=="ok")return c.json({error:"FORBIDDEN"},403);
       if(asCsv){
         const data=[["fecha_completada","sucursal","cajero","venta","moneda_liquidacion","total_usd","total_ves","tasa_snapshot","origen_fx","pagos","leyenda"]];
@@ -297,7 +301,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
     try{
       const result=await withDatabaseClient(c.env.DATABASE_URL,(client)=>withDatabaseTransaction(client,async(tx)=>{
         const auth=await authorizeTenantOperation(tx,token,organizationId,"reports.inventory",false);
-        if(!auth.allowed)return {kind:"forbidden" as const};
+        if(!auth.allowed)return {kind:auth.reason === "unauthenticated_or_out_of_scope" ? "unauthenticated" as const : "forbidden" as const};
         if(auth.context.role==="cashier")return {kind:"forbidden" as const};
         if(asCsv&&!isCommercialOperationAllowed(auth.context.role,"exports.allowed_data"))return {kind:"forbidden" as const};
         if(branchId){
@@ -327,6 +331,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const totalCost=includeValuation?sumNumeric(rows.rows.map((row:any)=>row.cost_valuation_usd),38,4):null;
         return {kind:"ok" as const,items:rows.rows,includeValuation,totalRetail,totalCost};
       }));
+      if(result.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);
       if(result.kind!=="ok")return c.json({error:"FORBIDDEN"},403);
       if(asCsv){
         const header=["sucursal","almacen","sku","barcode","producto","unidad","existencia","reservado","disponible","precio_usd","valor_venta_usd"];
@@ -340,6 +345,9 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
           if(result.includeValuation)line.push(formatCsvNumericCell(r.cost_usd),formatCsvNumericCell(r.cost_valuation_usd));
           data.push(line);
         }
+        const totals=["TOTAL","","","","","","","","","",formatCsvNumericCell(result.totalRetail)];
+        if(result.includeValuation)totals.push("",formatCsvNumericCell(result.totalCost!));
+        data.push(totals);
         return csvResponse(c,"reporte-inventario.csv",data);
       }
       return c.json({items:result.items,include_valuation:result.includeValuation,total_retail_valuation_usd:result.totalRetail,...(result.includeValuation?{total_cost_valuation_usd:result.totalCost}: {})},200);

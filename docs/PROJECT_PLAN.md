@@ -1,3 +1,24 @@
+# Plan vigente — Micro-PR 3B Escáner móvil — 2026-11-21
+
+## Estado integrado
+- PR #398 — Importador CSV 7D: MERGED, `04a6c325f87d0a854ffccc0a962704c7cf11b878`.
+- PR #399 — Micro-PR 3A: MERGED, `841145efb7da16e61e742bf331eda5ad04adb3b6`; SDD/ODD/helpers puros.
+- PR #400 — Hotfix BCV fin de semana: MERGED, `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`.
+- Micro-PR 3B — visor/integración cámara, QuickProductLookup, headers, jsdom y E2E móvil real PostgreSQL 18: rama `feat/mobile-barcode-scanner-3b-20261121`, PR Draft sin merge/auto-merge; validar HEAD/checks exactos.
+
+## Siguiente roadmap
+1. **PR 4 — Cierres / Reportes / Exportación CSV.**
+2. **Tour Visual E2E integral ($0):** nueve vistas, 390×844 y 1280×800, accesibilidad, copy, overflow y screenshots temporales.
+3. **Pre-prod Audit → `ve-fx-compliance-review` → AC-6 → Issue #53.** Gates independientes; no se cierran por CI verde.
+
+## Gates sin cambios
+AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
+
+## Validación
+Sin checkout local: no afirmar tests, build, typecheck, Playwright ni `python3 tools/validate-agent-docs.py` ejecutados localmente. Exigir 100 % de check-runs/workflows GitHub Actions sobre el SHA final exacto. No acceder a Neon main, secretos, DNS, Cloudflare ni producción.
+
+---
+
 # Plan vigente — Cierre condicionado Paso 7 / siguiente PR 3 — 2026-11-20
 
 ## Paso 7 — Importador CSV (implementación 7A–7D)

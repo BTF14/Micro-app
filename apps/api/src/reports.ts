@@ -179,8 +179,8 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const sales = await tx.query<any>(
           `SELECT count(*) FILTER (WHERE s.status='completed')::text AS completed_sales_count,
                   count(*) FILTER (WHERE s.status IN ('void','refunded'))::text AS non_completed_sales_count,
-                  COALESCE(sum(s.total_usd) FILTER (WHERE s.status='completed'),0)::numeric(14,4)::text AS total_usd,
-                  COALESCE(sum(s.total_ves_snapshot) FILTER (WHERE s.status='completed'),0)::numeric(16,2)::text AS total_ves_snapshot,
+                  COALESCE(sum(s.total_usd) FILTER (WHERE s.status='completed'),0)::numeric(38,4)::text AS total_usd,
+                  COALESCE(sum(s.total_ves_snapshot) FILTER (WHERE s.status='completed'),0)::numeric(38,2)::text AS total_ves_snapshot,
                   COALESCE(jsonb_agg(jsonb_build_object('settlement_currency',s.settlement_currency,'fx_source',s.fx_source,
                     'total_usd',s.total_usd::text,'total_ves_snapshot',s.total_ves_snapshot::text))
                     FILTER (WHERE s.status='completed'),'[]'::jsonb) AS sale_snapshots,
@@ -196,8 +196,8 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
           [organizationId, branchId, shiftId],
         );
         const payments = await tx.query<any>(
-          `SELECT p.method,p.currency,CASE WHEN p.currency='VES' THEN sum(p.amount)::numeric(16,2)::text ELSE sum(p.amount)::numeric(14,4)::text END AS amount,
-                  sum(p.usd_equivalent_snapshot)::numeric(14,4)::text AS usd_equivalent_snapshot
+          `SELECT p.method,p.currency,CASE WHEN p.currency='VES' THEN sum(p.amount)::numeric(38,2)::text ELSE sum(p.amount)::numeric(38,4)::text END AS amount,
+                  sum(p.usd_equivalent_snapshot)::numeric(38,4)::text AS usd_equivalent_snapshot
              FROM public.payments p JOIN public.sales s ON s.organization_id=p.organization_id AND s.id=p.sale_id
             WHERE s.organization_id=$1 AND s.branch_id=$2 AND s.register_shift_id=$3 AND s.status='completed'
             GROUP BY p.method,p.currency ORDER BY p.method,p.currency`,
@@ -205,12 +205,12 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         );
         const cashUsd = payments.rows.filter((p:any)=>p.method==="cash"&&p.currency==="USD").map((p:any)=>p.amount);
         const cashVes = payments.rows.filter((p:any)=>p.method==="cash"&&p.currency==="VES").map((p:any)=>p.amount);
-        const expectedUsd = sumNumeric([shift.opening_cash_usd,...cashUsd],14,4);
-        const expectedVes = sumNumeric([shift.opening_cash_ves,...cashVes],16,2);
+        const expectedUsd = sumNumeric([shift.opening_cash_usd,...cashUsd],38,4);
+        const expectedVes = sumNumeric([shift.opening_cash_ves,...cashVes],38,2);
         return { kind: "ok" as const, shift, sales: sales.rows[0], payments: payments.rows,
           expectedUsd, expectedVes,
-          differenceUsd: shift.closed_at ? subtractNumeric(shift.closing_cash_usd,expectedUsd,14,4) : null,
-          differenceVes: shift.closed_at ? subtractNumeric(shift.closing_cash_ves,expectedVes,16,2) : null };
+          differenceUsd: shift.closed_at ? subtractNumeric(shift.closing_cash_usd,expectedUsd,38,4) : null,
+          differenceVes: shift.closed_at ? subtractNumeric(shift.closing_cash_ves,expectedVes,38,2) : null };
       }));
       if (result.kind === "not_found") return c.json({ error: "SHIFT_NOT_FOUND" }, 404);
       if (result.kind !== "ok") return c.json({ error: "FORBIDDEN" }, 403);

@@ -139,7 +139,7 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
   async function request(role: Role, path: string) {
     const actor = actors.get(role)!;
     return app.fetch(new Request("https://api.example"+path,{headers:{Cookie:"microapp_session="+actor.token}}),
-      {DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example",GOOGLE_CLIENT_SECRET:"test-google-client-secret"});
+      {DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example",GOOGLE_CLIENT_SECRET:"test-google-client-secret",REPORTS_TEST_DEBUG:"true"});
   }
   async function checkout(payments: Array<{method:"cash"|"other";currency:"USD"|"VES";amount:string;reference?:string}>) {
     return app.fetch(new Request("https://api.example"+orgPath()+"/branches/"+branchId+"/checkout",{

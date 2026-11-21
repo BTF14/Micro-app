@@ -460,7 +460,7 @@ test("real CSV catalog import persists through PostgreSQL 18 on mobile", async (
 });
 
 
-test("mobile barcode scanner searches a real PostgreSQL product without sending camera frames", async ({ page, context, baseURL }) => {
+test("mobile barcode scanner searches a real PostgreSQL product without sending camera frames", async ({ page, context, browser, baseURL }) => {
   test.setTimeout(90_000);
   if (!baseURL) throw new Error("Playwright baseURL is required.");
   await page.setViewportSize({ width: 390, height: 844 });
@@ -516,11 +516,37 @@ test("mobile barcode scanner searches a real PostgreSQL product without sending 
   await expect(dialog).toBeHidden();
   await expect.poll(() => page.evaluate(() => (window as typeof window & { __scannerTrackStopCount?: number }).__scannerTrackStopCount ?? 0)).toBe(1);
   await expectNoHorizontalOverflow(page, "mobile barcode lookup");
-  await navigateByKeyboard(page, "Ventas");
-  const salesScan = page.getByRole("button", { name: "Escanear", exact: true });
+  // Sales exposes QuickProductLookup only after the cashier has an open shift and an active warehouse.
+  // Open the shift through the real UI, but do not add a product or create a sale from the scan.
+  const cashierContext = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await cashierContext.addCookies([{
+    name: "microapp_session", value: fixture.cashierSessionToken, url: baseURL,
+    httpOnly: true, secure: false, sameSite: "Lax",
+  }]);
+  const cashierPage = await cashierContext.newPage();
+  await cashierPage.addInitScript(() => { Reflect.deleteProperty(window, "BarcodeDetector"); });
+  await cashierPage.goto("/");
+  await expect(cashierPage.getByRole("heading", { name: `Hola, ${fixture.cashierDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await navigateByKeyboard(cashierPage, "Caja y turnos");
+  await expect(cashierPage.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
+  const branchSelect = cashierPage.locator("select").filter({ has: cashierPage.locator(`option[value="${fixture.branchId}"]`) });
+  const registerSelect = cashierPage.locator("select").filter({ has: cashierPage.locator(`option[value="${fixture.registerId}"]`) });
+  await expect(branchSelect).toHaveValue(fixture.branchId);
+  await expect(registerSelect).toHaveValue(fixture.registerId);
+  await cashierPage.getByLabel("Fondo inicial USD", { exact: true }).fill("50.0000");
+  await cashierPage.getByLabel("Fondo inicial VES", { exact: true }).fill("1000.00");
+  const openShift = cashierPage.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith("/register-shifts") && response.request().method() === "POST");
+  await cashierPage.getByRole("button", { name: "Abrir turno", exact: true }).click();
+  expect((await openShift).status()).toBe(201);
+  await navigateByKeyboard(cashierPage, "Ventas");
+  await expect(cashierPage.getByRole("heading", { name: "Ventas" })).toBeVisible();
+  const salesScan = cashierPage.getByRole("button", { name: "Escanear", exact: true });
   await expect(salesScan).toBeVisible(); await expect(salesScan).toBeEnabled(); await salesScan.click();
-  const salesDialog = page.getByRole("dialog", { name: "Escanear código de barras" });
+  const salesDialog = cashierPage.getByRole("dialog", { name: "Escanear código de barras" });
   await expect(salesDialog).toBeVisible();
-  await salesDialog.getByRole("button", { name: "Cerrar", exact: true }).click();
-  await expectNoHorizontalOverflow(page, "mobile sales scanner");
+  await expect(salesDialog.getByRole("button", { name: "Volver a la búsqueda manual" })).toBeVisible();
+  await salesDialog.getByRole("button", { name: "Volver a la búsqueda manual" }).click();
+  await expectNoHorizontalOverflow(cashierPage, "mobile sales scanner");
+  await cashierContext.close();
 });

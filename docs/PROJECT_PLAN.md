@@ -3,7 +3,7 @@
 ## Estado integrado y trabajo actual
 - **main:** `10d24105c49f7d5c240ef298c353b782f0cca255`, post-merge PR #401.
 - **PR #401 — Scanner móvil 3B:** incorporada en la base actual.
-- **Micro-PR 4A:** rama `feat/reports-shift-closure-4a-20261121`; backend de cierres, reportes, CSV y RBAC Owner-only para valoración. PR debe abrirse Draft y validarse en su SHA final exacto.
+- **Micro-PR 4A:** rama `feat/reports-shift-closure-4a-20261121`; **PR #402 OPEN / Draft** (https://github.com/BTF14/Micro-app/pull/402); backend de cierres, reportes, CSV y RBAC Owner-only para valoración. Sin merge ni auto-merge; validar en SHA final exacto.
 - Alcance: 11 archivos autorizados; sin migraciones, frontend, packages, workflows, dependencias o cambios a gates.
 - No hay checkout local; no afirmar pruebas locales ni ejecución manual de PostgreSQL 18.
 

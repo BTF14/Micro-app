@@ -346,3 +346,19 @@ describe("Micro app authentication flow", () => {
   });
 
 });
+
+
+describe("Reports navigation", () => {
+  it("enables Reportes and navigates to its view", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    const button = Array.from(container.querySelectorAll("button")).find((item) => item.textContent?.trim() === "Reportes");
+    expect(button).toBeTruthy();
+    expect(button?.disabled).toBe(false);
+    await act(async () => { button?.click(); });
+    expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");
+  });
+});

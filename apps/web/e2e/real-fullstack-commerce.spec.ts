@@ -144,6 +144,7 @@ async function completeSale(page: import("@playwright/test").Page, currency: "US
   expect(response.status()).toBe(201);
   await expect(page.getByRole("heading", { name: "Comprobante de venta" })).toBeVisible();
   await expect(page.locator(".sales-receipt")).toContainText(fixture.productName);
+  await expect(page.locator(".sales-receipt-disclaimer")).toHaveText("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
   if (currency === "USD") {
     await expect(page.locator(".sales-receipt-payments")).toContainText("US$");
   } else {

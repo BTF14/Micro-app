@@ -23,9 +23,9 @@ describe("ReportsPanel",()=>{
   await act(async()=>button("Ventas").click());
   const period=container.querySelector<HTMLSelectElement>(".reports-filters select");
   expect(period).toBeTruthy();
-  await act(async()=>{period!.value="custom";period!.dispatchEvent(new Event("change",{bubbles:true}))});
+  await act(async()=>{Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value")!.set!.call(period,"custom");period!.dispatchEvent(new Event("change",{bubbles:true}))});
   const dates=container.querySelectorAll<HTMLInputElement>('input[type="datetime-local"]');
-  await act(async()=>{dates[0].value="2026-11-20T08:00";dates[0].dispatchEvent(new Event("change",{bubbles:true}));dates[1].value="2026-11-21T18:00";dates[1].dispatchEvent(new Event("change",{bubbles:true}))});
+  await act(async()=>{const setValue=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")!.set!;setValue.call(dates[0],"2026-11-20T08:00");dates[0].dispatchEvent(new Event("input",{bubbles:true}));setValue.call(dates[1],"2026-11-21T18:00");dates[1].dispatchEvent(new Event("input",{bubbles:true}))});
   await act(async()=>button("Consultar período").click());
   expect(vi.mocked(apiRequest).mock.calls.some(call=>String(call[0]).includes("period=custom")&&String(call[0]).includes("from=2026-11-20T08%3A00"))).toBe(true);
   const fetchMock=vi.fn().mockResolvedValue({ok:true,blob:async()=>new Blob(["csv"])});

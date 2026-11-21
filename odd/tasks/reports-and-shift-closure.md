@@ -1,6 +1,6 @@
 # ODD task: PR 4 — Cierres de caja, reportes y exportación CSV
 
-- Status: 4A integrated; 4B implementation in Draft pending exact-SHA validation
+- Status: 4A integrated; 4B implementation and exact-SHA validation complete; PR #403 remains OPEN / Draft pending review
 - 4A: [PR #402 — MERGED](https://github.com/BTF14/Micro-app/pull/402), merge commit `37cab712cb2ced5c08cbf9f762a7e05c935fe422`
 - 4B: [PR #403 — OPEN / Draft](https://github.com/BTF14/Micro-app/pull/403), branch `feat/reports-shift-closure-4b-ui-20261121`
 - Started: 2026-11-21; risk: high
@@ -32,7 +32,7 @@ No changes to `apps/api/**`, SQL/migrations, `packages/**`, workflows, `package.
 
 ## Acceptance criteria
 - [x] 4A backend integrated by PR #402.
-- [ ] Role-aware navigation/tabs: Owner closures/sales/inventory valuation; Admin closures/sales/inventory without costs; Cashier own closures/sales; Inventory only inventory.
+- [x] Role-aware navigation/tabs: Owner closures/sales/inventory valuation; Admin closures/sales/inventory without costs; Cashier own closures/sales; Inventory only inventory.
 - [ ] Shift selector and initialShift, closure balances, exact negative differences, payment methods, historical FX and FISC-01.
 - [ ] Daily/weekly/monthly/custom Caracas sales reports, branch filter, completed/excluded counts.
 - [ ] Authenticated CSV download via fetch credentials, Blob, anchor and URL cleanup; no window.open/window.alert.
@@ -47,4 +47,4 @@ No changes to `apps/api/**`, SQL/migrations, `packages/**`, workflows, `package.
 Use backend contracts in `apps/api/src/reports.ts`; UI is not an authorization boundary. Keep money as decimal strings; never use Number/parseFloat for amounts. Completed sales use completed_at; void/refunded counts stay separate. Historical FX uses saved snapshots. Costs are rendered only when API returns include_valuation === true. FISC-01 is internal, not a tax invoice.
 
 ## Closure and handoff
-4A is integrated; 4B is not complete until exact-HEAD CI, PostgreSQL 18 E2E, RBAC/cost-visibility review and diff verification pass. No local checkout/terminal in this execution; do not claim local verify/Vitest/Playwright/docs validation. After PR 4 integration: (1) mobile scanner expansion to product create/edit, inventory and catalog search; (2) favicon.svg + visual tour of all nine views at 390×844 and 1280×800 + docs/USER_MANUAL.md; (3) Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53.
+4A is integrated. 4B implementation, RBAC/cost-visibility tests, PostgreSQL 18 Playwright flow and exact-HEAD CI/check-run validation are complete; all checks on the final branch head passed (17/17 check-runs and 13/13 workflow runs). PR #403 remains OPEN / Draft for review; do not merge or enable auto-merge. The diff is exactly the 14 authorized files, with zero excluded-path changes. No local checkout/terminal was available; validation ran through GitHub Actions, so no local verify/Vitest/Playwright/docs-validator execution is claimed. After PR 4 integration: (1) mobile scanner expansion to product create/edit, inventory and catalog search; (2) favicon.svg + visual tour of all nine views at 390×844 and 1280×800 + docs/USER_MANUAL.md; (3) Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53.

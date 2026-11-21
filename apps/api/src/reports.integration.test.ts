@@ -9,7 +9,8 @@ const app = (await import("./index")).default;
 const env = (globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }).process?.env;
 const adminUrl = env?.DATABASE_URL_ADMIN ?? env?.DATABASE_URL;
 const runtimeUrl = env?.DATABASE_URL_RUNTIME;
-if (env?.CI && (!adminUrl || !runtimeUrl)) throw new Error("CI requires admin and runtime PostgreSQL logins for reports integration tests.");
+const bcvUrl = env?.BCV_DATABASE_URL ?? env?.DATABASE_URL_BCV;
+if (env?.CI && (!adminUrl || !runtimeUrl || !bcvUrl)) throw new Error("CI requires admin, runtime, and BCV producer PostgreSQL logins for reports integration tests.");
 
 type Role = "owner" | "admin" | "inventory" | "cashier";
 type Actor = { role: Role; userId: string; token: string };
@@ -19,6 +20,14 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
   let organizationId: string;
   let branchId: string;
   let cashierShiftId: string;
+  let secondCashier: Actor;
+  let bcvProducer: Client;
+  let rateId: string;
+  let rateDate: string;
+  let originalRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
+  let rateWasCreated = false;
+  let previousBcvState: { attempt_id: string | null; last_attempt_at: Date | null; last_success_at: Date | null; last_outcome: string | null; last_error_code: string | null; last_effective_date: string | null; updated_at: Date } | null = null;
+  const observationAttemptIds: string[] = [];
   let productId: string;
   let warehouseId: string;
   let secondBranchId: string;
@@ -33,7 +42,8 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
   beforeAll(async () => {
     admin = new Client({ connectionString: adminUrl });
     runtime = new Client({ connectionString: runtimeUrl });
-    await Promise.all([admin.connect(), runtime.connect()]);
+    bcvProducer = new Client({ connectionString: bcvUrl! });
+    await Promise.all([admin.connect(), runtime.connect(), bcvProducer.connect()]);
     const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
     organizationId = (await admin.query("INSERT INTO organizations(name,slug) VALUES($1,$2) RETURNING id", ["Reports " + suffix, "reports-" + suffix])).rows[0].id;
     const branch = await admin.query("INSERT INTO branches(organization_id,name,slug) VALUES($1,'Main',$2) RETURNING id", [organizationId,"main-" + suffix]);
@@ -77,15 +87,57 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       "INSERT INTO warehouse_inventory_movements(organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,reason,count_id,actor_user_id) VALUES($1,$2,$3,$4,'count_adjustment',1.000,0,'Second branch seed',$5,$6)",
       [organizationId,secondBranchId,secondWarehouseId,secondProductId,secondCountId,actors.get("owner")!.userId],
     );
+    const secondCashierUserId = (await admin.query("INSERT INTO app_users(email,display_name) VALUES($1,'Second cashier') RETURNING id",["cashier-second-"+suffix+"@example.invalid"])).rows[0].id;
+    await admin.query("INSERT INTO organization_members(organization_id,user_id,role) VALUES($1,$2,'cashier')",[organizationId,secondCashierUserId]);
+    const secondCashierToken = "reports-second-cashier-" + crypto.randomUUID();
+    await admin.query("INSERT INTO auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",[secondCashierUserId,await hash(secondCashierToken)]);
+    secondCashier = {role:"cashier",userId:secondCashierUserId,token:secondCashierToken};
     const cashier = actors.get("cashier")!;
     const registerId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Front',$3) RETURNING id",[organizationId,branchId,"front-"+suffix])).rows[0].id;
     cashierShiftId = (await admin.query("INSERT INTO register_shifts(organization_id,branch_id,register_id,cashier_user_id,opening_cash_usd,opening_cash_ves) VALUES($1,$2,$3,$4,10.0000,100.00) RETURNING id",[organizationId,branchId,registerId,cashier.userId])).rows[0].id;
+    rateDate = (await admin.query("SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS day")).rows[0].day;
+    const state = await admin.query("SELECT attempt_id::text,last_attempt_at,last_success_at,last_outcome,last_error_code,last_effective_date::text,updated_at FROM bcv_sync_state WHERE singleton=true");
+    previousBcvState = state.rows[0];
+    const existingRate = await admin.query("SELECT id,rate::text,validation_status,fetched_at FROM exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date=$1::date",[rateDate]);
+    if (existingRate.rows[0]) {
+      rateId = existingRate.rows[0].id;
+      originalRate = existingRate.rows[0];
+      await admin.query("UPDATE exchange_rates SET rate=40.00000000,validation_status='valid',fetched_at=now() WHERE id=$1",[rateId]);
+    } else {
+      rateId = (await admin.query("INSERT INTO exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',40.00000000,'BCV_OFFICIAL_HTML_V1',$1::date,'valid') RETURNING id",[rateDate])).rows[0].id;
+      rateWasCreated = true;
+    }
+    const attemptId = crypto.randomUUID();
+    observationAttemptIds.push(attemptId);
+    await bcvProducer.query("UPDATE bcv_sync_state SET attempt_id=$1::uuid,last_attempt_at=clock_timestamp(),last_success_at=clock_timestamp(),last_outcome='inserted',last_error_code=NULL,last_effective_date=$2::date,updated_at=clock_timestamp() WHERE singleton=true",[attemptId,rateDate]);
   });
-  afterAll(async () => { if (runtime) await runtime.end(); if (admin) await admin.end(); });
+  afterAll(async () => {
+    if (bcvProducer) {
+      if (previousBcvState) await bcvProducer.query("UPDATE bcv_sync_state SET attempt_id=$1,last_attempt_at=$2,last_success_at=$3,last_outcome=$4,last_error_code=$5,last_effective_date=$6,updated_at=$7 WHERE singleton=true",
+        [previousBcvState.attempt_id,previousBcvState.last_attempt_at,previousBcvState.last_success_at,previousBcvState.last_outcome,previousBcvState.last_error_code,previousBcvState.last_effective_date,previousBcvState.updated_at]).catch(()=>undefined);
+      await bcvProducer.end();
+    }
+    if (admin && organizationId) {
+      await admin.query("ALTER TABLE bcv_sync_success_observations DISABLE TRIGGER bcv_sync_success_observations_10_append_only_rows");
+      if (observationAttemptIds.length) await admin.query("DELETE FROM bcv_sync_success_observations WHERE attempt_id=ANY($1::uuid[])",[observationAttemptIds]);
+      await admin.query("ALTER TABLE bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+      if (rateWasCreated && rateId) await admin.query("DELETE FROM exchange_rates WHERE id=$1",[rateId]);
+      else if (rateId && originalRate) await admin.query("UPDATE exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4 WHERE id=$1",[rateId,originalRate.rate,originalRate.validation_status,originalRate.fetched_at]);
+    }
+    if (runtime) await runtime.end();
+    if (admin) await admin.end();
+  });
   async function request(role: Role, path: string) {
     const actor = actors.get(role)!;
     return app.fetch(new Request("https://api.example"+path,{headers:{Cookie:"microapp_session="+actor.token}}),
       {DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example",GOOGLE_CLIENT_SECRET:"test-google-client-secret"});
+  }
+  async function checkout(payments: Array<{method:"cash"|"other";currency:"USD"|"VES";amount:string;reference?:string}>) {
+    return app.fetch(new Request("https://api.example"+orgPath()+"/branches/"+branchId+"/checkout",{
+      method:"POST",
+      headers:{Cookie:"microapp_session="+actors.get("cashier")!.token,Origin:"https://frontend.example","Content-Type":"application/json","Idempotency-Key":"reports-"+crypto.randomUUID(),"CF-Connecting-IP":"203.0.113.77"},
+      body:JSON.stringify({warehouse_id:warehouseId,lines:[{product_id:productId,quantity:"1.000"}],payments}),
+    }),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example",GOOGLE_CLIENT_SECRET:"test-google-client-secret"});
   }
   const orgPath = () => "/api/orgs/"+organizationId;
   it("returns inventory valuation only to Owner; Admin and Inventory SQL projections omit cost", async () => {

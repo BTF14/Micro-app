@@ -413,9 +413,10 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(cashierPage.getByText("Diferencia USD", { exact: true })).toBeVisible();
   await expect(cashierPage.locator(".reports-cards")).toContainText("−10,00");
   await expectNoHorizontalOverflow(cashierPage, "mobile cashier closure summary");
-  await cashierPage.getByRole("button", { name: "Mis ventas", exact: true }).click();
-  const cashierSalesResponse = await cashierPage.waitForResponse(response =>
+  const cashierSalesResponsePromise = cashierPage.waitForResponse(response =>
     new URL(response.url()).pathname.endsWith("/reports/sales") && response.request().method() === "GET");
+  await cashierPage.getByRole("button", { name: "Mis ventas", exact: true }).click();
+  const cashierSalesResponse = await cashierSalesResponsePromise;
   expect(cashierSalesResponse.status()).toBe(200);
   const cashierCsvResponsePromise = cashierPage.waitForResponse(response =>
     new URL(response.url()).pathname.endsWith("/reports/sales.csv") && response.request().method() === "GET");

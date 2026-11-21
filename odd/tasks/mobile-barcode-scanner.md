@@ -26,8 +26,8 @@ Excluded: SQL/migrations, `apps/api/**`, `packages/**`, `.github/workflows/**`, 
 - [x] AC-7 — Escanear disabled without warehouse; immediate existing `sort=relevance` search; manual typing preserved.
 - [x] AC-8 — jsdom lifecycle/fallback/permission tests and lookup integration tests added.
 - [x] AC-9 — 390×844 E2E uses browser-only camera simulation and real API/PostgreSQL product lookup; checks USD/VES, stock, track stop, Sales and overflow.
-- [ ] AC-10 — all check-runs/workflows pass on exact final PR SHA.
-- [ ] AC-11 — PR remains OPEN / Draft, no merge/auto-merge; human review pending.
+- [x] AC-10 — 17/17 check-runs and 13/13 workflow runs passed on exact implementation SHA `e1b4a739a3fa7d11d77b33c3cb9bdc852c94ab22`; the final documentation-only head is revalidated separately.
+- [x] AC-11 — PR #401 remains OPEN / Draft, no merge/auto-merge; human review pending.
 
 ## Risks and guardrails
 | Risk | Severity | Mitigation |
@@ -62,7 +62,8 @@ Excluded: SQL/migrations, `apps/api/**`, `packages/**`, `.github/workflows/**`, 
 - PR #399 (3A): MERGED; merge SHA `841145efb7da16e61e742bf331eda5ad04adb3b6`.
 - PR #400 (BCV weekend hotfix): MERGED; merge SHA `9ffe177f077ecb7bc40f47f03b5269658eb66cc4`; old Draft wording is superseded.
 - Final 3B SHA: pending. PR URL/number: pending creation; keep Draft.
-- Checks: pending all check-runs/workflows on final exact SHA. GitHub integration only; no local execution claimed.
-- AC-1–AC-9 implemented; AC-10/AC-11 pending exact-SHA checks and PR-state verification.
+- Checks on implementation SHA `e1b4a739a3fa7d11d77b33c3cb9bdc852c94ab22`: 17/17 check-runs and 13/13 workflow runs completed successfully, including CI, Playwright E2E, Cloudflare Pages, Workers Builds, Semgrep, Trivy, dependency review, secret scan and ODD validation. Recheck the live PR head after this documentation-only commit.
+- GitHub integration only; no local execution claimed.
+- AC-1–AC-11 implemented/verified on the validated implementation SHA; documentation-only final head must retain the same green checks.
 - Physical camera hardware/browser combinations and OS permission prompts are not certified by simulated CI.
 - Next: inspect exact-SHA checks, fix failures only within the eleven authorized files, and keep PR OPEN / Draft without merge/auto-merge.

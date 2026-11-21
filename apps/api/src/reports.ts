@@ -323,7 +323,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
                   p.id AS product_id,p.sku,p.barcode,p.name AS product_name,p.unit,p.price_usd::text AS price_usd,
                   ib.on_hand_quantity::text AS on_hand,ib.reserved_quantity::text AS reserved,
                   (ib.on_hand_quantity-ib.reserved_quantity)::numeric(14,3)::text AS available,
-                  (ib.on_hand_quantity*p.price_usd)::numeric(18,4)::text AS retail_valuation_usd
+                  (ib.on_hand_quantity*p.price_usd)::numeric(38,4)::text AS retail_valuation_usd
                   ${costColumns}
              FROM public.inventory_balances ib
              JOIN public.branches b ON b.organization_id=ib.organization_id AND b.id=ib.branch_id

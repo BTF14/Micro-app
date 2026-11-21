@@ -78,11 +78,12 @@ Excluded:
 
 ## Closure and handoff
 
-- Último SHA observado antes de esta sincronización ODD: `f1cda9d1d4119b08d4195467896a89a3741a78c6`; la sincronización documental generará un nuevo SHA y exige revalidación completa.
-- PR: #402 debe permanecer OPEN / Draft; sin merge ni auto-merge.
-- Evidencia CI: el commit `ddb853838c70f18ec131693fba854ef4ead65910` ejecutó el nuevo step en PostgreSQL 18. Falló en el setup por el fixture anterior que escribía directamente `inventory_balances` y recibió `INVENTORY_BALANCE_WRITES_MUST_ORIGINATE_FROM_LEDGER`. El fixture fue cambiado a `inventory_counts` + `warehouse_inventory_movements`; la suite se amplió y queda pendiente confirmar el resultado en el SHA final.
-- Checks and exact outcomes: pendientes en SHA final exacto; no heredar resultados de SHA anteriores.
-- Acceptance criteria met / unmet: pendientes de CI completo y revisión del diff de doce archivos.
+- SHA de código y suite antes de esta sincronización ODD: `59f59cb712ea14e572ea5dcfaa8e4749b480e0cf`. Esta actualización documental genera el SHA final siguiente; los checks deben ejecutarse de nuevo sobre ese SHA, sin heredar resultados.
+- PR: #402 permanece OPEN / Draft; sin merge ni auto-merge.
+- Evidencia CI previa: el commit `ddb853838c70f18ec131693fba854ef4ead65910` ejecutó el nuevo step en PostgreSQL 18 y falló en el setup porque el fixture escribía directamente `inventory_balances`; el trigger devolvió `INVENTORY_BALANCE_WRITES_MUST_ORIGINATE_FROM_LEDGER`. El fixture actual usa `inventory_counts` + `warehouse_inventory_movements`; la suite cubre stock positivo, segunda sucursal, checkout real, pagos, snapshots, medianoche Caracas, void, CSV y aislamiento.
+- Estado de workflows observado en `59f59cb712ea14e572ea5dcfaa8e4749b480e0cf`: ODD validation, Project progress dashboard, Dependency review, Semgrep, Security scan y Secret history scan en success; CI, Playwright E2E, PostgreSQL migration runner validation y Database migration validation estaban in progress. Estos resultados son previos a esta sincronización y no califican como evidencia del SHA final.
+- Checks and exact outcomes: pendientes en el SHA final posterior a esta actualización; exigir todos los workflows/check-runs en success y confirmar expresamente el step `PostgreSQL reports and shift closure integration tests` dentro de `CI / verify`.
+- Acceptance criteria met / unmet: AC-1 diff de doce archivos confirmado; AC-8 y AC-10 pendientes de CI exact-HEAD y revisión final.
 - Limitations not verified: no checkout local; no ejecución local de tests/build/PG18/validador.
 - Residual risks: la integración ampliada todavía debe pasar realmente en PostgreSQL 18; la suite no se considera validada hasta que el nuevo step y todos los check-runs terminen en success.
 - Next step: completar CI exact-HEAD de PR #402 y revisión del diff; después Micro-PR 4B UI Cierres/Reportes/CSV + leyenda FISC-01 + E2E; luego Tour Visual + favicon.svg + docs/USER_MANUAL.md; gates finales.

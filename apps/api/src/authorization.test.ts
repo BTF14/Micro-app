@@ -54,6 +54,15 @@ describe("commercial role authorization", () => {
     expect(isCommercialOperationAllowed("inventory", "register.shift.operate_own")).toBe(false);
   });
 
+  it("grants inventory valuation to Owner only, independently of catalog cost reads", () => {
+    expect(isCommercialOperationAllowed("owner", "reports.inventory.valuation")).toBe(true);
+    for (const role of ["admin", "inventory", "cashier"] as const) {
+      expect(isCommercialOperationAllowed(role, "reports.inventory.valuation")).toBe(false);
+    }
+    expect(isCommercialOperationAllowed("admin", "catalog.read_costs")).toBe(true);
+    expect(isCommercialOperationAllowed("inventory", "catalog.read_costs")).toBe(true);
+  });
+
   it("rejects discounts and manual price overrides for every role", () => {
     for (const role of roles) {
       expect(authorizeCommercialOperation(role, "sales.discount.apply")).toBe(false);

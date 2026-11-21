@@ -3,7 +3,7 @@
 ## Punto de partida
 - Repositorio `BTF14/Micro-app`; base exacta `main` = `37cab712cb2ced5c08cbf9f762a7e05c935fe422`.
 - PR #402 / 4A está MERGED en esa base.
-- Rama 4B: `feat/reports-shift-closure-4b-ui-20261121`; PR OPEN / Draft al publicar. Exactamente 14 archivos.
+- Rama 4B: [PR #403 OPEN / Draft](https://github.com/BTF14/Micro-app/pull/403), `feat/reports-shift-closure-4b-ui-20261121`. Exactamente 14 archivos.
 - Sin checkout local: no afirmar verify, Vitest, build, typecheck, Playwright ni validador documental ejecutados localmente.
 - Sin cambios API, SQL/migraciones, packages, workflows, dependencias o package.json. No merge/auto-merge.
 

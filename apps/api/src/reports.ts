@@ -183,7 +183,15 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
                   COALESCE(sum(s.total_ves_snapshot) FILTER (WHERE s.status='completed'),0)::numeric(16,2)::text AS total_ves_snapshot,
                   COALESCE(jsonb_agg(jsonb_build_object('settlement_currency',s.settlement_currency,'fx_source',s.fx_source,
                     'total_usd',s.total_usd::text,'total_ves_snapshot',s.total_ves_snapshot::text))
-                    FILTER (WHERE s.status='completed'),'[]'::jsonb) AS sale_snapshots
+                    FILTER (WHERE s.status='completed'),'[]'::jsonb) AS sale_snapshots,
+                  COALESCE((SELECT jsonb_agg(jsonb_build_object('settlement_currency',fx.settlement_currency,
+                    'fx_source',fx.fx_source,'sales_count',fx.sales_count::text,'total_usd',fx.total_usd,
+                    'total_ves_snapshot',fx.total_ves_snapshot))
+                    FROM (SELECT settlement_currency,fx_source,count(*) AS sales_count,
+                          sum(total_usd)::numeric(38,4)::text AS total_usd,
+                          sum(total_ves_snapshot)::numeric(38,2)::text AS total_ves_snapshot
+                            FROM public.sales WHERE organization_id=$1 AND branch_id=$2 AND register_shift_id=$3
+                              AND status='completed' GROUP BY settlement_currency,fx_source) fx),'[]'::jsonb) AS fx_breakdown
              FROM public.sales s WHERE s.organization_id=$1 AND s.branch_id=$2 AND s.register_shift_id=$3`,
           [organizationId, branchId, shiftId],
         );

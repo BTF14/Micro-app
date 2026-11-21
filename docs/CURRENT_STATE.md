@@ -2,7 +2,7 @@
 
 - **main:** `37cab712cb2ced5c08cbf9f762a7e05c935fe422`, merge commit de PR #402.
 - **PR #402 / 4A:** MERGED; backend de cierres, reportes, CSV y valoración Owner-only integrado.
-- **Micro-PR 4B:** rama `feat/reports-shift-closure-4b-ui-20261121`; UI, descarga CSV, FISC-01 y E2E; PR Draft tras publicación. No merge ni auto-merge.
+- **Micro-PR 4B:** [PR #403 OPEN / Draft](https://github.com/BTF14/Micro-app/pull/403), rama `feat/reports-shift-closure-4b-ui-20261121`; UI, descarga CSV, FISC-01 y E2E. No merge ni auto-merge.
 - **Alcance:** exactamente 14 archivos; sin API, SQL/migraciones, packages, workflows ni dependencias.
 - **Gates invariables:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
 - **Validación:** sin checkout local; no declarar ejecución local. Exigir todos los checks/workflows sobre el SHA final exacto.

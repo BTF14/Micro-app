@@ -129,6 +129,7 @@ describe("SalesPanel", () => {
     });
     expect(container.textContent).toContain("V-000042");
     expect(container.textContent).toContain("Comprobante de venta");
+    expect(container.querySelector(".sales-receipt-disclaimer")?.textContent).toBe("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
     expect(container.textContent).not.toContain("cost_usd");
     expect(container.textContent).not.toContain("unit_cost");
     expect(container.querySelector(".sales-workspace")).toBeNull();

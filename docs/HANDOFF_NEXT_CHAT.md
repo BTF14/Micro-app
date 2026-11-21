@@ -1,3 +1,22 @@
+# Handoff vigente — Micro-PR 4B Cierres/Reportes/CSV UI — 2026-11-21
+
+## Punto de partida
+- Repositorio `BTF14/Micro-app`; base exacta `main` = `37cab712cb2ced5c08cbf9f762a7e05c935fe422`.
+- PR #402 / 4A está MERGED en esa base.
+- Rama 4B: [PR #403 OPEN / Draft](https://github.com/BTF14/Micro-app/pull/403), `feat/reports-shift-closure-4b-ui-20261121`. Exactamente 14 archivos.
+- Sin checkout local: no afirmar verify, Vitest, build, typecheck, Playwright ni validador documental ejecutados localmente.
+- Sin cambios API, SQL/migraciones, packages, workflows, dependencias o package.json. No merge/auto-merge.
+
+## Próximos pasos en orden
+1. Expansión final del escáner móvil a Productos → Nuevo/Editar producto, Inventario y buscador de Catálogo.
+2. Pulido final: favicon.svg + Tour Visual E2E de las 9 vistas en 390×844 y 1280×800 + docs/USER_MANUAL.md.
+3. Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53.
+
+## Gates invariables
+AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; BCV_SYNC_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
+
+---
+
 # Handoff vigente — Micro-PR 4A Cierres/Reportes/CSV backend — 2026-11-21
 
 ## Punto de partida

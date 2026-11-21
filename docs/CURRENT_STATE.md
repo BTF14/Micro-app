@@ -1,3 +1,19 @@
+# Estado vigente — Micro-PR 4B UI Cierres/Reportes/CSV — 2026-11-21
+
+- **main:** `37cab712cb2ced5c08cbf9f762a7e05c935fe422`, merge commit de PR #402.
+- **PR #402 / 4A:** MERGED; backend de cierres, reportes, CSV y valoración Owner-only integrado.
+- **Micro-PR 4B:** [PR #403 OPEN / Draft](https://github.com/BTF14/Micro-app/pull/403), rama `feat/reports-shift-closure-4b-ui-20261121`; UI, descarga CSV, FISC-01 y E2E. No merge ni auto-merge.
+- **Alcance:** exactamente 14 archivos; sin API, SQL/migraciones, packages, workflows ni dependencias.
+- **Gates invariables:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
+- **Validación:** sin checkout local; no declarar ejecución local. Exigir todos los checks/workflows sobre el SHA final exacto.
+
+## Próximos pasos en orden
+1. **Expansión final del escáner móvil** a Productos → Nuevo/Editar producto, Inventario y buscador de Catálogo.
+2. **Pulido final:** `favicon.svg` + Tour Visual E2E de las 9 vistas en 390×844 y 1280×800 + Manual de usuario (`docs/USER_MANUAL.md`).
+3. **Pre-prod Audit → `ve-fx-compliance-review` → AC-6 → Issue #53**, manteniendo gates abiertos hasta evidencia y aprobación independiente.
+
+---
+
 # Corte vigente — Micro-PR 4A Cierres/Reportes/CSV backend — 2026-11-21
 
 - **Base exacta verificada:** `main` = `10d24105c49f7d5c240ef298c353b782f0cca255`, merge commit post-PR #401.

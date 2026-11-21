@@ -356,7 +356,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         return csvResponse(c,"reporte-inventario.csv",data);
       }
       return c.json({items:result.items,include_valuation:result.includeValuation,total_retail_valuation_usd:result.totalRetail,...(result.includeValuation?{total_cost_valuation_usd:result.totalCost}: {})},200);
-    }catch(error){console.error("inventory report failed",error);return failure(c,error);}
+    }catch(error){throw error;}
   };
   app.get("/api/orgs/:organizationId/reports/inventory",inventoryHandler(false));
   app.get("/api/orgs/:organizationId/reports/inventory.csv",inventoryHandler(true));

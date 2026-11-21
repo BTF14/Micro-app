@@ -19,6 +19,11 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
   let organizationId: string;
   let branchId: string;
   let cashierShiftId: string;
+  let productId: string;
+  let warehouseId: string;
+  let secondBranchId: string;
+  let secondWarehouseId: string;
+  let secondProductId: string;
   const actors = new Map<Role, Actor>();
 
   async function hash(value: string) {
@@ -41,9 +46,37 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       await admin.query("INSERT INTO auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day')",[userId,await hash(token)]);
       actors.set(role,{role,userId,token});
     }
-    const warehouseId = (await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Main warehouse') RETURNING id",[organizationId,branchId,"main-"+suffix])).rows[0].id;
-    const productId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd) VALUES($1,$2,' +SUM(1,1)','unidad',12.3400,20.0000) RETURNING id",[organizationId,"=CMD(1+1)-"+suffix])).rows[0].id;
-    await admin.query("INSERT INTO inventory_balances(organization_id,branch_id,warehouse_id,product_id,on_hand_quantity,reserved_quantity) VALUES($1,$2,$3,$4,0,0)",[organizationId,branchId,warehouseId,productId]);
+    warehouseId = (await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Main warehouse') RETURNING id",[organizationId,branchId,"main-"+suffix])).rows[0].id;
+    productId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd,quantity_mode) VALUES($1,$2,' +SUM(1,1)','unidad',12.3400,20.0000,'fractional') RETURNING id",[organizationId,"=CMD(1+1)-"+suffix])).rows[0].id;
+    const mainCountId = (await admin.query(
+      "INSERT INTO inventory_counts(organization_id,branch_id,warehouse_id,count_type,reason,created_by) VALUES($1,$2,$3,'physical','Reports integration seed',$4) RETURNING id",
+      [organizationId,branchId,warehouseId,actors.get("owner")!.userId],
+    )).rows[0].id;
+    await admin.query(
+      "INSERT INTO inventory_count_lines(organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,expected_on_hand_quantity,expected_balance_version) VALUES($1,$2,$3,$4,$5,5.000,12.3400,0.000,0)",
+      [organizationId,branchId,warehouseId,mainCountId,productId],
+    );
+    await admin.query("UPDATE inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE id=$1",[mainCountId,actors.get("owner")!.userId]);
+    await admin.query(
+      "INSERT INTO warehouse_inventory_movements(organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,reason,count_id,actor_user_id) VALUES($1,$2,$3,$4,'count_adjustment',5.000,12.3400,'Reports integration seed',$5,$6)",
+      [organizationId,branchId,warehouseId,productId,mainCountId,actors.get("owner")!.userId],
+    );
+    secondBranchId = (await admin.query("INSERT INTO branches(organization_id,name,slug) VALUES($1,'Second','second-'||$2) RETURNING id",[organizationId,suffix])).rows[0].id;
+    secondWarehouseId = (await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Second warehouse') RETURNING id",[organizationId,secondBranchId,"second-"+suffix])).rows[0].id;
+    secondProductId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd,quantity_mode) VALUES($1,$2,'Second branch product','unidad',0,0,'fractional') RETURNING id",[organizationId,"SECOND-"+suffix])).rows[0].id;
+    const secondCountId = (await admin.query(
+      "INSERT INTO inventory_counts(organization_id,branch_id,warehouse_id,count_type,reason,created_by) VALUES($1,$2,$3,'physical','Second branch seed',$4) RETURNING id",
+      [organizationId,secondBranchId,secondWarehouseId,actors.get("owner")!.userId],
+    )).rows[0].id;
+    await admin.query(
+      "INSERT INTO inventory_count_lines(organization_id,branch_id,warehouse_id,count_id,product_id,counted_quantity,unit_cost_usd,expected_on_hand_quantity,expected_balance_version) VALUES($1,$2,$3,$4,$5,1.000,0,0.000,0)",
+      [organizationId,secondBranchId,secondWarehouseId,secondCountId,secondProductId],
+    );
+    await admin.query("UPDATE inventory_counts SET status='confirmed',confirmed_by=$2,confirmed_at=now() WHERE id=$1",[secondCountId,actors.get("owner")!.userId]);
+    await admin.query(
+      "INSERT INTO warehouse_inventory_movements(organization_id,branch_id,warehouse_id,product_id,movement_type,quantity_delta,unit_cost_usd,reason,count_id,actor_user_id) VALUES($1,$2,$3,$4,'count_adjustment',1.000,0,'Second branch seed',$5,$6)",
+      [organizationId,secondBranchId,secondWarehouseId,secondProductId,secondCountId,actors.get("owner")!.userId],
+    );
     const cashier = actors.get("cashier")!;
     const registerId = (await admin.query("INSERT INTO registers(organization_id,branch_id,name,code) VALUES($1,$2,'Front',$3) RETURNING id",[organizationId,branchId,"front-"+suffix])).rows[0].id;
     cashierShiftId = (await admin.query("INSERT INTO register_shifts(organization_id,branch_id,register_id,cashier_user_id,opening_cash_usd,opening_cash_ves) VALUES($1,$2,$3,$4,10.0000,100.00) RETURNING id",[organizationId,branchId,registerId,cashier.userId])).rows[0].id;
@@ -59,8 +92,12 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
     const owner = await request("owner",orgPath()+"/reports/inventory");
     expect(owner.status).toBe(200);
     const ownerBody = await owner.json() as {items:Array<Record<string,unknown>>};
-    expect(ownerBody.items[0]).toHaveProperty("cost_usd","12.3400");
-    expect(ownerBody.items[0]).toHaveProperty("cost_valuation_usd","0.0000");
+    const valued = ownerBody.items.find((item) => item.product_id === productId);
+    expect(valued).toHaveProperty("on_hand","5.000");
+    expect(valued).toHaveProperty("cost_usd","12.3400");
+    expect(valued).toHaveProperty("cost_valuation_usd","61.7000");
+    expect(ownerBody).toHaveProperty("total_cost_valuation_usd","61.7000");
+    expect(ownerBody.items.some((item) => item.branch_id === secondBranchId && item.product_id === secondProductId)).toBe(true);
     for (const role of ["admin","inventory"] as const) {
       const response = await request(role,orgPath()+"/reports/inventory");
       expect(response.status).toBe(200);
@@ -74,6 +111,9 @@ describe.skipIf(!adminUrl || !runtimeUrl)("reports API with restricted PostgreSQ
       expect(csvText).toContain("\"'=CMD(1+1)-");
       expect(csvText).toContain("\"' +SUM(1,1)\"");
     }
+    const inventoryBody = await (await request("inventory",orgPath()+"/reports/inventory")).json() as {items:Array<{branch_id:string;product_id:string}>};
+    expect(inventoryBody.items.every((item) => item.branch_id === branchId)).toBe(true);
+    expect(inventoryBody.items.some((item) => item.branch_id === secondBranchId)).toBe(false);
     expect((await request("cashier",orgPath()+"/reports/inventory")).status).toBe(403);
   });
   it("limits Cashier shift listing and closure summary to their own shift", async () => {

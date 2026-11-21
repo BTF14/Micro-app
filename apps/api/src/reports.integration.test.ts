@@ -76,6 +76,7 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
       [organizationId,branchId,warehouseId,productId,mainCountId,actors.get("owner")!.userId],
     );
     secondBranchId = (await admin.query("INSERT INTO branches(organization_id,name,slug) VALUES($1,'Second','second-'||$2) RETURNING id",[organizationId,suffix])).rows[0].id;
+    await admin.query("INSERT INTO branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",[organizationId,secondBranchId,actors.get("owner")!.userId]);
     secondWarehouseId = (await admin.query("INSERT INTO warehouses(organization_id,branch_id,code,name) VALUES($1,$2,$3,'Second warehouse') RETURNING id",[organizationId,secondBranchId,"second-"+suffix])).rows[0].id;
     secondProductId = (await admin.query("INSERT INTO products(organization_id,sku,name,unit,cost_usd,price_usd,quantity_mode) VALUES($1,$2,'Second branch product','unidad',0,0,'fractional') RETURNING id",[organizationId,"SECOND-"+suffix])).rows[0].id;
     const secondCountId = (await admin.query(

@@ -26,7 +26,7 @@ function caracasMidnight(date: string): number | null {
   return parts ? Date.UTC(parts.year, parts.month - 1, parts.day) + CARACAS_OFFSET_MS : null;
 }
 function isoCaracas(ms: number): string {
-  return new Date(ms).toISOString().replace("Z", "-04:00");
+  return new Date(ms).toISOString();
 }
 function parseCustomDate(value: string): number | null {
   if (dateParts(value)) return caracasMidnight(value);

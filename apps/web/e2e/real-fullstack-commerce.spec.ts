@@ -468,12 +468,12 @@ test("mobile barcode scanner searches a real PostgreSQL product without sending 
   const sku = `SCAN-E2E-${crypto.randomUUID().slice(0, 8)}`;
   const productName = "Producto escáner E2E";
   await page.addInitScript((scannedBarcode) => {
-    const state = window as typeof window & { __barcodeDelivered?: boolean; __scannerTrackStopCount?: number };
-    state.__barcodeDelivered = false; state.__scannerTrackStopCount = 0;
+    const state = window as typeof window & { __barcodeDelivered?: boolean; __allowBarcodeDetection?: boolean; __scannerTrackStopCount?: number };
+    state.__barcodeDelivered = false; state.__allowBarcodeDetection = false; state.__scannerTrackStopCount = 0;
     class BrowserBarcodeDetector {
       static async getSupportedFormats() { return ["ean_13"]; }
       async detect() {
-        if (state.__barcodeDelivered) return [];
+        if (!state.__allowBarcodeDetection || state.__barcodeDelivered) return [];
         state.__barcodeDelivered = true;
         return [{ rawValue: scannedBarcode, format: "ean_13" }];
       }
@@ -508,7 +508,9 @@ test("mobile barcode scanner searches a real PostgreSQL product without sending 
   const scanButton = page.getByRole("button", { name: "Escanear", exact: true });
   await expect(scanButton).toBeEnabled(); await scanButton.click();
   const dialog = page.getByRole("dialog", { name: "Escanear código de barras" });
-  await expect(dialog).toBeVisible(); await expect(dialog.getByRole("status")).toContainText("Apunta la cámara al código de barras");
+  await expect(dialog).toBeVisible(); await expect(dialog.getByRole("heading", { name: "Escanear código de barras" })).toBeVisible();
+  await expect(dialog).not.toContainText("NotAllowedError");
+  await page.evaluate(() => { (window as typeof window & { __allowBarcodeDetection?: boolean }).__allowBarcodeDetection = true; });
   const result = page.locator(".quick-lookup-result").filter({ hasText: productName });
   await expect(result).toBeVisible(); await expect(result).toContainText("US$"); await expect(result).toContainText("Bs."); await expect(result).toContainText("Agotado");
   await expect(dialog).toBeHidden();

@@ -9,7 +9,7 @@
 ## Objective and authorization
 
 - Desired outcome: implementar contrato backend de PR 4 (turnos, cierre, reportes de ventas/inventario y CSV) con aislamiento tenant/sucursal y valoración Owner-only.
-- Authorization boundary: base exacta `main` SHA `10d24105c49f7d5c240ef298c353b782f0cca255`; exactamente doce archivos (los once originales más `.github/workflows/ci.yml` y los tres archivos de ampliación ya incluidos en el conjunto autorizado); PR Draft sin merge/auto-merge.
+- Authorization boundary: base exacta `main` SHA `10d24105c49f7d5c240ef298c353b782f0cca255`; exactamente doce archivos: los once del alcance original más `.github/workflows/ci.yml`; la ampliación actualiza tres de esos once archivos ya autorizados; PR Draft sin merge/auto-merge.
 - Relevant original request: Micro-PR 4A; ADR v1.1 sección PR 4; matriz RBAC aprobada; `odd/TASK_TEMPLATE.md`.
 
 ## Scope and exclusions

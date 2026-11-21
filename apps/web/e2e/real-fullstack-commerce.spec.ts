@@ -458,3 +458,64 @@ test("real CSV catalog import persists through PostgreSQL 18 on mobile", async (
   await expect(importedProductRow.locator(".catalog-product-meta")).toContainText(sku);
   await expectNoHorizontalOverflow(page, "mobile persisted CSV product");
 });
+
+
+test("mobile barcode scanner searches a real PostgreSQL product without sending camera frames", async ({ page, context, baseURL }) => {
+  test.setTimeout(90_000);
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  await page.setViewportSize({ width: 390, height: 844 });
+  const barcode = `750${crypto.randomUUID().replace(/\D/g, "").slice(0, 10).padEnd(10, "0")}`;
+  const sku = `SCAN-E2E-${crypto.randomUUID().slice(0, 8)}`;
+  const productName = "Producto escáner E2E";
+  await page.addInitScript((scannedBarcode) => {
+    const state = window as typeof window & { __barcodeDelivered?: boolean; __scannerTrackStopCount?: number };
+    state.__barcodeDelivered = false; state.__scannerTrackStopCount = 0;
+    class BrowserBarcodeDetector {
+      static async getSupportedFormats() { return ["ean_13"]; }
+      async detect() {
+        if (state.__barcodeDelivered) return [];
+        state.__barcodeDelivered = true;
+        return [{ rawValue: scannedBarcode, format: "ean_13" }];
+      }
+    }
+    Object.defineProperty(window, "BarcodeDetector", { configurable: true, value: BrowserBarcodeDetector });
+    const stream = new MediaStream();
+    const track = { stop: () => { state.__scannerTrackStopCount = (state.__scannerTrackStopCount ?? 0) + 1; } } as MediaStreamTrack;
+    Object.defineProperty(stream, "getTracks", { configurable: true, value: () => [track] });
+    Object.defineProperty(navigator.mediaDevices, "getUserMedia", { configurable: true, value: async () => stream });
+    Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: () => Promise.resolve() });
+  }, barcode);
+  await context.addCookies([{ name: "microapp_session", value: fixture.ownerSessionToken, url: baseURL, httpOnly: true, secure: false, sameSite: "Lax" }]);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: `Hola, ${fixture.ownerDisplayName.split(" ")[0]}.` })).toBeVisible();
+  await navigateByKeyboard(page, "Productos");
+  await page.getByRole("button", { name: "Nuevo producto", exact: true }).click();
+  await page.getByLabel("SKU", { exact: true }).fill(sku);
+  await page.getByLabel("Nombre", { exact: true }).fill(productName);
+  await page.getByLabel("Código de barras", { exact: true }).fill(barcode);
+  await page.getByLabel("Unidad", { exact: true }).fill("unidad");
+  await page.getByLabel("Descripción", { exact: true }).fill("Producto sintético para E2E del escáner.");
+  await page.getByLabel(/Precio USD/).fill("12.5000");
+  await page.getByLabel(/Costo USD/).fill("5.0000");
+  await page.getByLabel(/Stock mínimo/).fill("0");
+  const createResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith("/catalog") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Crear producto", exact: true }).click();
+  expect((await createResponse).status()).toBe(201);
+  await navigateByKeyboard(page, "Consultar precio");
+  const scanButton = page.getByRole("button", { name: "Escanear", exact: true });
+  await expect(scanButton).toBeEnabled(); await scanButton.click();
+  const dialog = page.getByRole("dialog", { name: "Escanear código de barras" });
+  await expect(dialog).toBeVisible(); await expect(dialog.getByRole("status")).toContainText("Apunta la cámara al código de barras");
+  const result = page.locator(".quick-lookup-result").filter({ hasText: productName });
+  await expect(result).toBeVisible(); await expect(result).toContainText("US$"); await expect(result).toContainText("Bs."); await expect(result).toContainText("Agotado");
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __scannerTrackStopCount?: number }).__scannerTrackStopCount ?? 0)).toBe(1);
+  await expectNoHorizontalOverflow(page, "mobile barcode lookup");
+  await navigateByKeyboard(page, "Ventas");
+  const salesScan = page.getByRole("button", { name: "Escanear", exact: true });
+  await expect(salesScan).toBeVisible(); await expect(salesScan).toBeEnabled(); await salesScan.click();
+  const salesDialog = page.getByRole("dialog", { name: "Escanear código de barras" });
+  await expect(salesDialog).toBeVisible();
+  await salesDialog.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await expectNoHorizontalOverflow(page, "mobile sales scanner");
+});

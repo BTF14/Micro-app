@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   getBarcodeScannerSupport, mapCameraScannerError, normalizeScannedBarcode,
   selectSupportedBarcodeFormats, shouldAcceptDetectedBarcode,
-  type BarcodeDetectorConstructorLike, type BarcodeDetectorLike,
+  type BarcodeDetectorConstructorLike, type BarcodeDetectorLike, type BarcodeScannerNavigatorLike,
 } from "./barcode-scanner";
 
 type Props = { onDetected: (code: string) => void; onClose: () => void };
@@ -34,8 +34,8 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
 
     const start=async()=>{
       const BarcodeDetector=(window as unknown as {BarcodeDetector?:BarcodeDetectorConstructorLike}).BarcodeDetector;
-      const support=getBarcodeScannerSupport({isSecureContext:window.isSecureContext,navigator,BarcodeDetector});
-      if(!support.supported){if(!disposed){setMessage(support.message);setManualOnly(true);}return;}
+      const support=getBarcodeScannerSupport({isSecureContext:window.isSecureContext,navigator:navigator as unknown as BarcodeScannerNavigatorLike,BarcodeDetector});
+      if(!support.supported || !BarcodeDetector){if(!disposed){setMessage(support.supported ? "El escaneo no está disponible en este dispositivo. Puedes buscar el producto escribiendo su código." : support.message);setManualOnly(true);}return;}
       try{
         const reported=await BarcodeDetector.getSupportedFormats?.();
         if(disposed)return;

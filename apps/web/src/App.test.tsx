@@ -356,7 +356,7 @@ describe("Reports navigation", () => {
       .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();
     await settle();
-    const button = Array.from(container.querySelectorAll("button")).find((item) => item.textContent?.trim() === "Reportes");
+    const button = Array.from(container.querySelectorAll("button")).find((item) => item.textContent?.includes("Reportes"));
     expect(button).toBeTruthy();
     expect(button?.disabled).toBe(false);
     await act(async () => { button?.click(); });

@@ -352,6 +352,7 @@ describe("Reports navigation", () => {
   it("enables Reportes and navigates to its view", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
       .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();
     await settle();

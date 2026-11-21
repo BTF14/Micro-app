@@ -2,7 +2,9 @@ name: BCV Node TLS sync
 
 on:
   schedule:
-    - cron: "17 11 * * MON-FRI"
+    - cron: "17 11 * * *"
+    - cron: "23 22 * * MON-FRI"
+    - cron: "23 23 * * MON-FRI"
   workflow_dispatch:
     inputs:
       force_sync:

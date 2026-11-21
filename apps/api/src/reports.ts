@@ -288,8 +288,8 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
           formatSafeCsvCell(row.sale_number),formatSafeCsvCell(row.settlement_currency),formatCsvNumericCell(row.total_usd),
           formatCsvNumericCell(row.total_ves_snapshot),formatCsvNumericCell(row.exchange_rate_snapshot),formatSafeCsvCell(row.fx_source),
           formatSafeCsvCell(JSON.stringify(row.payments)),formatSafeCsvCell(row.payments.map((payment:any)=>payment.reference??"").filter(Boolean).join(" | ")),formatSafeCsvCell(DISCLAIMER)]);
-        data.push(["","","","","","","","","","",""]);
-        data.push(["","","","","","","","","","",formatSafeCsvCell(DISCLAIMER)]);
+        data.push(["","","","","","","","","","","",""]);
+        data.push(["","","","","","","","","","","",formatSafeCsvCell(DISCLAIMER)]);
         return csvResponse(c,`reporte-ventas-${period}.csv`,data);
       }
       return c.json({period,range:result.range,items:result.items,total_usd:result.totalUsd,total_ves_snapshot:result.totalVes,excluded_non_completed_count:result.excluded,disclaimer:DISCLAIMER},200);

@@ -2,7 +2,7 @@
 
 ## Estado
 - **main:** `37cab712cb2ced5c08cbf9f762a7e05c935fe422`; PR #402 / 4A MERGED.
-- **Micro-PR 4B:** `feat/reports-shift-closure-4b-ui-20261121`; Draft al publicar, sin merge/auto-merge. Alcance exacto 14 archivos.
+- **Micro-PR 4B:** [PR #403 OPEN / Draft](https://github.com/BTF14/Micro-app/pull/403), rama `feat/reports-shift-closure-4b-ui-20261121`; sin merge/auto-merge. Alcance exacto 14 archivos.
 - 4B incluye ReportsPanel, navegación por rol, resumen de cierre, CSV autenticado, FISC-01, pruebas jsdom y E2E PostgreSQL 18.
 - Sin checkout local: no declarar ejecución local; validar todos los check-runs/workflows sobre SHA final exacto.
 

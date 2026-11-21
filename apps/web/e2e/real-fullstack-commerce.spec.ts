@@ -482,7 +482,10 @@ test("mobile barcode scanner searches a real PostgreSQL product without sending 
     const stream = new MediaStream();
     const track = { stop: () => { state.__scannerTrackStopCount = (state.__scannerTrackStopCount ?? 0) + 1; } } as MediaStreamTrack;
     Object.defineProperty(stream, "getTracks", { configurable: true, value: () => [track] });
-    Object.defineProperty(navigator.mediaDevices, "getUserMedia", { configurable: true, value: async () => stream });
+    const mediaDevices = navigator.mediaDevices ?? {};
+    if (!navigator.mediaDevices) Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: mediaDevices });
+    Object.defineProperty(mediaDevices, "getUserMedia", { configurable: true, value: async () => stream });
+    Object.defineProperty(HTMLMediaElement.prototype, "readyState", { configurable: true, get: () => 4 });
     Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: () => Promise.resolve() });
   }, barcode);
   await context.addCookies([{ name: "microapp_session", value: fixture.ownerSessionToken, url: baseURL, httpOnly: true, secure: false, sameSite: "Lax" }]);

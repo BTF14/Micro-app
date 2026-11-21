@@ -437,7 +437,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await expect(page.getByRole("heading", { name: "Reportes" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Inventario y valoración", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Inventario y valoración", exact: true }).click();
-  await expect(page.getByText("Valoración al costo", { exact: true })).toBeVisible();
+  await expect(page.locator(".reports-cards").getByText("Valoración al costo", { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page, "mobile owner inventory valuation");
   await page.setViewportSize({ width: 1280, height: 800 });
   await expectNoHorizontalOverflow(page, "desktop owner reports");

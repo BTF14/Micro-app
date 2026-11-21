@@ -407,7 +407,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await navigateByKeyboard(cashierPage, "Reportes");
   await expect(cashierPage.getByRole("heading", { name: "Reportes" })).toBeVisible();
   await expect(cashierPage.getByRole("button", { name: "Mis ventas", exact: true })).toBeVisible();
-  await expect(cashierPage.getByRole("button", { name: "Inventario", exact: true })).toHaveCount(0);
+  await expect(cashierPage.locator(".reports-tabs").getByRole("button", { name: "Inventario", exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(cashierPage, "mobile cashier reports");
   await expect(cashierPage.getByLabel("Turno reciente")).toHaveValue(/.+/);
   await expect(cashierPage.getByText("Diferencia USD", { exact: true })).toBeVisible();

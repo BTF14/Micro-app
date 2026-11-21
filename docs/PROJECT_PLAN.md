@@ -1,3 +1,21 @@
+# Plan vigente — PR 4A integrada / Micro-PR 4B UI — 2026-11-21
+
+## Estado
+- **main:** `37cab712cb2ced5c08cbf9f762a7e05c935fe422`; PR #402 / 4A MERGED.
+- **Micro-PR 4B:** `feat/reports-shift-closure-4b-ui-20261121`; Draft al publicar, sin merge/auto-merge. Alcance exacto 14 archivos.
+- 4B incluye ReportsPanel, navegación por rol, resumen de cierre, CSV autenticado, FISC-01, pruebas jsdom y E2E PostgreSQL 18.
+- Sin checkout local: no declarar ejecución local; validar todos los check-runs/workflows sobre SHA final exacto.
+
+## Próximos pasos obligatorios en orden
+1. Expansión final del escáner móvil a Productos → Nuevo/Editar producto, Inventario y buscador de Catálogo.
+2. Pulido final: `favicon.svg` + Tour Visual E2E en las 9 vistas a 390×844 y 1280×800 + Manual de usuario `docs/USER_MANUAL.md`.
+3. Pre-prod Audit → `ve-fx-compliance-review` → AC-6 → Issue #53 mediante procesos independientes.
+
+## Gates invariables
+AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
+
+---
+
 # Plan vigente — Micro-PR 4A Cierres/Reportes/CSV backend — 2026-11-21
 
 ## Estado integrado y trabajo actual

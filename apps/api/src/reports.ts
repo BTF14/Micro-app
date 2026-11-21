@@ -260,7 +260,9 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
               AND ($4::uuid IS NULL OR s.branch_id=$4)
               AND ($5::uuid IS NULL OR EXISTS(SELECT 1 FROM public.register_shifts rs WHERE rs.organization_id=s.organization_id AND rs.id=s.register_shift_id AND rs.cashier_user_id=$5))`,
           [organizationId,range.start,range.end,branchId??null,context.role==="cashier"?context.userId:null]);
-        return {kind:"ok" as const,items:rows.rows,excluded:excluded.rows[0]?.count??"0",range};
+        return {kind:"ok" as const,items:rows.rows,excluded:excluded.rows[0]?.count??"0",range,
+          totalUsd:sumNumeric(rows.rows.map((row:any)=>row.total_usd),38,4),
+          totalVes:sumNumeric(rows.rows.map((row:any)=>row.total_ves_snapshot),38,2)};
       }));
       if(result.kind!=="ok")return c.json({error:"FORBIDDEN"},403);
       if(asCsv){
@@ -269,9 +271,11 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
           formatSafeCsvCell(row.sale_number),formatSafeCsvCell(row.settlement_currency),formatCsvNumericCell(row.total_usd),
           formatCsvNumericCell(row.total_ves_snapshot),formatCsvNumericCell(row.exchange_rate_snapshot),formatSafeCsvCell(row.fx_source),
           formatSafeCsvCell(JSON.stringify(row.payments)),formatSafeCsvCell(DISCLAIMER)]);
-        return csvResponse(c,"reporte-ventas.csv",data);
+        data.push(["","","","","","","","","","",""]);
+        data.push(["","","","","","","","","","",formatSafeCsvCell(DISCLAIMER)]);
+        return csvResponse(c,`reporte-ventas-${period}.csv`,data);
       }
-      return c.json({period,range:result.range,items:result.items,excluded_non_completed_count:result.excluded,disclaimer:DISCLAIMER},200);
+      return c.json({period,range:result.range,items:result.items,total_usd:result.totalUsd,total_ves_snapshot:result.totalVes,excluded_non_completed_count:result.excluded,disclaimer:DISCLAIMER},200);
     }catch(error){return failure(c,error);}
   };
   app.get("/api/orgs/:organizationId/reports/sales",salesHandler(false));
@@ -311,7 +315,9 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
             WHERE ib.organization_id=$1 AND ($3::uuid IS NULL OR ib.branch_id=$3) ${membershipFilter}
             ORDER BY b.name,w.name,p.name,p.id`,
           [organizationId,auth.context.userId,branchId??null]);
-        return {kind:"ok" as const,items:rows.rows,includeValuation};
+        const totalRetail=sumNumeric(rows.rows.map((row:any)=>row.retail_valuation_usd),38,4);
+        const totalCost=includeValuation?sumNumeric(rows.rows.map((row:any)=>row.cost_valuation_usd),38,4):null;
+        return {kind:"ok" as const,items:rows.rows,includeValuation,totalRetail,totalCost};
       }));
       if(result.kind!=="ok")return c.json({error:"FORBIDDEN"},403);
       if(asCsv){
@@ -328,7 +334,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         }
         return csvResponse(c,"reporte-inventario.csv",data);
       }
-      return c.json({items:result.items,include_valuation:result.includeValuation},200);
+      return c.json({items:result.items,include_valuation:result.includeValuation,total_retail_valuation_usd:result.totalRetail,...(result.includeValuation?{total_cost_valuation_usd:result.totalCost}: {})},200);
     }catch(error){return failure(c,error);}
   };
   app.get("/api/orgs/:organizationId/reports/inventory",inventoryHandler(false));

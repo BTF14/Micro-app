@@ -46,6 +46,13 @@ describe("BarcodeScanner",()=>{
   Object.defineProperty(navigator,"mediaDevices",{configurable:true,value:undefined});
   await mount();expect(container.textContent).toContain("no permite acceder a la cámara");
  });
+ it("does not request the camera when supported-format discovery resolves after unmount",async()=>{
+  let resolveFormats!:(formats:string[])=>void;
+  FakeDetector.getSupportedFormats.mockImplementationOnce(()=>new Promise<string[]>(resolve=>{resolveFormats=resolve;}));
+  await act(async()=>root.render(<BarcodeScanner onDetected={detected} onClose={closed}/>));await settle();
+  await act(async()=>root.unmount());resolveFormats(["ean_13"]);await settle();
+  expect(getUserMedia).not.toHaveBeenCalled();
+ });
  it("falls back when the browser reports no retail formats",async()=>{
   FakeDetector.getSupportedFormats.mockResolvedValueOnce([]);await mount();
   expect(container.textContent).toContain("no admite los formatos");expect(getUserMedia).not.toHaveBeenCalled();
@@ -58,7 +65,7 @@ describe("BarcodeScanner",()=>{
  });
  it("cleans up on manual close and hidden visibility",async()=>{
   await mount();await act(async()=>container.querySelector<HTMLButtonElement>(".barcode-scanner-close")!.click());
-  expect(track.stop).toHaveBeenCalledTimes(1);expect(closed).toHaveBeenCalledTimes(1);
+  expect(track.stop).toHaveBeenCalledTimes(1);expect(secondTrack.stop).toHaveBeenCalledTimes(1);expect(closed).toHaveBeenCalledTimes(1);
   await act(async()=>root.unmount());root=createRoot(container);await mount();Object.defineProperty(document,"visibilityState",{configurable:true,value:"hidden"});
   await act(async()=>document.dispatchEvent(new Event("visibilitychange")));
   expect(track.stop).toHaveBeenCalledTimes(2);expect(secondTrack.stop).toHaveBeenCalledTimes(2);expect(closed).toHaveBeenCalledTimes(2);
@@ -68,11 +75,16 @@ describe("BarcodeScanner",()=>{
   getUserMedia.mockImplementationOnce(()=>new Promise<MediaStream>(resolve=>{resolveStream=resolve;}));
   await act(async()=>root.render(<BarcodeScanner onDetected={detected} onClose={closed}/>));await settle();
   await act(async()=>root.unmount());resolveStream(stream());await settle();
-  expect(track.stop).toHaveBeenCalledTimes(1);expect(detected).not.toHaveBeenCalled();
+  expect(track.stop).toHaveBeenCalledTimes(1);expect(secondTrack.stop).toHaveBeenCalledTimes(1);expect(detected).not.toHaveBeenCalled();
  });
  it("maps permission errors to Spanish without exposing the DOM name",async()=>{
   getUserMedia.mockRejectedValueOnce(new DOMException("blocked","NotAllowedError"));await mount();
   expect(container.textContent).toContain("No se autorizó el acceso a la cámara");expect(container.textContent).not.toContain("NotAllowedError");
+ });
+ it("maps an unknown camera error without exposing its message",async()=>{
+  getUserMedia.mockRejectedValueOnce(new Error("private browser details"));await mount();
+  expect(container.textContent).toContain("No pudimos iniciar el escáner");
+  expect(container.textContent).not.toContain("private browser details");
  });
  it("closes on Escape and releases every camera track after a camera playback error",async()=>{
   await mount();await act(async()=>document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true})));

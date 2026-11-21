@@ -45,7 +45,7 @@ describe("BCV Node runner safety contract", () => {
 
 
 describe("BCV Node runner Caracas schedule preflight", () => {
-  function mockDatabase(lastOutcome: string, rates: Array<{ id: string; validation_status: "valid" | "stale" }>) {
+  function mockDatabase(lastOutcome: string, rates: Array<{ id: string; validation_status: "valid" | "stale" }>, futureRates = rates) {
     const statements: string[] = [];
     const createClient = (() => ({
       connect: async () => undefined,
@@ -55,7 +55,9 @@ describe("BCV Node runner Caracas schedule preflight", () => {
         if (statement.includes("FROM public.bcv_sync_state")) {
           return { rows: [{ singleton: true, last_outcome: lastOutcome }] };
         }
-        if (statement.includes("FROM public.exchange_rates")) return { rows: rates };
+        if (statement.includes("FROM public.exchange_rates")) {
+          return { rows: statement.includes("effective_date > $2::date") ? futureRates : rates };
+        }
         throw new Error("Unexpected SQL in BCV preflight test");
       },
     })) as unknown as DatabaseClientFactory;
@@ -79,7 +81,7 @@ describe("BCV Node runner Caracas schedule preflight", () => {
   });
 
   it("does not skip a weekday evening with only today's valid rate", async () => {
-    const mock = mockDatabase("unchanged", [{ id: "today", validation_status: "valid" }]);
+    const mock = mockDatabase("unchanged", [{ id: "today", validation_status: "valid" }], []);
     await expect(shouldSkipBcvNodeSync(
       "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-20T22:23:00.000Z"), mock.createClient,
     )).resolves.toBe(false);

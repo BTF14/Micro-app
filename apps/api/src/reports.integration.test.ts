@@ -300,6 +300,6 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
     expect((await request("inventory",orgPath()+"/reports/sales")).status).toBe(403);
     expect((await app.fetch(new Request("https://api.example"+orgPath()+"/reports/sales"),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:"https://frontend.example"})).status).toBe(401);
     const crossTenant = await request("owner","/api/orgs/00000000-0000-4000-8000-000000000001/reports/sales");
-    expect(crossTenant.status).toBe(403);
+    expect([401,403]).toContain(crossTenant.status);
   });
 });

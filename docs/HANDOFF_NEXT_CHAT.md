@@ -3,7 +3,7 @@
 ## Punto de partida
 - Repositorio `BTF14/Micro-app`; base exacta `main` = `10d24105c49f7d5c240ef298c353b782f0cca255` (post-PR #401).
 - PR #401 quedó integrada en el merge commit de la base; encabezados históricos que la llamaban Draft están supersedidos.
-- Rama de trabajo: `feat/reports-shift-closure-4a-20261121`; Micro-PR 4A, backend de turnos/cierre/reportes/CSV y permiso de valoración Owner-only.
+- Rama de trabajo: `feat/reports-shift-closure-4a-20261121`; **PR #402 OPEN / Draft** (https://github.com/BTF14/Micro-app/pull/402), implementación backend de turnos/cierre/reportes/CSV y permiso de valoración Owner-only. Sin merge ni auto-merge.
 - La PR 4A debe quedar OPEN / Draft, sin merge ni auto-merge; validar todos los check-runs/workflows en el SHA final exacto.
 - Sin checkout local: no afirmar ejecución local de tests, build, typecheck, PostgreSQL 18 ni `python3 tools/validate-agent-docs.py`.
 

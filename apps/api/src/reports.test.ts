@@ -23,6 +23,7 @@ describe("Caracas report ranges", () => {
   });
   it("rejects invalid dates, inverted ranges and spans above 366 days", () => {
     expect(buildCaracasReportRange({ period: "daily", date: "2026-02-30" })).toBeNull();
+    expect(buildCaracasReportRange({ period: "custom", from: "2026-02-30T00:00", to: "2026-03-01T00:00" })).toBeNull();
     expect(buildCaracasReportRange({ period: "custom", from: "2026-11-22T00:00", to: "2026-11-21T00:00" })).toBeNull();
     expect(buildCaracasReportRange({ period: "custom", from: "2025-01-01T00:00Z", to: "2026-01-03T00:00Z" })).toBeNull();
   });

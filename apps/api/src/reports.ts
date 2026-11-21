@@ -86,6 +86,9 @@ function pgCode(error: unknown): string | undefined {
   return error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : undefined;
 }
 function failure(c: Context<{ Bindings: Bindings }>, error: unknown) {
+  if ((c.env as Bindings & { REPORTS_TEST_DEBUG?: string }).REPORTS_TEST_DEBUG === "true") {
+    return c.json({ error: "REPORTS_READ_FAILED", debug: error instanceof Error ? error.message : String(error) }, 500);
+  }
   const code = pgCode(error);
   if (code && ["42P01", "42883", "42703", "42501"].includes(code)) {
     return c.json({ error: "REPORTS_NOT_ENABLED", message: "Los reportes todavía no están habilitados en esta base de datos." }, 503);
@@ -356,7 +359,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         return csvResponse(c,"reporte-inventario.csv",data);
       }
       return c.json({items:result.items,include_valuation:result.includeValuation,total_retail_valuation_usd:result.totalRetail,...(result.includeValuation?{total_cost_valuation_usd:result.totalCost}: {})},200);
-    }catch(error){throw error;}
+    }catch(error){return failure(c,error);}
   };
   app.get("/api/orgs/:organizationId/reports/inventory",inventoryHandler(false));
   app.get("/api/orgs/:organizationId/reports/inventory.csv",inventoryHandler(true));

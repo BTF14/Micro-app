@@ -1605,40 +1605,63 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await setBcvSyncState("failed", rateDate, true);
     await seedBalance("5.000");
     const authorizationId = await createFxAuthorization();
-    const tomorrowResult = await client.query<{ tomorrow: string }>(
-      "SELECT (($1::date + 1)::date)::text AS tomorrow", [rateDate],
+    const beyondWindowResult = await client.query<{ beyond_window_date: string }>(
+      "SELECT (($1::date + 6)::date)::text AS beyond_window_date", [rateDate],
     );
-    const tomorrow = tomorrowResult.rows[0]!.tomorrow;
-    const existingFuture = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
-      "SELECT id,rate::text,validation_status,fetched_at FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
-      [BCV_SOURCE, tomorrow],
-    );
-    if (existingFuture.rows[0]) {
-      fxFutureRateId = existingFuture.rows[0].id;
-      previousFxFutureRate = existingFuture.rows[0];
-      await client.query("UPDATE public.exchange_rates SET rate=300.00000000,validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [fxFutureRateId]);
-    } else {
-      const future = await client.query<{ id: string }>(
-        "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
-        [BCV_SOURCE, tomorrow],
+    const beyondWindowDate = beyondWindowResult.rows[0]!.beyond_window_date;
+    let beyondWindowRateId: string | null = null;
+    let beyondWindowAttemptId: string | null = null;
+    let previousBeyondWindowRate: { rate: string; validation_status: string; fetched_at: Date } | null = null;
+    try {
+      const existingFuture = await client.query<{ id: string; rate: string; validation_status: string; fetched_at: Date }>(
+        "SELECT id,rate::text,validation_status,fetched_at FROM public.exchange_rates WHERE source=$1 AND effective_date=$2::date",
+        [BCV_SOURCE, beyondWindowDate],
       );
-      fxFutureRateId = future.rows[0]!.id;
-      fxFutureRateCreated = true;
-    }
-    const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
-    await recordFxBcvSuccess("inserted", tomorrow, new Date(auth.rows[0]!.starts_at.getTime() - 24 * 60 * 60 * 1000));
+      if (existingFuture.rows[0]) {
+        beyondWindowRateId = existingFuture.rows[0].id;
+        previousBeyondWindowRate = existingFuture.rows[0];
+        await client.query("UPDATE public.exchange_rates SET rate=300.00000000,validation_status='valid',fetched_at=pg_catalog.clock_timestamp() WHERE id=$1", [beyondWindowRateId]);
+      } else {
+        const future = await client.query<{ id: string }>(
+          "INSERT INTO public.exchange_rates(base_currency,quote_currency,rate,source,effective_date,validation_status) VALUES('USD','VES',300.00000000,$1,$2::date,'valid') RETURNING id",
+          [BCV_SOURCE, beyondWindowDate],
+        );
+        beyondWindowRateId = future.rows[0]!.id;
+      }
+      const auth = await client.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+      beyondWindowAttemptId = await recordFxBcvSuccess("inserted", beyondWindowDate, new Date(auth.rows[0]!.starts_at.getTime() - 24 * 60 * 60 * 1000));
 
-    const response = await request({
-      ...checkoutBody("1.000", "23.8500"),
-      manual_fx_acknowledged: true,
-      manual_fx_acknowledged_rate: "104.00000000",
-    }, "future-bcv-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
-    expect(response.status).toBe(201);
-    const sale = await response.json() as { fx_source: string; fx_authorization_id: string };
-    expect(sale.fx_source).toBe("manual_contingency");
-    expect(sale.fx_authorization_id).toBe(authorizationId);
-    const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
-    expect(status.rows[0].status).toBe("active");
+      const response = await request({
+        ...checkoutBody("1.000", "23.8500"),
+        manual_fx_acknowledged: true,
+        manual_fx_acknowledged_rate: "104.00000000",
+      }, "future-bcv-" + crypto.randomUUID(), organizationId, branchId, "203.0.113.10", true);
+      expect(response.status).toBe(201);
+      const sale = await response.json() as { fx_source: string; fx_authorization_id: string };
+      expect(sale.fx_source).toBe("manual_contingency");
+      expect(sale.fx_authorization_id).toBe(authorizationId);
+      const status = await client.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authorizationId]);
+      expect(status.rows[0].status).toBe("active");
+    } finally {
+      if (beyondWindowRateId) {
+        if (previousBeyondWindowRate) {
+          await client.query(
+            "UPDATE public.exchange_rates SET rate=$2::numeric,validation_status=$3,fetched_at=$4::timestamptz WHERE id=$1",
+            [beyondWindowRateId, previousBeyondWindowRate.rate, previousBeyondWindowRate.validation_status, previousBeyondWindowRate.fetched_at],
+          );
+        } else {
+          if (beyondWindowAttemptId) {
+            await client.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER bcv_sync_success_observations_10_append_only_rows");
+            try {
+              await client.query("DELETE FROM public.bcv_sync_success_observations WHERE attempt_id=$1::uuid", [beyondWindowAttemptId]);
+            } finally {
+              await client.query("ALTER TABLE public.bcv_sync_success_observations ENABLE ALWAYS TRIGGER bcv_sync_success_observations_10_append_only_rows");
+            }
+          }
+          await client.query("DELETE FROM public.exchange_rates WHERE id=$1", [beyondWindowRateId]);
+        }
+      }
+    }
   });
 
   it("completes a 0027 weekday same-day-sync sale with a future effective BCV snapshot and preserves it", async () => {

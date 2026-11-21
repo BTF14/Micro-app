@@ -7,14 +7,12 @@ const processLike = (globalThis as typeof globalThis & { process?: ProcessLike }
 if (!processLike) throw new Error("BCV_NODE_PROCESS_UNAVAILABLE");
 
 const env = processLike.env;
-const scheduledFor = env.GITHUB_EVENT_NAME === "schedule"
-  ? `${new Date().toISOString().slice(0, 10)}T11:17:00.000Z`
-  : null;
 const forceSync = env.BCV_FORCE_SYNC === "true";
 
 describe("dedicated BCV Node 24 production runner", () => {
   it("performs or safely skips one official BCV synchronization", async () => {
     const startedAt = new Date().toISOString();
+    const scheduledFor = env.GITHUB_EVENT_NAME === "schedule" ? startedAt : null;
     console.info({
       event: "BCV_NODE_SYNC_STARTED",
       scheduledFor,

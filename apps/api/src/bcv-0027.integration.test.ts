@@ -6,9 +6,9 @@ function safe(url:string|undefined):boolean{if(!url)return false;try{const u=new
 if(ci&&!safe(adminUrl))throw new Error("BCV 0027 integration matrix requires disposable localhost PostgreSQL 18 admin connection.");
 const enabled=safe(adminUrl);
 function addDays(date:string,n:number):string{return new Date(Date.parse(date+"T12:00:00.000Z")+n*86400000).toISOString().slice(0,10)}
-function previousWeekday(day:number):string{const d=new Date();d.setUTCHours(12,0,0,0);for(let i=1;i<=7;i++){d.setUTCDate(d.getUTCDate()-1);if(d.getUTCDay()===day)return d.toISOString().slice(0,10)}throw new Error("previous weekday calculation failed")}
+function previousCompletedFriday():string{const d=new Date();d.setUTCHours(12,0,0,0);d.setUTCDate(d.getUTCDate()-7);for(let i=0;i<=6;i++){if(d.getUTCDay()===5)return d.toISOString().slice(0,10);d.setUTCDate(d.getUTCDate()-1)}throw new Error("previous completed Friday calculation failed")}
 describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
- let db:Client;let syncSequence=0;const friday=previousWeekday(5),saturday=addDays(friday,1),sunday=addDays(friday,2),monday=addDays(friday,3),tuesday=addDays(friday,4);
+ let db:Client;let syncSequence=0;const friday=previousCompletedFriday(),saturday=addDays(friday,1),sunday=addDays(friday,2),monday=addDays(friday,3),tuesday=addDays(friday,4);
  beforeAll(async()=>{db=new Client({connectionString:adminUrl});await db.connect();await db.query("BEGIN")});
  beforeEach(async()=>{await db.query("SAVEPOINT bcv_0027_case");await db.query("DELETE FROM public.exchange_rates WHERE source='BCV_OFFICIAL_HTML_V1' AND effective_date BETWEEN $1::date AND $2::date",[friday,addDays(saturday,6)])});
  afterEach(async()=>{await db.query("ROLLBACK TO SAVEPOINT bcv_0027_case");await db.query("RELEASE SAVEPOINT bcv_0027_case")});

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DatabaseClientFactory } from "./database";
-import { runBcvNodeSync, shouldSkipBcvNodeSync } from "./bcv-node-runner";
+import { caracasHour, isCaracasWeekend, runBcvNodeSync, shouldSkipBcvNodeSync } from "./bcv-node-runner";
 import { safeBcvSyncErrorCode } from "./exchange-rates";
 
 describe("BCV Node runner safety contract", () => {
@@ -40,5 +40,76 @@ describe("BCV Node runner safety contract", () => {
     const cause = Object.assign(new Error("private"), { code: "ECONNRESET" });
     expect(safeBcvSyncErrorCode(new Error("DATABASE_QUERY_FAILED", { cause })))
       .toBe("BCV_SYNC_UNKNOWN");
+  });
+});
+
+
+describe("BCV Node runner Caracas schedule preflight", () => {
+  function mockDatabase(lastOutcome: string, rates: Array<{ id: string; validation_status: "valid" | "stale" }>, futureRates = rates) {
+    const statements: string[] = [];
+    const createClient = (() => ({
+      connect: async () => undefined,
+      end: async () => undefined,
+      query: async (statement: string) => {
+        statements.push(statement);
+        if (statement.includes("FROM public.bcv_sync_state")) {
+          return { rows: [{ singleton: true, last_outcome: lastOutcome }] };
+        }
+        if (statement.includes("FROM public.exchange_rates")) {
+          return { rows: statement.includes("effective_date > $2::date") ? futureRates : rates };
+        }
+        throw new Error("Unexpected SQL in BCV preflight test");
+      },
+    })) as unknown as DatabaseClientFactory;
+    return { createClient, statements };
+  }
+
+  it("classifies Caracas hour and weekend independently of the host timezone", () => {
+    expect(caracasHour(new Date("2026-11-20T15:00:00.000Z"))).toBe(11);
+    expect(caracasHour(new Date("2026-11-20T22:23:00.000Z"))).toBe(18);
+    expect(isCaracasWeekend(new Date("2026-11-21T11:17:00.000Z"))).toBe(true);
+    expect(isCaracasWeekend(new Date("2026-11-20T22:23:00.000Z"))).toBe(false);
+  });
+
+  it("skips a valid same-day rate on a weekday morning", async () => {
+    const mock = mockDatabase("inserted", [{ id: "today", validation_status: "valid" }]);
+    await expect(shouldSkipBcvNodeSync(
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-20T15:00:00.000Z"), mock.createClient,
+    )).resolves.toBe(true);
+    expect(mock.statements[1]).toContain("effective_date = $2::date");
+    expect(mock.statements[1]).not.toContain("effective_date > $2::date");
+  });
+
+  it("does not skip a weekday evening with only today's valid rate", async () => {
+    const mock = mockDatabase("unchanged", [{ id: "today", validation_status: "valid" }], []);
+    await expect(shouldSkipBcvNodeSync(
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-20T22:23:00.000Z"), mock.createClient,
+    )).resolves.toBe(false);
+    expect(mock.statements[1]).toContain("effective_date > $2::date");
+    expect(mock.statements[1]).toContain("effective_date <= ($2::date + 5)");
+  });
+
+  it("skips a weekday evening after a valid future rate has been captured", async () => {
+    const mock = mockDatabase("inserted", [{ id: "monday", validation_status: "valid" }]);
+    await expect(shouldSkipBcvNodeSync(
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-20T22:23:00.000Z"), mock.createClient,
+    )).resolves.toBe(true);
+    expect(mock.statements[1]).toContain("effective_date > $2::date");
+  });
+
+  it("recovers on Saturday when no future valid rate exists", async () => {
+    const mock = mockDatabase("unchanged", []);
+    await expect(shouldSkipBcvNodeSync(
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-21T11:17:00.000Z"), mock.createClient,
+    )).resolves.toBe(false);
+    expect(mock.statements[1]).toContain("effective_date > $2::date");
+  });
+
+  it("skips on Saturday once Monday's valid rate is already present", async () => {
+    const mock = mockDatabase("unchanged", [{ id: "monday", validation_status: "valid" }]);
+    await expect(shouldSkipBcvNodeSync(
+      "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-21T11:17:00.000Z"), mock.createClient,
+    )).resolves.toBe(true);
+    expect(mock.statements[1]).toContain("effective_date > $2::date");
   });
 });

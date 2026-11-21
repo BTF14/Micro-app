@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
 import type { DatabaseClient, DatabaseClientFactory } from "./database";
-import { runBcvNodeSync } from "./bcv-node-runner";
+import { runBcvNodeSync, shouldSkipBcvNodeSync } from "./bcv-node-runner";
 
 const processEnv = (globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
@@ -68,10 +68,8 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
   });
 
   it("skips after today's successful state and valid rate without mutating bcv_sync_state", async () => {
-    const dateResult = await admin.query<{ today: string }>(
-      "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",
-    );
-    const today = dateResult.rows[0]!.today;
+    const weekdayMorningUtc = new Date("2026-11-20T15:00:00.000Z");
+    const today = "2026-11-20";
     await clearBcvFixtures();
     await admin.query(
       `INSERT INTO public.exchange_rates
@@ -93,7 +91,7 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
          FROM public.bcv_sync_state WHERE singleton = true`,
     );
 
-    const result = await runBcvNodeSync(producerUrl, false, pgFactory);
+    const result = await runBcvNodeSync(producerUrl, false, pgFactory, weekdayMorningUtc);
     expect(result).toMatchObject({ status: "skipped", outcome: "unchanged" });
     const after = await admin.query(
       `SELECT attempt_id::text, last_attempt_at::text, last_success_at::text,
@@ -103,6 +101,21 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
     expect(after.rows).toEqual(before.rows);
   });
 
+  it("retries at the weekday evening window until a future valid rate is captured, then skips without mutating producer state", async () => {
+    const evening = new Date("2026-11-20T22:23:00.000Z");
+    const today = "2026-11-20";
+    const monday = "2026-11-23";
+    await clearBcvFixtures();
+    await admin.query("INSERT INTO public.exchange_rates (base_currency, quote_currency, rate, source, effective_date, fetched_at, validation_status) VALUES ('USD','VES',895.1,$1,$2::date,now(),'valid')", [source, today]);
+    await admin.query("UPDATE public.bcv_sync_state SET attempt_id = gen_random_uuid(), last_attempt_at = now() - interval '1 hour', last_success_at = now() - interval '1 hour', last_outcome = 'unchanged', last_error_code = NULL, last_effective_date = $1::date, updated_at = now() WHERE singleton = true", [today]);
+    await expect(shouldSkipBcvNodeSync(producerUrl!, false, evening, pgFactory)).resolves.toBe(false);
+    await admin.query("INSERT INTO public.exchange_rates (base_currency, quote_currency, rate, source, effective_date, fetched_at, validation_status) VALUES ('USD','VES',895.2,$1,$2::date,now(),'valid')", [source, monday]);
+    const before = await admin.query("SELECT attempt_id::text, last_attempt_at::text, last_success_at::text, last_outcome, last_error_code, last_effective_date::text, updated_at::text FROM public.bcv_sync_state WHERE singleton = true");
+    const result = await runBcvNodeSync(producerUrl, false, pgFactory, evening);
+    expect(result).toEqual({ status: "skipped", outcome: "unchanged" });
+    const after = await admin.query("SELECT attempt_id::text, last_attempt_at::text, last_success_at::text, last_outcome, last_error_code, last_effective_date::text, updated_at::text FROM public.bcv_sync_state WHERE singleton = true");
+    expect(after.rows).toEqual(before.rows);
+  });
   it("recovers a failed state by confirming the current official rate", async () => {
     const dateResult = await admin.query<{ today: string }>(
       "SELECT (now() AT TIME ZONE 'America/Caracas')::date::text AS today",

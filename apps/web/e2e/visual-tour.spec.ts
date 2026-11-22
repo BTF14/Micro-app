@@ -109,8 +109,8 @@ const views = [
   { id: "reports", label: "Reportes", nav: "Reportes", heading: "Reportes" },
 ] as const;
 
-test("visual tour: nine owner views at mobile and desktop sizes", async ({ page, request }) => {
-  const favicon = await request.get("/favicon.svg");
+test("visual tour: nine owner views at mobile and desktop sizes", async ({ page }) => {
+  const favicon = await page.request.get("http://127.0.0.1:4173/favicon.svg");
   expect(favicon.status()).toBe(200);
   expect(favicon.headers()["content-type"]).toContain("image/svg+xml");
   await installStubs(page);

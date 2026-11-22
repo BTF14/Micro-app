@@ -112,9 +112,6 @@ const views = [
 ] as const;
 
 test("visual tour: nine owner views at mobile and desktop sizes", async ({ page }) => {
-  const favicon = await page.request.get("http://127.0.0.1:4173/favicon.svg");
-  expect(favicon.status()).toBe(200);
-  expect(favicon.headers()["content-type"]).toContain("image/svg+xml");
   await installStubs(page);
   const unexpectedPageErrors: string[] = [];
   page.on("pageerror", (error) => unexpectedPageErrors.push(error.message));
@@ -136,6 +133,9 @@ test("visual tour: nine owner views at mobile and desktop sizes", async ({ page 
 
     for (let index = 0; index < views.length; index += 1) {
       const view = views[index]!;
+      const favicon = await page.request.get("http://127.0.0.1:4173/favicon.svg");
+      expect(favicon.status()).toBe(200);
+      expect(favicon.headers()["content-type"]).toContain("image/svg+xml");
       if (viewport.name === "movil" && index > 0) await page.locator(".mobile-nav-toggle").click();
       await expect(navigation).toBeVisible();
       const item = navigation.getByRole(view.id === "overview" ? "link" : "button", { name: view.nav, exact: true });

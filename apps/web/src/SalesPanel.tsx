@@ -139,7 +139,8 @@ export default function SalesPanel({
       const { precision, scale } = paymentScale(currency);
       const expected = parseNumeric(expectedPayment, currency === "USD" ? 14 : 16, scale);
       const received = parseNumeric(cashReceived, precision, scale);
-      const cashTendered = parseNumeric(cashPaymentTotal, precision, scale);
+      const cashTarget = payments.length === 1 && payments[0]?.method === "cash" ? expectedPayment : cashPaymentTotal;
+      const cashTendered = parseNumeric(cashTarget, precision, scale);
       if (expected <= 0n || cashTendered <= 0n) return null;
       const difference = received - cashTendered;
       return { kind: difference >= 0n ? "change" as const : "short" as const, amount: formatNumeric(difference >= 0n ? difference : -difference, precision, scale) };

@@ -16,6 +16,8 @@ const shift = {
   branch_id: branchId, register_id: registerId, cashier_user_id: "user-ana",
   opened_at: "2026-11-21T13:00:00.000Z", openedAt: "2026-11-21T13:00:00.000Z",
   opening_cash_usd: "0.0000", opening_cash_ves: "0.00",
+  openingCashUsd: "0.0000", openingCashVes: "0.00",
+  branch_name: "Sucursal Centro", register_name: "Caja principal", cashier_name: "Ana Pérez",
 };
 
 async function installStubs(page: Page) {
@@ -117,32 +119,74 @@ test("visual tour: nine owner views at mobile and desktop sizes", async ({ page 
   const unexpectedPageErrors: string[] = [];
   page.on("pageerror", (error) => unexpectedPageErrors.push(error.message));
 
-  for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+  for (const viewport of [
+    { name: "movil", width: 390, height: 844 },
+    { name: "tablet", width: 820, height: 1180 },
+    { name: "pc", width: 1280, height: 800 },
+  ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Hola, Ana." })).toBeVisible();
+    const navigation = page.locator("#primary-navigation");
+    if (viewport.name === "movil") {
+      await page.locator(".mobile-nav-toggle").click();
+      await expect(navigation).toBeVisible();
+      await page.screenshot({ path: "apps/web/test-results/visual-tour/00-menu-abierto-movil-390x844.png", fullPage: false, animations: "disabled" });
+    }
 
     for (let index = 0; index < views.length; index += 1) {
       const view = views[index]!;
-      if (viewport.width === 390) await page.locator(".mobile-nav-toggle").click();
-      const navigation = page.locator("#primary-navigation");
+      if (viewport.name === "movil" && index > 0) await page.locator(".mobile-nav-toggle").click();
       await expect(navigation).toBeVisible();
       const item = navigation.getByRole(view.id === "overview" ? "link" : "button", { name: view.nav, exact: true });
       await item.click();
-      if (viewport.width === 390) await expect(navigation).not.toHaveClass(/open/);
+      if (viewport.name === "movil") await expect(navigation).not.toHaveClass(/open/);
       await expect(page.locator("main").first()).toBeVisible();
       await expect(page.getByRole("heading", { name: view.heading, exact: true })).toBeVisible();
+      if (view.id === "quick-lookup") {
+        await page.locator("#quick-product-search").fill("CAF-001");
+        await expect(page.getByText("Café molido 500 g", { exact: true })).toBeVisible();
+      }
+      if (view.id === "sales") {
+        await page.locator("#quick-product-search").fill("CAF-001");
+        await expect(page.getByText("Café molido 500 g", { exact: true })).toBeVisible();
+        await page.locator(".quick-lookup-results").getByRole("button", { name: "+ Agregar", exact: true }).click();
+        await expect(page.getByText("Carrito", { exact: true })).toBeVisible();
+        await page.getByRole("button", { name: "Monto exacto", exact: true }).click();
+        await expect(page.getByText(/Pagos:.*Total requerido:/)).toBeVisible();
+      }
+      if (view.id === "register-shifts" || view.id === "sales") {
+        const operationalText = await page.locator("main").innerText();
+        expect(operationalText).not.toContain("No disponible");
+        expect(operationalText).not.toContain("branch-centro");
+      }
+      if (view.id === "inventory") {
+        const history = page.getByRole("heading", { name: "Recepciones recientes", exact: true });
+        await expect(history).toBeVisible();
+        await history.scrollIntoViewIfNeeded();
+        await expect(page.locator(".inventory-receipt-history")).toContainText("1 línea");
+        await expect(page.locator(".inventory-receipt-history")).toContainText("21 nov 2026");
+        await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-inventario-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
+      }
+      if (view.id === "reports") {
+        const breakdown = page.getByRole("heading", { name: "Desglose de pagos", exact: true });
+        await expect(breakdown).toBeVisible();
+        await breakdown.scrollIntoViewIfNeeded();
+        await expect(page.locator(".reports-table-wrap")).toContainText("Moneda");
+        await expect(page.locator(".reports-table-wrap")).toContainText("12,5000");
+        await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-reportes-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
+      }
       await expect(page.locator(".sidebar")).toHaveAttribute("aria-label", "Navegación principal");
       await expect(page.locator("main [role='alert']")).toHaveCount(0);
       const visibleText = await page.locator("body").innerText();
-      expect(visibleText).not.toMatch(/\b(?:NaN|undefined|SQLSTATE|PostgreSQL|Hono|Cloudflare|Neon|TypeError)\b/i);
+      expect(visibleText).not.toMatch(/\b(?:NaN|undefined|MAX_LINES|SQLSTATE|PostgreSQL|Hono|Cloudflare|Neon|TypeError)\b/i);
       const dimensions = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,
       }));
       expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.innerWidth + 1);
-      const filename = `${String(index + 1).padStart(2, "0")}-${view.id === "quick-lookup" ? "consultar-precio" : view.id === "register-shifts" ? "caja-y-turnos" : view.id === "organization-structure" ? "estructura" : view.id === "fx-contingency" ? "gestion-cambiaria" : view.id === "overview" ? "resumen" : view.id === "catalog" ? "productos" : view.id === "inventory" ? "inventario" : view.id === "sales" ? "ventas" : "reportes"}-${viewport.width}x${viewport.height}.png`;
-      await page.screenshot({ path: `apps/web/test-results/visual-tour/${filename}`, fullPage: true, animations: "disabled" });
+      const filename = `${String(index + 1).padStart(2, "0")}-${view.id === "quick-lookup" ? "consultar-precio" : view.id === "register-shifts" ? "caja-y-turnos" : view.id === "organization-structure" ? "estructura" : view.id === "fx-contingency" ? "gestion-cambiaria" : view.id === "overview" ? "resumen" : view.id === "catalog" ? "productos" : view.id === "inventory" ? "inventario" : view.id === "sales" ? "ventas" : "reportes"}-${viewport.name}-${viewport.width}x${viewport.height}.png`;
+      await page.screenshot({ path: `apps/web/test-results/visual-tour/${filename}`, fullPage: false, animations: "disabled" });
       expect(unexpectedPageErrors, `Errores inesperados en ${view.label} ${viewport.width}x${viewport.height}`).toEqual([]);
     }
   }

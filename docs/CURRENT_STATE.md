@@ -1,7 +1,7 @@
 # Estado vigente — Micro-PR 5 Scanner móvil / Vuelto / Criterio de evidencia — 2026-11-21
 
 - **Base verificada:** main = 97b092ea8089207352ed6b30254464ed53d08592.
-- **Rama:** feat/mobile-scanner-cash-change-evidence-criterion-20261121; PR OPEN / Draft al completar la entrega; sin merge ni auto-merge.
+- **Rama:** feat/mobile-scanner-cash-change-evidence-criterion-20261121; [PR #405 OPEN / Draft](https://github.com/BTF14/Micro-app/pull/405); sin merge ni auto-merge.
 - **Alcance:** escáner compartido en Productos/Inventario/Catálogo; calculadora opcional de vuelto exacto en Ventas; copy honesto de turnos; skill de criterio basado en evidencia.
 - **Restricciones:** 0 backend, 0 SQL/migraciones, 0 package/dependencias, 0 workflows; sin favicon, Tour Visual ni USER_MANUAL en esta PR.
 - **Gates invariables:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; BCV_SYNC_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.

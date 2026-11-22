@@ -87,8 +87,10 @@ describe("SalesPanel", () => {
   });
 
   it("calculates exact cash change and shortage without changing the net checkout payment", async () => {
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never).mockRejectedValueOnce(new Error("synthetic checkout stop")); await render(); await act(async () => { click("Agregar producto A"); click("Monto exacto"); });
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never).mockRejectedValueOnce(new Error("synthetic checkout stop")); await render(); await act(async () => { click("Agregar producto A"); });
     const received=container.querySelector<HTMLInputElement>("#sales-cash-received"); if(!received)throw new Error("Cash received input missing");
+    await act(async()=>{setInputValue(received,"0.0001");}); expect(container.textContent).toContain("Falta por completar: US$ 0,0001");
+    await act(async()=>{click("Monto exacto");});
     await act(async()=>{setInputValue(received,"0.0010");}); expect(container.textContent).toContain("Vuelto a entregar: US$ 0,0008");
     await act(async()=>{setInputValue(received,"0.0002");}); expect(container.textContent).toContain("Vuelto a entregar: US$ 0,00");
     await act(async()=>{setInputValue(received,"0.0001");}); expect(container.textContent).toContain("Falta por completar: US$ 0,0001"); expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(false);

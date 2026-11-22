@@ -165,7 +165,7 @@ test("visual tour: nine owner views at mobile and desktop sizes", async ({ page 
         await expect(history).toBeVisible();
         await history.scrollIntoViewIfNeeded();
         await expect(page.locator(".inventory-receipt-history")).toContainText("1 línea");
-        await expect(page.locator(".inventory-receipt-history")).toContainText(/21 nov\\. 2026/);
+        await expect(page.locator(".inventory-receipt-history")).toContainText(/21 nov\. 2026/);
         await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-inventario-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
       }
       if (view.id === "reports") {

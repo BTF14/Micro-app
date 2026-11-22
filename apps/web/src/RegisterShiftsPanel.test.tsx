@@ -64,6 +64,10 @@ describe("Register shifts workspace", () => {
     await settle();
     expect(container.textContent).toContain("Turno abierto");
     expect(container.textContent).toContain("$ 20,00");
+    expect(container.textContent).toContain("100 % digital");
+    expect(container.textContent).toContain("Reportes suma las ventas en efectivo netas");
+    expect(container.textContent).not.toContain("no calcula diferencias");
+    expect(container.textContent).not.toContain("no sustituye el arqueo");
 
     const closeInputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-form input")];
     const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;

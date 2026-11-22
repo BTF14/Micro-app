@@ -80,3 +80,5 @@ Excluded: SQL/migrations, `apps/api/**`, `packages/**`, `.github/workflows/**`, 
 - Exclusiones: 0 API/backend, 0 migraciones/SQL, 0 package.json/dependencias/workflows; no favicon, Tour Visual ni docs/USER_MANUAL.md.
 - Gates permanecen AC-6 OPEN, FX contingency OFF, BCV sync OFF, Issue #53 OPEN/P0, freeze v1.1, PRODUCTION NOT READY y USD 0.
 - Siguiente paso único: favicon.svg + Tour Visual E2E de 9 vistas (390×844 y 1280×800) + docs/USER_MANUAL.md; después Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53.
+
+- Curación local registrada en `docs/AUTOSKILLS_ADOPTION.md`: skill propia, sin bundle/URL/licencia externa, sin CLI AutoSkills ni lockfile; Git blob SHA documentado y limitaciones declaradas.

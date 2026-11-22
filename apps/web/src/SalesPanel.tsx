@@ -145,7 +145,7 @@ export default function SalesPanel({
       const difference = received - cashTendered;
       return { kind: difference >= 0n ? "change" as const : "short" as const, amount: formatNumeric(difference >= 0n ? difference : -difference, precision, scale) };
     } catch { return null; }
-  }, [cashReceived, hasCashPayment, cart.length, currency, computed.totalVes, expectedPayment, cashPaymentTotal]);
+  }, [cashReceived, hasCashPayment, cart.length, currency, computed.totalVes, expectedPayment, cashPaymentTotal, payments]);
 
   const paymentMatches = useMemo(() => {
     try {

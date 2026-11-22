@@ -168,4 +168,12 @@ describe("product form", () => {
     expect(container.textContent).toContain("no pueden ser negativos");
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("fills barcode while editing an existing product", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" product={{ id:"p1",sku:"SKU-1",barcode:"OLD",name:"Producto",description:null,unit:"unidad",quantity_mode:"integer",cost_usd:"1.0000",price_usd:"2.0000",is_active:true }} onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    await act(async () => { container.querySelector<HTMLButtonElement>(".product-barcode-scan")?.click(); });
+    await act(async () => { container.querySelector<HTMLButtonElement>('[role="dialog"] button')?.click(); });
+    expect(field("Código de barras").value).toBe("7501234567890");
+  });
+
 });

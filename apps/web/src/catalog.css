@@ -185,3 +185,6 @@
 .barcode-scanner-message,.barcode-scanner-fallback p{margin:.8rem 0;color:var(--muted);font-size:.8rem;line-height:1.5}
 .barcode-scanner-fallback{display:grid;gap:.5rem}.barcode-scanner-manual{border-color:var(--petrol);background:var(--petrol);color:#fff}
 @media(max-width:420px){.barcode-scanner-backdrop{padding:.5rem}.barcode-scanner-panel{width:100%;max-height:calc(100dvh - 1rem);padding:.8rem}.quick-lookup-scan-button{flex:1 1 auto}}
+
+.catalog-search-scan{min-height:2.75rem;padding:.6rem .9rem;border:1px solid var(--petrol);border-radius:.6rem;color:var(--petrol);background:#fff;font:inherit;font-size:.75rem;font-weight:650;cursor:pointer}.catalog-search-scan:disabled{opacity:.55;cursor:not-allowed}
+.product-barcode-field{display:grid;gap:.35rem;min-width:0}.product-barcode-field>label{color:var(--petrol-dark);font-size:.75rem;font-weight:650}.product-barcode-row{display:flex;gap:.5rem;min-width:0}.product-barcode-row input{flex:1;min-width:0}.product-barcode-row button{flex:0 0 auto;min-height:2.75rem;padding:.55rem .8rem}@media(max-width:560px){.product-barcode-row{align-items:stretch}.product-barcode-row button{min-width:6rem}}

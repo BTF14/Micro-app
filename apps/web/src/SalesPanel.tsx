@@ -373,7 +373,7 @@ export default function SalesPanel({
   }
   function setPaymentCurrency(next: Currency) {
     setCurrency(next);
-    setPayments((current) => current.map((payment) => ({ ...payment, amount: "" })));
+    setPayments((current) => current.map((payment) => ({ ...payment, amount: "", cashReceived: "" })));
     resetIdempotency();
   }
   function fillExactAmount() {
@@ -509,7 +509,7 @@ export default function SalesPanel({
                     <label><span>Monto ({currency})</span><input inputMode="decimal" value={payment.amount} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { amount: normalizeDecimalInput(event.target.value) })} /></label>
                     <label className="sales-payment-reference"><span>Referencia (opcional)</span><input maxLength={128} value={payment.reference} onChange={(event) => updatePayment(payment.id, { reference: event.target.value })} /></label>
                     {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && <label className="sales-payment-reference"><span>Efectivo recibido (solo cálculo de vuelto)</span><input inputMode="decimal" value={payment.cashReceived ?? ""} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { cashReceived: normalizeDecimalInput(event.target.value) })} /></label>}
-                    {payment.method === "cash" && cart.length > 0 && payment.cashReceived?.trim() && <p className="sales-cash-change" role="status">{cashChangeMessage(payment)}</p>}
+                    {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && payment.cashReceived?.trim() && <p className="sales-cash-change" role="status">{cashChangeMessage(payment)}</p>}
                     {payments.length > 1 && <button type="button" className="sales-remove-payment" onClick={() => removePayment(payment.id)} aria-label={`Quitar pago ${index + 1}`}>Quitar</button>}
                   </div>)}
                   <div className="sales-payment-actions"><button type="button" className="sales-secondary-button" onClick={addPayment} disabled={payments.length >= 10}>Agregar pago</button><button type="button" className="sales-secondary-button" onClick={fillExactAmount}>Monto exacto</button></div>

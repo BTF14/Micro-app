@@ -2,6 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("./BarcodeScanner", () => ({ default: ({ onDetected, onClose }: { onDetected: (code: string) => void; onClose: () => void }) => (<div role="dialog" aria-label="Escáner de prueba"><button type="button" onClick={() => onDetected("7501234567890")}>Simular escaneo</button><button type="button" onClick={onClose}>Cerrar escáner</button></div>) }));
 import InventoryPanel from "./InventoryPanel";
 
 let container: HTMLDivElement;
@@ -135,6 +136,12 @@ describe("inventory panel", () => {
     expect(container.textContent).toContain("Café molido");
     expect(container.textContent).toContain("750123");
     expect([...container.querySelectorAll("option")].some((option)=>option.textContent?.includes("Café molido"))).toBe(true);
+  });
+
+  it("scans a barcode into quick search and immediately filters the warehouse", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({branches:[{id:BRANCH_A,name:"Central",slug:"central"}]})).mockResolvedValueOnce(jsonResponse({warehouses:[{id:WAREHOUSE,code:"main",name:"Principal",is_active:true}]})).mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100})).mockResolvedValueOnce(jsonResponse({receipts:[]})).mockResolvedValueOnce(jsonResponse({items:[balance({barcode:"7501234567890",name:"Café escaneado"})],nextCursor:null,limit:100}));
+    await renderPanel(); await act(async()=>{container.querySelector<HTMLButtonElement>(".catalog-search-scan")?.click();}); await act(async()=>{container.querySelector<HTMLButtonElement>('[role="dialog"] button')?.click();}); await flush();
+    expect(container.querySelector<HTMLInputElement>("#inventory-quick-search")?.value).toBe("7501234567890"); expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=7501234567890"); expect(container.textContent).toContain("Café escaneado");
   });
 
   it("explains when the member has no branch assigned without calling other endpoints", async () => {

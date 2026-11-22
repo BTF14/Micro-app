@@ -55,7 +55,7 @@ describe("Register shifts workspace", () => {
   it("loads assigned branches and registers, opens a shift, then closes it", async () => {
     await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });
     await settle();
-    expect(container.textContent).toContain("Prepara tu caja");
+    expect(container.textContent).toContain("Prepara tu caja"); expect(container.textContent).toContain("opera 100 % digital"); expect(container.textContent).toContain("ventas en efectivo netas"); expect(container.textContent).not.toContain("no calcula diferencias"); expect(container.textContent).not.toContain("no sustituye el arqueo");
     expect(container.textContent).toContain("Principal");
 
     const openButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Abrir turno");

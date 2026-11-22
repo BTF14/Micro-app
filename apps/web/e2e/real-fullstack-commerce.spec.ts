@@ -133,6 +133,10 @@ async function completeSale(page: import("@playwright/test").Page, currency: "US
   await expect(paymentCurrency).toHaveCount(1);
   await paymentCurrency.selectOption(currency);
   await page.getByRole("button", { name: "Monto exacto", exact: true }).click();
+  const cashReceived = page.getByLabel("Efectivo recibido (solo cálculo de vuelto)", { exact: true });
+  await expect(cashReceived).toBeVisible();
+  await cashReceived.fill(currency === "USD" ? "12.00" : "400.00");
+  await expect(page.getByRole("status").filter({ hasText: "Vuelto a entregar" })).toBeVisible();
   const charge = page.getByRole("button", { name: "Cobrar venta", exact: true });
   await expect(charge).toBeEnabled();
   const responsePromise = page.waitForResponse((response) =>

@@ -2,6 +2,7 @@
 import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("./BarcodeScanner", () => ({ default: ({ onDetected, onClose }: { onDetected: (code: string) => void; onClose: () => void }) => (<div role="dialog" aria-label="Escáner de prueba"><button type="button" onClick={() => onDetected("7501234567890")}>Simular escaneo</button><button type="button" onClick={onClose}>Cerrar escáner</button></div>) }));
 import CatalogPanel from "./CatalogPanel";
 
 let container: HTMLDivElement;
@@ -126,6 +127,12 @@ describe("catalog panel", () => {
     expect(container.textContent).toContain("Café molido");
     expect(container.textContent).toContain("US$ 4,25");
     expect(container.textContent).toContain("Bs. 155,13");
+  });
+
+  it("scans a barcode into catalog search and immediately filters products", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({items:[],nextCursor:null,limit:100})).mockResolvedValueOnce(jsonResponse({items:[{id:"scan-1",is_active:true,sku:"SCAN-1",barcode:"7501234567890",name:"Producto escaneado",description:null,unit:"unidad",quantity_mode:"integer",price_usd:"2.0000"}],nextCursor:null,limit:100}));
+    await renderPanel({organizationId:"00000000-0000-4000-8000-000000000010",exchangeRate:null,exchangeRateStatus:"unavailable",canManage:false}); await act(async()=>{container.querySelector<HTMLButtonElement>(".catalog-search-scan")?.click();}); await act(async()=>{container.querySelector<HTMLButtonElement>('[role="dialog"] button')?.click();}); await act(async()=>{await new Promise(resolve=>setTimeout(resolve,0));});
+    expect(container.querySelector<HTMLInputElement>("#catalog-quick-search")?.value).toBe("7501234567890"); expect(String(vi.mocked(fetch).mock.calls[1]?.[0])).toContain("q=7501234567890"); expect(container.textContent).toContain("Producto escaneado");
   });
 
   it("shows an explicit empty state when a catalog search has no results", async () => {

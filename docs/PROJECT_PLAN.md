@@ -1,3 +1,19 @@
+# Plan vigente — Micro-PR 5 Escáner móvil + UX de vuelto + criterio de evidencia — 2026-11-21
+
+## Estado
+- Base exacta de la misión: 97b092ea8089207352ed6b30254464ed53d08592.
+- Micro-PR 5: rama feat/mobile-scanner-change-ux-evidence-criterion-20261121; PR OPEN / Draft; no merge ni auto-merge.
+- Alcance: UI web, tests jsdom/E2E, skill y ODD/continuidad; 0 API/backend, 0 SQL/migraciones, 0 package.json/dependencias/workflows.
+- Sin checkout local: validar exclusivamente con resultados reales de GitHub sobre el SHA final; no declarar pruebas locales.
+
+## Siguiente paso único
+Paquete final: favicon.svg + Tour Visual E2E de las 9 vistas en 390×844 y 1280×800 + docs/USER_MANUAL.md; después **Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53**.
+
+## Gates invariables
+AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; BCV_SYNC_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; **PRODUCTION: NOT READY**; presupuesto USD 0.
+
+---
+
 # Plan vigente — PR 4A integrada / Micro-PR 4B UI — 2026-11-21
 
 ## Estado

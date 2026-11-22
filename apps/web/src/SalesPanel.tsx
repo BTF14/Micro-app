@@ -82,6 +82,7 @@ export default function SalesPanel({
   const cartRef = useRef<CartLine[]>([]);
   const [currency, setCurrency] = useState<Currency>("USD");
   const [payments, setPayments] = useState<PaymentLine[]>(() => [{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
+  const [cashReceived, setCashReceived] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [error, setError] = useState("");
@@ -126,6 +127,25 @@ export default function SalesPanel({
     const { precision, scale } = paymentScale(currency);
     try { return sumNumeric(payments.filter((p) => p.amount.trim() !== "").map((p) => p.amount), precision, scale); } catch { return currency === "USD" ? "0.0000" : "0.00"; }
   }, [currency, payments]);
+  const hasCashPayment = payments.some((payment) => payment.method === "cash");
+  const cashPaymentTotal = useMemo(() => {
+    const { precision, scale } = paymentScale(currency);
+    try { return sumNumeric(payments.filter((payment) => payment.method === "cash" && payment.amount.trim() !== "").map((payment) => payment.amount), precision, scale); }
+    catch { return currency === "USD" ? "0.0000" : "0.00"; }
+  }, [currency, payments]);
+  const cashChange = useMemo(() => {
+    if (!cashReceived.trim() || !hasCashPayment || cart.length === 0 || (currency === "VES" && computed.totalVes === null)) return null;
+    try {
+      const { precision, scale } = paymentScale(currency);
+      const expected = parseNumeric(expectedPayment, currency === "USD" ? 14 : 16, scale);
+      const received = parseNumeric(cashReceived, precision, scale);
+      const cashTendered = parseNumeric(cashPaymentTotal, precision, scale);
+      if (expected <= 0n || cashTendered <= 0n) return null;
+      const difference = received - cashTendered;
+      return { kind: difference >= 0n ? "change" as const : "short" as const, amount: formatNumeric(difference >= 0n ? difference : -difference, precision, scale) };
+    } catch { return null; }
+  }, [cashReceived, hasCashPayment, cart.length, currency, computed.totalVes, expectedPayment, cashPaymentTotal]);
+
   const paymentMatches = useMemo(() => {
     try {
       const { precision, scale } = paymentScale(currency);
@@ -354,6 +374,7 @@ export default function SalesPanel({
   }
   function setPaymentCurrency(next: Currency) {
     setCurrency(next);
+    setCashReceived("");
     setPayments((current) => current.map((payment) => ({ ...payment, amount: "" })));
     resetIdempotency();
   }
@@ -419,6 +440,7 @@ export default function SalesPanel({
     commitCart([]);
     setLookupReset((value) => value + 1);
     setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
+    setCashReceived("");
     setCurrency("USD");
     setManualFxAcknowledgedRate(null);
     setNotice("Venta nueva lista.");
@@ -493,6 +515,7 @@ export default function SalesPanel({
                   </div>)}
                   <div className="sales-payment-actions"><button type="button" className="sales-secondary-button" onClick={addPayment} disabled={payments.length >= 10}>Agregar pago</button><button type="button" className="sales-secondary-button" onClick={fillExactAmount}>Monto exacto</button></div>
                   <p className={paymentMatches ? "sales-payment-match" : "sales-payment-pending"} role="status">Pagos: {currency === "USD" ? usd(paymentTotal) : ves(paymentTotal)} · Total requerido: {currency === "USD" ? usd(expectedPayment) : ves(expectedPayment)}</p>
+                  {hasCashPayment && cart.length > 0 && (currency !== "VES" || computed.totalVes !== null) && <div className="sales-cash-change"><label htmlFor="sales-cash-received">Efectivo recibido (solo cálculo de vuelto)</label><input id="sales-cash-received" aria-label="Efectivo recibido (solo cálculo de vuelto)" inputMode="decimal" autoComplete="off" placeholder={currency === "USD" ? "0,0000" : "0,00"} value={cashReceived} onChange={(event) => setCashReceived(normalizeDecimalInput(event.target.value))} />{cashChange && <p role="status" className={cashChange.kind === "change" ? "sales-cash-change-result" : "sales-cash-change-short"}>{cashChange.kind === "change" ? "Vuelto a entregar" : "Falta por completar"}: {currency === "USD" ? usd(cashChange.amount) : ves(cashChange.amount)}</p>}<small>El cálculo es orientativo: no cambia los pagos ni el importe neto registrado en la venta.</small></div>}
                 </section>
                 {usingManualFx && <label className="sales-manual-fx-ack"><input type="checkbox" checked={manualFxAcknowledged} onChange={(event) => setManualFxAcknowledgedRate(event.target.checked ? effectiveRate : null)} /> Confirmo que comuniqué al cliente la tasa manual de contingencia (no oficial BCV) antes de cobrar.</label>}
                 <button type="button" className="sales-primary-button sales-charge-button" onClick={() => void checkout()} disabled={!readyToCharge}>{checkoutBusy ? "Procesando venta…" : "Cobrar venta"}</button>

@@ -67,3 +67,16 @@ Excluded: SQL/migrations, `apps/api/**`, `packages/**`, `.github/workflows/**`, 
 - AC-1–AC-11 implemented/verified on the validated implementation SHA; documentation-only final head must retain the same green checks.
 - Physical camera hardware/browser combinations and OS permission prompts are not certified by simulated CI.
 - Next: inspect exact-SHA checks, fix failures only within the eleven authorized files, and keep PR OPEN / Draft without merge/auto-merge.
+
+
+## Micro-PR 5 — expansión a Productos/Inventario/Catálogo y UX de vuelto — 2026-11-21
+
+- Base autorizada: 97b092ea8089207352ed6b30254464ed53d08592; rama feat/mobile-scanner-change-ux-evidence-criterion-20261121.
+- Se reutiliza BarcodeScanner.tsx en ProductForm.tsx, InventoryPanel.tsx y CatalogPanel.tsx. El escaneo solo actualiza el campo/buscador; no guarda productos, no registra movimientos ni inicia ventas. QuickProductLookup existente en Consultar precio/Ventas no se sustituye.
+- Caja comunica apertura/cierre en cero para operación digital y explica que los cobros netos en efectivo alimentan el efectivo esperado en Reportes. No cambia el contrato de turnos.
+- SalesPanel añade un cálculo de vuelto en cliente: compara efectivo recibido contra la suma de asignaciones de pago marcadas como cash, en la moneda de liquidación. Es opcional, usa parseNumeric/sumNumeric/formatNumeric de @micro-app/money, no se incluye en el payload ni modifica payments.amount; un faltante es informativo y no bloquea el flujo multipago.
+- Skill .agents/skills/micro-app-evidence-criterion/SKILL.md establece evidencia verificable, desacuerdo técnico justificado y clasificación v1.1/v1.2/invariante. Cualquier cita de código/SQL debe revalidarse contra el HEAD real antes de cada revisión.
+- Pruebas añadidas/extendidas: lectura de scanner simulada para los tres puntos, copy de turnos, vuelto positivo/cero/faltante y payload checkout neto; E2E comprueba vuelto y guía de caja. Ejecución local no disponible; solo CI exact-SHA puede certificar.
+- Exclusiones: 0 API/backend, 0 migraciones/SQL, 0 package.json/dependencias/workflows; no favicon, Tour Visual ni docs/USER_MANUAL.md.
+- Gates permanecen AC-6 OPEN, FX contingency OFF, BCV sync OFF, Issue #53 OPEN/P0, freeze v1.1, PRODUCTION NOT READY y USD 0.
+- Siguiente paso único: favicon.svg + Tour Visual E2E de 9 vistas (390×844 y 1280×800) + docs/USER_MANUAL.md; después Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53.

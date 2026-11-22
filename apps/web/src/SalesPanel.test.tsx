@@ -86,6 +86,16 @@ describe("SalesPanel", () => {
     expect(container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto A"]')?.value).toBe("2.000");
   });
 
+  it("calculates exact cash change and shortage without changing the net checkout payment", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never).mockRejectedValueOnce(new Error("synthetic checkout stop")); await render(); await act(async () => { click("Agregar producto A"); click("Monto exacto"); });
+    const received=container.querySelector<HTMLInputElement>("#sales-cash-received"); if(!received)throw new Error("Cash received input missing");
+    await act(async()=>{setInputValue(received,"0.0010");}); expect(container.textContent).toContain("Vuelto a entregar: US$ 0,0008");
+    await act(async()=>{setInputValue(received,"0.0002");}); expect(container.textContent).toContain("Vuelto a entregar: US$ 0,00");
+    await act(async()=>{setInputValue(received,"0.0001");}); expect(container.textContent).toContain("Falta por completar: US$ 0,0001"); expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(false);
+    await act(async()=>{click("Cobrar venta");await new Promise(resolve=>setTimeout(resolve,0));}); const [,init]=vi.mocked(apiRequest).mock.calls[2] as unknown as [string,RequestInit]; const payload=JSON.parse(String(init.body)) as {payments:Array<{amount:string}>;[key:string]:unknown};
+    expect(payload.payments[0]?.amount).toBe("0.0002"); expect(payload).not.toHaveProperty("cash_received"); expect(payload).not.toHaveProperty("change");
+  });
+
   it("sums rounded VES per line with @micro-app/money arithmetic", async () => {
     vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
     await render();

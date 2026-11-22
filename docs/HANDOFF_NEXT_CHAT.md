@@ -1,3 +1,19 @@
+# Handoff vigente — Micro-PR 5 Escáner móvil, vuelto y criterio de evidencia — 2026-11-21
+
+## Punto de partida
+- Repositorio BTF14/Micro-app; base verificada main = 97b092ea8089207352ed6b30254464ed53d08592.
+- Rama feat/mobile-scanner-change-ux-evidence-criterion-20261121; PR OPEN / Draft, sin merge ni auto-merge.
+- Sin checkout local: no declarar verify, Vitest, build, typecheck, Playwright ni validador documental ejecutados localmente.
+- Cero backend/API, SQL/migraciones, package manifests, dependencias o workflows. Sin favicon, Tour Visual ni Manual en esta PR.
+
+## Siguiente paso único
+Paquete final: favicon.svg + Tour Visual E2E de las 9 vistas en 390×844 y 1280×800 + docs/USER_MANUAL.md; luego **Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53**.
+
+## Gates invariables
+AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; BCV_SYNC_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; **PRODUCTION: NOT READY**; presupuesto USD 0.
+
+---
+
 # Handoff vigente — Micro-PR 4B Cierres/Reportes/CSV UI — 2026-11-21
 
 ## Punto de partida

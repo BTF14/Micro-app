@@ -1,3 +1,16 @@
+# Estado vigente — Micro-PR 5 Escáner móvil + vuelto efectivo + criterio de evidencia — 2026-11-21
+
+- **Base exacta verificada:** main = 97b092ea8089207352ed6b30254464ed53d08592; no había PRs abiertas al iniciar.
+- **Micro-PR 5:** rama feat/mobile-scanner-change-ux-evidence-criterion-20261121; PR OPEN / Draft al publicarse. Skill evidence-criterion, escáner compartido en Productos/Inventario/Catálogo, guía de Caja, cálculo local de vuelto, pruebas jsdom/E2E y continuidad ODD.
+- **Límites:** 0 backend/API, 0 SQL/migraciones, 0 package.json/dependencias/workflows. Sin favicon, Tour Visual ni Manual de usuario en esta PR.
+- **Validación:** sin checkout local/terminal; no afirmar verify/Vitest/Playwright/validador local. Exigir 100 % de check-runs y workflows GitHub Actions en el SHA final exacto.
+- **Gates invariables:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; BCV_SYNC_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; **PRODUCTION: NOT READY**; presupuesto USD 0.
+
+## Siguiente paso único
+Paquete final: favicon.svg + Tour Visual E2E de las 9 vistas en 390×844 y 1280×800 + docs/USER_MANUAL.md; después **Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53**.
+
+---
+
 # Estado vigente — Micro-PR 4B UI Cierres/Reportes/CSV — 2026-11-21
 
 - **main:** `37cab712cb2ced5c08cbf9f762a7e05c935fe422`, merge commit de PR #402.

@@ -2,6 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("./BarcodeScanner", () => ({ default: ({ onDetected, onClose }: { onDetected: (code: string) => void; onClose: () => void }) => (<div role="dialog" aria-label="Escáner de prueba"><button type="button" onClick={() => onDetected("7501234567890")}>Simular escaneo</button><button type="button" onClick={onClose}>Cerrar escáner</button></div>) }));
 import ProductForm from "./ProductForm";
 
 let container: HTMLDivElement;
@@ -43,6 +44,12 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   vi.stubGlobal("fetch", vi.fn());
+  it("fills barcode from the shared scanner", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    await act(async () => { container.querySelector<HTMLButtonElement>(".product-barcode-scan")?.click(); });
+    await act(async () => { container.querySelector<HTMLButtonElement>('[role="dialog"] button')?.click(); });
+    expect(field("Código de barras").value).toBe("7501234567890"); expect(container.querySelector('[role="dialog"]')).toBeNull();
+  });
 });
 
 afterEach(async () => {

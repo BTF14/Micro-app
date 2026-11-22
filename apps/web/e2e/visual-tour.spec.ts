@@ -29,6 +29,12 @@ async function installStubs(page: Page) {
       user: { id: "user-ana", email: "ana@example.test", display_name: "Ana Pérez" },
       organizations: [{ id: organizationId, name: "Tienda Centro", slug: "tienda-centro", role: "owner" }],
     });
+    if (path.endsWith("/bcv/sync-state")) return json({
+      source: "BCV", health: "succeeded", lastAttemptAt: "2026-11-21T13:00:00.000Z",
+      lastSuccessAt: "2026-11-21T13:00:00.000Z", lastOutcome: "success", lastErrorCode: null,
+      lastEffectiveDate: "2026-11-21", updatedAt: "2026-11-21T13:00:00.000Z",
+      attemptAgeSeconds: 120, isStaleRunning: false, staleRunningThresholdSeconds: 900,
+    });
     if (path.endsWith("/exchange-rates/latest")) return json({
       rate: "897.53830000", effectiveDate: "2026-11-21", operationDate: "2026-11-21",
       fetchedAt: "2026-11-21T13:00:00.000Z", source: "BCV", status: "current",

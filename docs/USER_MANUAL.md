@@ -89,7 +89,7 @@ Aquí puedes consultar **Cierres de caja**, **Ventas** e **Inventario**, según 
 - En **Cierres de caja**, elige un turno reciente para revisar fondo inicial, conteo final, ventas, efectivo esperado, diferencias y desglose de pagos.
 - En **Ventas**, selecciona el período y la fecha que deseas consultar. Cuando corresponda, puedes elegir un rango personalizado.
 - En **Inventario**, revisa las existencias y los valores que tu rol tenga permitidos.
-- Usa **Descargar CSV** para guardar el reporte y abrirlo en una hoja de cálculo. El archivo contiene los datos del informe consultado; guárdalo únicamente en lugares autorizados por tu negocio.
+- Usa **Exportar CSV** para guardar el reporte y abrirlo en una hoja de cálculo. El archivo contiene los datos del informe consultado; guárdalo únicamente en lugares autorizados por tu negocio.
 
 ## 4. Escáner con la cámara del teléfono
 

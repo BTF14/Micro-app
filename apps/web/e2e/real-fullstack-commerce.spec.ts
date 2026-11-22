@@ -298,6 +298,8 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   // 3. Open a real cashier shift on the seeded branch/register.
   await navigateByKeyboard(cashierPage, "Caja y turnos");
   await expect(cashierPage.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
+  await expect(cashierPage.getByText(/opera 100 % digital/)).toBeVisible();
+  await expect(cashierPage.getByText(/ventas en efectivo netas/)).toBeVisible();
   await expectNoHorizontalOverflow(cashierPage, "mobile register shifts");
   const branchSelect = cashierPage.locator("select").filter({
     has: cashierPage.locator(`option[value="${fixture.branchId}"]`),

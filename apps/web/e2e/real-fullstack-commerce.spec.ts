@@ -221,7 +221,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await page.getByLabel("SKU", { exact: true }).fill(fixture.productSku);
   await page.getByLabel("Nombre", { exact: true }).fill(fixture.productName);
   await page.getByLabel("Código de barras", { exact: true }).fill(`BAR-${fixture.productSku}`);
-  await expect(page.getByRole("button", { name: "Escanear", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Nuevo producto" }).getByRole("button", { name: "Escanear", exact: true })).toBeVisible();
   await page.getByLabel("Unidad", { exact: true }).fill("unidad");
   await page.getByLabel("Descripción", { exact: true }).fill("Synthetic product for real full-stack CI.");
   await page.getByLabel(/Precio USD/).fill("10.0000");

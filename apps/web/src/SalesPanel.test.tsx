@@ -371,7 +371,7 @@ describe("SalesPanel", () => {
     await act(async () => { setInputValue(received, "0.0003"); });
     expect(container.textContent).toContain("Vuelto a entregar: US$ 0,0001");
     await act(async () => { setInputValue(received, "0.0002"); });
-    expect(container.textContent).toContain("Vuelto a entregar: US$ 0,0000");
+    expect(container.textContent).toContain("Vuelto a entregar: US$ 0,00");
     await act(async () => { setInputValue(received, "0.0001"); });
     expect(container.textContent).toContain("Falta: US$ 0,0001");
     await act(async () => { click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });

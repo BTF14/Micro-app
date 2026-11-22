@@ -1,3 +1,18 @@
+# Handoff vigente — Micro-PR 5 Scanner móvil / Vuelto / Criterio de evidencia — 2026-11-21
+
+## Punto de partida
+- Repositorio BTF14/Micro-app; base exacta main = 97b092ea8089207352ed6b30254464ed53d08592.
+- Rama feat/mobile-scanner-cash-change-evidence-criterion-20261121; mantener PR OPEN / Draft, sin merge ni auto-merge.
+- Cambios UI: escáner reutilizado en ProductForm, InventoryPanel y CatalogPanel; QuickProductLookup existente intacto; vuelto opcional client-only con decimal bigint; copy de turnos reconciliado; skill evidence-criterion.
+- Exclusiones: apps/api/**, SQL/migraciones, package.json, dependencias, .github/workflows/**, favicon.svg, Tour Visual y docs/USER_MANUAL.md.
+- Sin checkout local: no declarar Vitest/build/typecheck/Playwright/validador local.
+- Gates: AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; BCV_SYNC_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; USD 0.
+
+## Siguiente paso único
+Paquete final: favicon.svg + Tour Visual E2E de las 9 vistas (390×844 y 1280×800) + docs/USER_MANUAL.md. Solo después: Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53.
+
+---
+
 # Handoff vigente — Micro-PR 4B Cierres/Reportes/CSV UI — 2026-11-21
 
 ## Punto de partida

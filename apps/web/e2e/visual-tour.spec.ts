@@ -160,21 +160,14 @@ test("visual tour: nine owner views at mobile and desktop sizes", async ({ page 
         expect(operationalText).not.toContain("No disponible");
         expect(operationalText).not.toContain("branch-centro");
       }
-      if (view.id === "inventory") {
-        const history = page.getByRole("heading", { name: "Recepciones recientes", exact: true });
-        await expect(history).toBeVisible();
-        await history.scrollIntoViewIfNeeded();
-        await expect(page.locator(".inventory-receipt-history")).toContainText("1 línea");
-        await expect(page.locator(".inventory-receipt-history")).toContainText(/21 nov\. 2026/);
-        await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-inventario-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
-      }
-      if (view.id === "reports") {
-        const breakdown = page.getByRole("heading", { name: "Desglose de pagos", exact: true });
-        await expect(breakdown).toBeVisible();
-        await breakdown.scrollIntoViewIfNeeded();
-        await expect(page.locator(".reports-table-wrap")).toContainText("Moneda");
-        await expect(page.locator(".reports-table-wrap")).toContainText("12,5000");
-        await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-reportes-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
+      if (view.id === "catalog" || view.id === "inventory") {
+        const tableWrap = page.locator(".catalog-table-wrap");
+        await expect(tableWrap).toBeVisible();
+        const tableOverflow = await tableWrap.evaluate((element) => ({
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+        }));
+        expect(tableOverflow.scrollWidth).toBeLessThanOrEqual(tableOverflow.clientWidth + 1);
       }
       await expect(page.locator(".sidebar")).toHaveAttribute("aria-label", "Navegación principal");
       await expect(page.locator("main [role='alert']")).toHaveCount(0);
@@ -186,7 +179,30 @@ test("visual tour: nine owner views at mobile and desktop sizes", async ({ page 
       }));
       expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.innerWidth + 1);
       const filename = `${String(index + 1).padStart(2, "0")}-${view.id === "quick-lookup" ? "consultar-precio" : view.id === "register-shifts" ? "caja-y-turnos" : view.id === "organization-structure" ? "estructura" : view.id === "fx-contingency" ? "gestion-cambiaria" : view.id === "overview" ? "resumen" : view.id === "catalog" ? "productos" : view.id === "inventory" ? "inventario" : view.id === "sales" ? "ventas" : "reportes"}-${viewport.name}-${viewport.width}x${viewport.height}.png`;
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `apps/web/test-results/visual-tour/${filename}`, fullPage: false, animations: "disabled" });
+      if (view.id === "inventory") {
+        const history = page.getByRole("heading", { name: "Recepciones recientes", exact: true });
+        await history.scrollIntoViewIfNeeded();
+        await expect(page.locator(".inventory-receipt-history")).toContainText("1 línea");
+        await expect(page.locator(".inventory-receipt-history")).toContainText(/21 nov\\. 2026/);
+        await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-inventario-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
+      }
+      if (view.id === "sales") {
+        await expect(page.locator(".sales-payment-match")).toBeVisible();
+        const chargeButton = page.getByRole("button", { name: "Cobrar venta", exact: true });
+        await chargeButton.scrollIntoViewIfNeeded();
+        await expect(chargeButton).toBeVisible();
+        await expect(page.getByText(/Pagos:.*Total requerido:/)).toBeVisible();
+        await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-ventas-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
+      }
+      if (view.id === "reports") {
+        const breakdown = page.getByRole("heading", { name: "Desglose de pagos", exact: true });
+        await breakdown.scrollIntoViewIfNeeded();
+        await expect(page.locator(".reports-table-wrap")).toContainText("Moneda");
+        await expect(page.locator(".reports-table-wrap")).toContainText("12,5000");
+        await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-reportes-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
+      }
       expect(unexpectedPageErrors, `Errores inesperados en ${view.label} ${viewport.width}x${viewport.height}`).toEqual([]);
     }
   }

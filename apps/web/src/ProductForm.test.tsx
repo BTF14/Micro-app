@@ -44,12 +44,6 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   vi.stubGlobal("fetch", vi.fn());
-  it("fills barcode from the shared scanner", async () => {
-    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
-    await act(async () => { container.querySelector<HTMLButtonElement>(".product-barcode-scan")?.click(); });
-    await act(async () => { container.querySelector<HTMLButtonElement>('[role="dialog"] button')?.click(); });
-    expect(field("Código de barras").value).toBe("7501234567890"); expect(container.querySelector('[role="dialog"]')).toBeNull();
-  });
 });
 
 afterEach(async () => {
@@ -167,6 +161,13 @@ describe("product form", () => {
 
     expect(container.textContent).toContain("no pueden ser negativos");
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("fills barcode from the shared scanner when creating a product", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    await act(async () => { container.querySelector<HTMLButtonElement>(".product-barcode-scan")?.click(); });
+    await act(async () => { container.querySelector<HTMLButtonElement>('[role="dialog"] button')?.click(); });
+    expect(field("Código de barras").value).toBe("7501234567890"); expect(container.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it("fills barcode while editing an existing product", async () => {

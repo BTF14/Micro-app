@@ -111,7 +111,7 @@ const views = [
   { id: "reports", label: "Reportes", nav: "Reportes", heading: "Reportes" },
 ] as const;
 
-test("visual tour: nine owner views at mobile and desktop sizes", async ({ page }) => {
+test("visual tour: nine owner views at mobile, tablet and desktop sizes", async ({ page }) => {
   await installStubs(page);
   const unexpectedPageErrors: string[] = [];
   page.on("pageerror", (error) => unexpectedPageErrors.push(error.message));

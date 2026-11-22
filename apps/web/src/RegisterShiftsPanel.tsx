@@ -137,7 +137,7 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
               <div className="register-shift-card-head"><div><span className="register-shift-state open">Turno abierto</span><h2>Tu caja está en operación</h2></div><span className="register-shift-time">Desde {dateTime(shift.openedAt)}</span></div>
               <dl className="register-shift-values"><div><dt>Fondo inicial USD</dt><dd>$ {money(shift.openingCashUsd)}</dd></div><div><dt>Fondo inicial VES</dt><dd>Bs. {money(shift.openingCashVes)}</dd></div></dl>
               <form className="register-shift-form" onSubmit={closeShift}>
-                <h3>Cierre de turno</h3><p>Introduce el efectivo contado al cierre en cada moneda. Este registro no calcula diferencias ni efectivo esperado.</p>
+                <h3>Cierre de turno</h3><p>Introduce el efectivo contado al cierre. Si tu tienda opera 100 % digital (Pago móvil, tarjeta o transferencia), puedes abrir y cerrar con $ 0,00 y Bs. 0,00. Si recibes efectivo y entregas vuelto, aunque abras con 0,00, Reportes suma las ventas en efectivo netas al efectivo esperado.</p>
                 <label className="register-shifts-field"><span>Conteo final USD</span><input inputMode="decimal" required value={closingUsd} onChange={(event) => { setClosingUsd(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
                 <label className="register-shifts-field"><span>Conteo final VES</span><input inputMode="decimal" required value={closingVes} onChange={(event) => { setClosingVes(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
                 {confirmClose && <p className="register-shifts-confirm" role="status">Confirma que ambos importes corresponden al conteo físico final. El cierre no se puede editar después.</p>}
@@ -160,7 +160,7 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
           ))}
         </>
       )}
-      <p className="register-shifts-footnote">Responsable: {userName}. Esta primera versión registra apertura y cierre; no sustituye el arqueo, las ventas, los cobros ni el reporte de diferencias.</p>
+      <p className="register-shifts-footnote">Responsable: {userName}. Consulta Reportes → Cierres de caja para revisar el efectivo esperado, el desglose de pagos y las diferencias del turno.</p>
     </section>
   );
 }

@@ -133,6 +133,9 @@ async function completeSale(page: import("@playwright/test").Page, currency: "US
   await expect(paymentCurrency).toHaveCount(1);
   await paymentCurrency.selectOption(currency);
   await page.getByRole("button", { name: "Monto exacto", exact: true }).click();
+  const netCashAmount = await page.locator(".sales-payment-row").first().locator("input").first().inputValue();
+  await page.getByLabel("Efectivo recibido (solo cálculo de vuelto)", { exact: true }).fill(netCashAmount);
+  await expect(page.getByRole("status").filter({ hasText: "Vuelto a entregar" })).toBeVisible();
   const charge = page.getByRole("button", { name: "Cobrar venta", exact: true });
   await expect(charge).toBeEnabled();
   const responsePromise = page.waitForResponse((response) =>
@@ -218,6 +221,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await page.getByLabel("SKU", { exact: true }).fill(fixture.productSku);
   await page.getByLabel("Nombre", { exact: true }).fill(fixture.productName);
   await page.getByLabel("Código de barras", { exact: true }).fill(`BAR-${fixture.productSku}`);
+  await expect(page.getByRole("region", { name: "Nuevo producto" }).getByRole("button", { name: "Escanear", exact: true })).toBeVisible();
   await page.getByLabel("Unidad", { exact: true }).fill("unidad");
   await page.getByLabel("Descripción", { exact: true }).fill("Synthetic product for real full-stack CI.");
   await page.getByLabel(/Precio USD/).fill("10.0000");
@@ -233,6 +237,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
 
   // 2. Receive inventory through the real receipt UI and database function.
   await navigateByKeyboard(page, "Inventario");
+  await expect(page.getByRole("button", { name: "Escanear", exact: true })).toBeVisible();
   const receiptForm = page.locator("form.inventory-operation-form").first();
   await expect(receiptForm.getByRole("heading", { name: "Recibir mercancía" })).toBeVisible();
   await receiptForm.getByLabel("Cantidad", { exact: true }).fill("5");
@@ -311,6 +316,7 @@ test("real catalog → inventory receipt → register → USD/VES POS → close 
   await cashierPage.getByRole("button", { name: "Abrir turno", exact: true }).click();
   expect((await openShiftPromise).status()).toBe(201);
   await expect(cashierPage.getByText("Turno abierto correctamente. La apertura quedó registrada en auditoría.")).toBeVisible();
+  await expect(cashierPage.getByText(/100 % digital/)).toBeVisible();
 
   // 4. Two real atomic checkouts exercise both supported settlement currencies.
   await navigateByKeyboard(cashierPage, "Ventas");

@@ -3,6 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import InventoryPanel from "./InventoryPanel";
+vi.mock("./BarcodeScanner", () => ({ default: ({ onDetected, onClose }: { onDetected: (code: string) => void; onClose: () => void }) => <div role="dialog"><button type="button" onClick={() => onDetected("750123")}>Entregar código de prueba</button><button type="button" onClick={onClose}>Cerrar</button></div> }));
 
 let container: HTMLDivElement;
 let root: Root;
@@ -165,4 +166,19 @@ describe("inventory panel", () => {
     expect(container.textContent).toContain("todavía no tiene almacenes activos");
     expect(fetch).toHaveBeenCalledTimes(2);
   });
+  it("scans a barcode into the inventory search and immediately filters the selected warehouse", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
+      .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await renderPanel();
+    await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Escanear")?.click(); });
+    await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Entregar código de prueba")?.click(); });
+    await flush();
+    expect(container.querySelector<HTMLInputElement>("#inventory-quick-search")?.value).toBe("750123");
+    expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=750123");
+  });
+
 });

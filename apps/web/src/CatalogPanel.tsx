@@ -5,6 +5,7 @@ import { apiRequest } from "./auth";
 import ProductForm from "./ProductForm";
 import CatalogCsvImportPanel from "./CatalogCsvImportPanel";
 import "./catalog.css";
+import BarcodeScanner from "./BarcodeScanner";
 
 type ExchangeRateStatus = "current" | "scheduled" | "stale" | "unavailable";
 
@@ -70,6 +71,7 @@ export default function CatalogPanel({
   const [error, setError] = useState("");
   const [searchText, setSearchText] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showImportPanel, setShowImportPanel] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(null);
@@ -184,6 +186,7 @@ export default function CatalogPanel({
         <label className="catalog-search-label" htmlFor="catalog-quick-search">Buscar productos</label>
         <input id="catalog-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={searchText} onChange={(event) => setSearchText(event.target.value)} />
         <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>
+        <button className="catalog-search-scan" type="button" onClick={() => setScannerOpen(true)} disabled={loading}>Escanear</button>
         {activeSearch && <button className="catalog-search-clear" type="button" onClick={() => { setSearchText(""); setActiveSearch(""); void fetchPage(); }}>Limpiar</button>}
       </form>
 
@@ -259,6 +262,7 @@ export default function CatalogPanel({
           )}
         </>
       ) : null}
+      {scannerOpen && <BarcodeScanner onDetected={(code) => { setScannerOpen(false); setSearchText(code); setActiveSearch(code); void fetchPage(undefined, false, code); }} onClose={() => setScannerOpen(false)} />}
     </section>
   );
 }

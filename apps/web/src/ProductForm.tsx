@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { formatMoneyForDisplay, parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
 import { normalizeDecimalInput } from "./decimal";
+import BarcodeScanner from "./BarcodeScanner";
 
 type CatalogProduct = {
   id: string;
@@ -56,6 +57,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [quantityModeManuallySet, setQuantityModeManuallySet] = useState(Boolean(product));
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   function update<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -148,10 +150,13 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
           Nombre
           <input value={draft.name} onChange={(event) => update("name", event.target.value)} maxLength={240} required />
         </label>
-        <label>
-          Código de barras
-          <input value={draft.barcode} onChange={(event) => update("barcode", event.target.value)} maxLength={128} />
-        </label>
+        <div className="product-barcode-field">
+          <label htmlFor="product-barcode">Código de barras</label>
+          <div className="product-barcode-row">
+            <input id="product-barcode" value={draft.barcode} onChange={(event) => update("barcode", event.target.value)} maxLength={128} autoComplete="off" />
+            <button type="button" className="catalog-search-scan" onClick={() => setScannerOpen(true)} disabled={saving}>Escanear</button>
+          </div>
+        </div>
         <label>
           Unidad
           <input value={draft.unit} onChange={(event) => {
@@ -204,6 +209,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
           </button>
         </div>
       </form>
+      {scannerOpen && <BarcodeScanner onDetected={(code) => { update("barcode", code); setScannerOpen(false); }} onClose={() => setScannerOpen(false)} />}
     </section>
   );
 }

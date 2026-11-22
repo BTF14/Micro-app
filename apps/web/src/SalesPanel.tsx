@@ -18,7 +18,7 @@ type Shift = { shift_id?: string; id?: string; branch_id: string; branch_name?: 
 type Warehouse = { id: string; name: string; code: string; is_active: boolean };
 type FxPanelState = { commercial_enabled: boolean; authorization: { id: string; rate: string; expires_at: string } | null };
 type CartLine = { product: QuickLookupProduct; quantity: string; quantityInput: string; quantityValid: boolean };
-type PaymentLine = { id: string; method: PaymentMethod; amount: string; reference: string };
+type PaymentLine = { id: string; method: PaymentMethod; amount: string; reference: string; cashReceived?: string };
 type SaleLineReceipt = { product_name_snapshot: string; sku_snapshot: string; unit_snapshot: string; quantity_mode_snapshot: "integer" | "fractional"; quantity: string; unit_price_usd: string; line_total_usd: string; line_total_ves: string };
 type SalePaymentReceipt = { method: PaymentMethod; currency: Currency; amount: string; reference: string | null };
 type SaleReceipt = {
@@ -338,6 +338,25 @@ export default function SalesPanel({
     resetIdempotency();
   }
 
+  function cashChangeMessage(payment: PaymentLine): string | null {
+    const receivedInput = payment.cashReceived?.trim() ?? "";
+    if (!receivedInput) return null;
+    const { precision, scale } = paymentScale(currency);
+    try {
+      const dueInput = payment.amount.trim() || (payments.length === 1 ? expectedPayment : "");
+      if (!dueInput) return "Completa el importe de este pago en efectivo para calcular el vuelto.";
+      const received = parseNumeric(receivedInput, precision, scale);
+      const due = parseNumeric(dueInput, precision, scale);
+      const difference = received - due;
+      const formatted = formatNumeric(difference < 0n ? -difference : difference, precision, scale);
+      return difference >= 0n
+        ? `Vuelto a entregar: ${currency === "USD" ? usd(formatted) : ves(formatted)}`
+        : `Falta: ${currency === "USD" ? usd(formatted) : ves(formatted)}`;
+    } catch {
+      return "Introduce un importe válido para calcular el vuelto.";
+    }
+  }
+
   function updatePayment(id: string, patch: Partial<PaymentLine>) {
     setPayments((current) => current.map((payment) => payment.id === id ? { ...payment, ...patch } : payment));
     resetIdempotency();
@@ -354,7 +373,7 @@ export default function SalesPanel({
   }
   function setPaymentCurrency(next: Currency) {
     setCurrency(next);
-    setPayments((current) => current.map((payment) => ({ ...payment, amount: "" })));
+    setPayments((current) => current.map((payment) => ({ ...payment, amount: "", cashReceived: "" })));
     resetIdempotency();
   }
   function fillExactAmount() {
@@ -489,6 +508,8 @@ export default function SalesPanel({
                     <label><span>Método</span><select value={payment.method} onChange={(event) => updatePayment(payment.id, { method: event.target.value as PaymentMethod })}>{PAYMENT_METHODS.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}</select></label>
                     <label><span>Monto ({currency})</span><input inputMode="decimal" value={payment.amount} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { amount: normalizeDecimalInput(event.target.value) })} /></label>
                     <label className="sales-payment-reference"><span>Referencia (opcional)</span><input maxLength={128} value={payment.reference} onChange={(event) => updatePayment(payment.id, { reference: event.target.value })} /></label>
+                    {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && <label className="sales-payment-reference"><span>Efectivo recibido (solo cálculo de vuelto)</span><input inputMode="decimal" value={payment.cashReceived ?? ""} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { cashReceived: normalizeDecimalInput(event.target.value) })} /></label>}
+                    {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && payment.cashReceived?.trim() && <p className="sales-cash-change" role="status">{cashChangeMessage(payment)}</p>}
                     {payments.length > 1 && <button type="button" className="sales-remove-payment" onClick={() => removePayment(payment.id)} aria-label={`Quitar pago ${index + 1}`}>Quitar</button>}
                   </div>)}
                   <div className="sales-payment-actions"><button type="button" className="sales-secondary-button" onClick={addPayment} disabled={payments.length >= 10}>Agregar pago</button><button type="button" className="sales-secondary-button" onClick={fillExactAmount}>Monto exacto</button></div>

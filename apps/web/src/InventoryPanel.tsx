@@ -3,6 +3,7 @@ import { parseNumeric } from "@micro-app/money";
 import { apiRequest } from "./auth";
 import { formatLocalizedDecimal, normalizeDecimalInput } from "./decimal";
 import "./catalog.css";
+import BarcodeScanner from "./BarcodeScanner";
 
 type Branch = { id: string; name: string; slug: string };
 type Warehouse = { id: string; code: string; name: string; is_active: boolean };
@@ -54,6 +55,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [inventorySearch, setInventorySearch] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
   const [receiptReason, setReceiptReason] = useState("");
   const [receiptProductId, setReceiptProductId] = useState("");
@@ -276,6 +278,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
         <label className="catalog-search-label" htmlFor="inventory-quick-search">Buscar en este almacén</label>
         <input id="inventory-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={inventorySearch} onChange={(event) => setInventorySearch(event.target.value)} />
         <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>
+        <button className="catalog-search-scan" type="button" onClick={() => setScannerOpen(true)} disabled={!warehouseId || loading}>Escanear</button>
         {inventorySearch && <button className="catalog-search-clear" type="button" onClick={() => { setInventorySearch(""); setReceiptProductId(""); setCountProductId(""); void fetchBalances(); }}>Limpiar</button>}
       </form>
       {error && <p className="catalog-error" role="alert">{error}</p>}
@@ -396,6 +399,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
           )}
         </>
       ) : null}
+      {scannerOpen && <BarcodeScanner onDetected={(code) => { setScannerOpen(false); setInventorySearch(code); setReceiptProductId(""); setCountProductId(""); void fetchBalances(undefined, code); }} onClose={() => setScannerOpen(false)} />}
     </section>
   );
 }

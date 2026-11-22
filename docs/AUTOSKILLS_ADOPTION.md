@@ -113,3 +113,14 @@ Do not create a fabricated lockfile, claim a successful install without command 
 - AutoSkills registry entries: https://github.com/midudev/autoskills/tree/main/packages/autoskills/skills-registry
 
 These are research leads, not claims that those third-party skills were installed. Prefer a registry-verified package over manual download; adapt only the relevant procedures to this repository and check license, security, and version compatibility first.
+
+
+## Skill local: micro-app-evidence-criterion — 2026-11-21
+
+- **Tipo/origen:** skill propia del repositorio, creada localmente en `.agents/skills/micro-app-evidence-criterion/SKILL.md`; no es un bundle externo ni una instalación de AutoSkills/ECC. No hay URL de fuente externa ni texto/código de terceros reutilizado.
+- **Motivo de selección:** estandarizar revisión con evidencia viva de código, migraciones, triggers, grants y tests; evitar aprobación por complacencia; separar mitigaciones v1.1 ($0/0 SQL), diferimientos estructurales v1.2 e invariantes no negociables.
+- **Compatibilidad:** instrucciones Markdown abiertas `SKILL.md`, enfocadas al stack real del repo; no ejecuta scripts, hooks, CLI, MCP ni dependencias. No contiene secretos ni datos reales.
+- **Licencia:** no se incorporó licencia de terceros ni se copió un bundle. La redistribución del archivo queda sujeta a la licencia del repositorio; verificar el archivo LICENSE vigente antes de extraerlo o publicarlo por separado.
+- **Preview/instalación:** no se ejecutó AutoSkills dry-run, CLI ni registro externo para esta autoría local; no se generó `skills-lock.json`, no se declara instalación externa ni verificación de registry/hash.
+- **Identidad del archivo:** Git blob SHA `d086399c8a24af2a7f5c1c719ba61e3fa5a771b4` en el commit inicial de la skill; volver a consultar el blob en el SHA final de la PR antes de futuras actualizaciones.
+- **Verificación/limitaciones:** el skill no es código ejecutable. No se ejecutó un linter específico de skills; la validación documental ODD corre como workflow independiente de GitHub Actions y debe comprobarse sobre el SHA final. La guía exige revalidar paths/line numbers porque cambian entre commits.

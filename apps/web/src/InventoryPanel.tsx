@@ -285,7 +285,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       {notice && <p className="catalog-success" role="status">{notice}</p>}
       {canManageInventory && warehouseId && manageableProducts.length > 0 && (
         <div className="inventory-operations">
-          <p className="inventory-batch-note">El catálogo y el inventario no tienen un límite total de 1.000 productos. Cada envío o tanda admite hasta 500 líneas (MAX_LINES = 500). Si necesitas registrar más de 500 productos, hazlo en doble tanda de hasta 500 productos cada una.</p>
+          <p className="inventory-batch-note">El catálogo y el inventario no tienen un límite total de 1.000 productos. Cada envío o tanda admite hasta 500 productos. Si necesitas registrar más de 500 productos, divídelos en tandas de hasta 500 productos cada una.</p>
           <form className="inventory-operation-form" onSubmit={submitReceipt}>
             <h2>Recibir mercancía</h2>
             <label>Producto
@@ -324,7 +324,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       {canManageInventory && receipts.length > 0 && (
         <section className="inventory-receipt-history" aria-label="Recepciones recientes">
           <h2>Recepciones recientes</h2>
-          <ul>{receipts.map((receipt) => <li key={receipt.id}><strong>{receipt.reason}</strong><span>{receipt.line_count} líneas · {new Date(receipt.created_at).toLocaleString()}</span></li>)}</ul>
+          <ul>{receipts.map((receipt) => <li key={receipt.id}><strong>{receipt.reason}</strong><span>{Number(receipt.line_count) === 1 ? "1 línea" : `${receipt.line_count} líneas`} · {new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(new Date(receipt.created_at))}</span></li>)}</ul>
         </section>
       )}
 

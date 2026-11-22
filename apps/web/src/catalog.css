@@ -36,10 +36,10 @@
 .catalog-summary { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 0.65rem; color: #87918a; font-size: 0.68rem; }
 .catalog-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 1rem; background: #fff; }
 .catalog-table { width: 100%; border-collapse: collapse; text-align: left; }
-.catalog-table th { padding: 0.85rem 1rem; border-bottom: 1px solid var(--line); color: #87918a; background: #fafbf9; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
-.catalog-table td { padding: 0.95rem 1rem; border-bottom: 1px solid #f0f2ee; color: #33443b; font-size: 0.78rem; white-space: nowrap; }
+.catalog-table th { padding: 0.78rem 0.65rem; border-bottom: 1px solid var(--line); color: #87918a; background: #fafbf9; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+.catalog-table td { padding: 0.78rem 0.65rem; border-bottom: 1px solid #f0f2ee; color: #33443b; font-size: 0.78rem; white-space: nowrap; }
 .catalog-table tbody tr:last-child td { border-bottom: 0; }
-.catalog-table td:first-child { min-width: 13rem; white-space: normal; }
+.catalog-table td:first-child { min-width: 10rem; white-space: normal; }
 .catalog-table td:first-child strong, .catalog-product-meta { display: block; }
 .catalog-table td:first-child strong { color: #253c35; font-size: 0.79rem; font-weight: 650; }
 .catalog-product-meta { margin-top: 0.25rem; color: #87918a; font-size: 0.65rem; }
@@ -94,18 +94,6 @@
  .catalog-search { align-items:stretch; }
  .catalog-search input { flex-basis:100%; }
  .catalog-search-submit,.catalog-search-clear { flex:1 1 40%; }
- .catalog-table-wrap { overflow:visible; border:0; background:transparent; }
- .catalog-table,.catalog-table tbody,.catalog-table tr,.catalog-table td { display:block; width:100%; }
- .catalog-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
- .catalog-table tbody { display:grid; gap:.7rem; }
- .catalog-table tr { padding:.85rem; border:1px solid var(--line); border-radius:.8rem; background:#fff; }
- .catalog-table td { display:flex; align-items:center; justify-content:space-between; gap:.7rem; padding:.42rem 0; border:0; white-space:normal; text-align:right; }
- .catalog-table td[data-label="Producto"] { min-width:0; display:block; text-align:left; }
- .catalog-table td[data-label]:not([data-label="Producto"])::before { content:attr(data-label); color:var(--muted); font-size:.68rem; font-weight:500; }
- .inventory-table { width:100%; border-collapse:separate; border-spacing:0 .75rem; }
- .inventory-table tbody tr { padding:.75rem; border:1px solid var(--line); border-radius:.75rem; background:#fff; }
- .inventory-table td { display:grid; grid-template-columns:minmax(7rem,42%) minmax(0,1fr); gap:.5rem; padding:.45rem 0; text-align:right; overflow-wrap:anywhere; }
- .inventory-table td[data-label="Producto"] { display:block; text-align:left; border-bottom:1px solid var(--line); padding-bottom:.65rem; margin-bottom:.25rem; }
  .inventory-operations { grid-template-columns:minmax(0,1fr); }
  .inventory-operation-form { min-width:0; }
 }
@@ -188,3 +176,19 @@
 
 .catalog-search-scan{min-height:2.75rem;padding:.6rem .9rem;border:1px solid var(--petrol);border-radius:.6rem;color:var(--petrol);background:#fff;font:inherit;font-size:.75rem;font-weight:650;cursor:pointer}.catalog-search-scan:disabled{opacity:.55;cursor:not-allowed}
 .product-barcode-field{display:grid;gap:.35rem;min-width:0}.product-barcode-field>label{color:var(--petrol-dark);font-size:.75rem;font-weight:650}.product-barcode-row{display:flex;gap:.5rem;min-width:0}.product-barcode-row input{flex:1;min-width:0}.product-barcode-row button{flex:0 0 auto;min-height:2.75rem;padding:.55rem .8rem}@media(max-width:560px){.product-barcode-row{align-items:stretch}.product-barcode-row button{min-width:6rem}}
+
+/* Tablet y móvil usan tarjetas para evitar columnas ocultas dentro de tablas desplazables. */
+@media (max-width: 1000px) {
+  .catalog-table-wrap { overflow: visible; border: 0; background: transparent; }
+  .catalog-table, .catalog-table tbody, .catalog-table tr, .catalog-table td { display: block; width: 100%; }
+  .catalog-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  .catalog-table tbody { display: grid; gap: .7rem; }
+  .catalog-table tr { padding: .85rem; border: 1px solid var(--line); border-radius: .8rem; background: #fff; }
+  .catalog-table td { display: flex; align-items: center; justify-content: space-between; gap: .7rem; padding: .42rem 0; border: 0; white-space: normal; text-align: right; }
+  .catalog-table td[data-label="Producto"] { min-width: 0; display: block; text-align: left; }
+  .catalog-table td[data-label]:not([data-label="Producto"])::before { content: attr(data-label); color: var(--muted); font-size: .68rem; font-weight: 500; }
+  .inventory-table { width: 100%; border-collapse: separate; border-spacing: 0 .75rem; }
+  .inventory-table tbody tr { padding: .75rem; border: 1px solid var(--line); border-radius: .75rem; background: #fff; }
+  .inventory-table td { display: grid; grid-template-columns: minmax(7rem,42%) minmax(0,1fr); gap: .5rem; padding: .45rem 0; text-align: right; overflow-wrap: anywhere; }
+  .inventory-table td[data-label="Producto"] { display: block; text-align: left; border-bottom: 1px solid var(--line); padding-bottom: .65rem; margin-bottom: .25rem; }
+}

@@ -1,3 +1,19 @@
+# Plan vigente — Micro-PR 6 Paquete Final Visual y Manual — 2026-11-22
+
+- **Base exacta:** `main` = `012653ed9b8d72967580aa5a6dde0ef914ff656d`.
+- **PR #403 (4B):** MERGED en main mediante `97b092ea8089207352ed6b30254464ed53d08592`.
+- **PR #405 (Micro-PR 5):** MERGED en main mediante `012653ed9b8d72967580aa5a6dde0ef914ff656d`.
+- **PR #404:** cerrada sin merge; ignorada completamente.
+- **PR #406 (Micro-PR 6):** `https://github.com/BTF14/Micro-app/pull/406`; rama `feat/final-visual-manual-micro-pr-6-20261122`; OPEN / Draft contra `main`, sin merge ni auto-merge. Incluye favicon, Tour Visual E2E de 9 vistas × 2 viewports (18 capturas y artifact temporal de 7 días), Manual de Usuario y ODD/continuidad. Todos los gates permanecen congelados e intactos.
+- **Exclusiones:** 0 `apps/api/**`, SQL/migraciones, `package.json`, `pnpm-lock.yaml` o dependencias; CSP intacta; sin secretos, datos reales, pagos, Neon, producción ni deploy.
+- **Validación:** no hay checkout local/terminal; no declarar ejecución local. Revisar el 100 % de checks y workflow runs en el SHA final exacto y verificar artifact con 18 capturas.
+- **Gates congelados:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; USD 0.
+
+## Siguiente paso único tras el merge
+**Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53**, como cierre independiente. No cambiar gates por CI verde.
+
+---
+
 # Plan vigente — Micro-PR 5 Scanner móvil / Vuelto / Criterio de evidencia — 2026-11-21
 
 - **Base:** main = 97b092ea8089207352ed6b30254464ed53d08592.

@@ -1,3 +1,23 @@
+# Handoff vigente — Micro-PR 6 Paquete Final Visual y Manual — 2026-11-22
+
+## Punto de partida y estado
+- Repositorio `BTF14/Micro-app`; base exacta `main` = `012653ed9b8d72967580aa5a6dde0ef914ff656d`.
+- PR #403 (4B) MERGED en main mediante `97b092ea8089207352ed6b30254464ed53d08592`; PR #405 (Micro-PR 5) MERGED en main mediante `012653ed9b8d72967580aa5a6dde0ef914ff656d`.
+- PR #404 está cerrada sin merge y debe ignorarse por completo.
+- **PR #406:** `https://github.com/BTF14/Micro-app/pull/406`; rama `feat/final-visual-manual-micro-pr-6-20261122`; OPEN / Draft contra `main`, sin merge ni auto-merge. Mantener todos los gates congelados e intactos.
+- Entregables: `apps/web/public/favicon.svg`; `apps/web/e2e/visual-tour.spec.ts`; ajuste limitado al job `browser-tests` de `.github/workflows/playwright-e2e.yml`; `docs/USER_MANUAL.md`; ODD en `odd/tasks/`; actualización superior de CURRENT_STATE/HANDOFF/PROJECT_PLAN sin borrar historial.
+- Tour: nueve vistas × dos viewports (390×844 y 1280×800), 18 PNG en `apps/web/test-results/visual-tour/`, artifact `visual-tour-screenshots-<run_id>` por siete días.
+- Cero cambios en `apps/api/**`, SQL/migraciones, `package.json`, `pnpm-lock.yaml` y dependencias. CSP intacta. USD 0, sin secretos/datos reales/servicios pagos.
+- No hay checkout local/terminal: no afirmar ejecución local de tests, build, typecheck, Playwright ni `tools/validate-agent-docs.py`.
+
+## Gates congelados
+AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; USD 0.
+
+## Siguiente paso único tras el merge
+Cierre independiente: **Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53**. Mantener gates intactos hasta evidencia y aprobación independiente.
+
+---
+
 # Handoff vigente — Micro-PR 5 Scanner móvil / Vuelto / Criterio de evidencia — 2026-11-21
 
 ## Punto de partida

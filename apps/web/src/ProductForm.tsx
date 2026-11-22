@@ -152,7 +152,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Código de barras
-          <div className="product-barcode-field"><input value={draft.barcode} onChange={(event) => update("barcode", event.target.value)} maxLength={128} autoComplete="off" /><button className="product-barcode-scan" type="button" onClick={() => setScannerOpen(true)} disabled={saving}>Escanear</button></div>
+          <div className="product-barcode-field"><input aria-label="Código de barras" value={draft.barcode} onChange={(event) => update("barcode", event.target.value)} maxLength={128} autoComplete="off" /><button className="product-barcode-scan" type="button" onClick={() => setScannerOpen(true)} disabled={saving}>Escanear</button></div>
         </label>
         <label>
           Unidad

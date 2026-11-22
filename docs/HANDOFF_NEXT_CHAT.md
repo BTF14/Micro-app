@@ -2,7 +2,7 @@
 
 ## Punto de partida
 - Repositorio BTF14/Micro-app; base exacta main = 97b092ea8089207352ed6b30254464ed53d08592.
-- Rama feat/mobile-scanner-cash-change-evidence-criterion-20261121; mantener PR OPEN / Draft, sin merge ni auto-merge.
+- Rama feat/mobile-scanner-cash-change-evidence-criterion-20261121; [PR #405 OPEN / Draft](https://github.com/BTF14/Micro-app/pull/405); sin merge ni auto-merge.
 - Cambios UI: escáner reutilizado en ProductForm, InventoryPanel y CatalogPanel; QuickProductLookup existente intacto; vuelto opcional client-only con decimal bigint; copy de turnos reconciliado; skill evidence-criterion.
 - Exclusiones: apps/api/**, SQL/migraciones, package.json, dependencias, .github/workflows/**, favicon.svg, Tour Visual y docs/USER_MANUAL.md.
 - Sin checkout local: no declarar Vitest/build/typecheck/Playwright/validador local.

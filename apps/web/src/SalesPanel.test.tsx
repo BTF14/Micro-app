@@ -359,4 +359,25 @@ describe("SalesPanel", () => {
     expect(container.textContent).toContain("Fecha valor BCV: 2026-11-09");
   });
 
+  it("calculates cash change exactly, reports zero and short tender, and posts only the net payment", async () => {
+    const receipt = { sale_number: "V-CASH-01", created_at: "2026-11-14T15:00:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null, lines: [], payments: [{ method: "cash", currency: "USD", amount: "0.0002", reference: null }] };
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never).mockResolvedValueOnce(receipt as never);
+    await render();
+    await act(async () => { click("Agregar producto A"); click("Monto exacto"); });
+    const cashLabel = [...container.querySelectorAll("label")].find(label => label.textContent?.includes("Efectivo recibido (solo cálculo de vuelto)"));
+    const received = cashLabel?.querySelector("input");
+    if (!(received instanceof HTMLInputElement)) throw new Error("Cash received input missing");
+    await act(async () => { setInputValue(received, "0.0003"); });
+    expect(container.textContent).toContain("Vuelto a entregar: US$ 0,0001");
+    await act(async () => { setInputValue(received, "0.0002"); });
+    expect(container.textContent).toContain("Vuelto a entregar: US$ 0,0000");
+    await act(async () => { setInputValue(received, "0.0001"); });
+    expect(container.textContent).toContain("Falta: US$ 0,0001");
+    await act(async () => { click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });
+    const [, init] = vi.mocked(apiRequest).mock.calls[2] as unknown as [string, RequestInit];
+    const payload = JSON.parse(String(init.body)) as { payments: Array<Record<string, unknown>> };
+    expect(payload.payments).toEqual([{ method: "cash", currency: "USD", amount: "0.0002", reference: null }]);
+    expect(JSON.stringify(payload)).not.toContain("cashReceived");
+  });
+
 });

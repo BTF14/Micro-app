@@ -363,7 +363,8 @@ describe("SalesPanel", () => {
     const receipt = { sale_number: "V-CASH-01", created_at: "2026-11-14T15:00:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null, lines: [], payments: [{ method: "cash", currency: "USD", amount: "0.0002", reference: null }] };
     vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never).mockResolvedValueOnce(receipt as never);
     await render();
-    await act(async () => { click("Agregar producto A"); click("Monto exacto"); });
+    await act(async () => { click("Agregar producto A"); });
+    await act(async () => { click("Monto exacto"); });
     const cashLabel = [...container.querySelectorAll("label")].find(label => label.textContent?.includes("Efectivo recibido (solo cálculo de vuelto)"));
     const received = cashLabel?.querySelector("input");
     if (!(received instanceof HTMLInputElement)) throw new Error("Cash received input missing");

@@ -127,10 +127,11 @@ test("visual tour: nine owner views at mobile and desktop sizes", async ({ page 
       if (viewport.width === 390) await page.locator(".mobile-nav-toggle").click();
       const navigation = page.locator("#primary-navigation");
       await expect(navigation).toBeVisible();
-      const item = navigation.getByText(view.nav, { exact: true });
+      const item = navigation.getByRole(view.id === "overview" ? "link" : "button", { name: view.nav, exact: true });
       await item.click();
+      if (viewport.width === 390) await expect(navigation).not.toHaveClass(/open/);
       await expect(page.locator("main").first()).toBeVisible();
-      await expect(page.locator("main h1").first()).toBeVisible();
+      await expect(page.getByRole("heading", { name: view.heading, exact: true })).toBeVisible();
       await expect(page.locator(".sidebar")).toHaveAttribute("aria-label", "Navegación principal");
       await expect(page.locator("main [role='alert']")).toHaveCount(0);
       const visibleText = await page.locator("body").innerText();

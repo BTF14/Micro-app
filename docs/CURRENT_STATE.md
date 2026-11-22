@@ -1,3 +1,16 @@
+# Estado vigente — Micro-PR 6 Paquete Final Visual y Manual — 2026-11-22
+
+- **Base exacta:** `main` = `012653ed9b8d72967580aa5a6dde0ef914ff656d`.
+- **Integración confirmada:** PR #403 (Micro-PR 4B) MERGED en `main` mediante `97b092ea8089207352ed6b30254464ed53d08592`; PR #405 (Micro-PR 5) MERGED en `main` mediante `012653ed9b8d72967580aa5a6dde0ef914ff656d`.
+- **PR Micro-PR 6:** rama `feat/final-visual-manual-micro-pr-6-20261122`; PR Draft contra `main` (número/URL y SHA final se registran al abrirla); sin merge ni auto-merge.
+- **Entregables:** favicon SVG corporativo; Tour Visual E2E Playwright de las nueve vistas en 390×844 y 1280×800, 18 PNG temporales y artefacto de siete días; Manual de Usuario en español; ODD task y continuidad reconciliada.
+- **Límites:** USD 0; sin `apps/api/**`, SQL/migraciones, `package.json`, lockfile ni dependencias. CSP se conserva (`img-src 'self' data:`, `script-src 'self'`). No secretos, datos reales, servicios pagos, Neon, producción ni deploy.
+- **Gates congelados e intactos:** AC-6 OPEN; `FX_CONTINGENCY_ENABLED=false`; `BCV_SYNC_ENABLED=false`; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; presupuesto USD 0.
+- **Validación:** sin checkout local/terminal; no declarar tests, build, typecheck, Playwright ni validador local ejecutados. Exigir 100 % de check-runs y workflow runs reales sobre el SHA final exacto; confirmar artefacto y 18 PNG antes de declarar tour completado.
+- **Siguiente paso único tras el merge:** cierre independiente `Pre-prod Audit` → `ve-fx-compliance-review` → `AC-6` → `Issue #53`. Los gates no se cierran por CI verde.
+
+---
+
 # Estado vigente — Micro-PR 5 Scanner móvil / Vuelto / Criterio de evidencia — 2026-11-21
 
 - **Base verificada:** main = 97b092ea8089207352ed6b30254464ed53d08592.

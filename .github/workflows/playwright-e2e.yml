@@ -54,6 +54,15 @@ jobs:
           --config apps/web/playwright.config.ts
           apps/web/e2e/auth.spec.ts
           apps/web/e2e/register-shifts.spec.ts
+          apps/web/e2e/visual-tour.spec.ts
+      - name: Upload visual tour screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-tour-screenshots-${{ github.run_id }}
+          path: apps/web/test-results/visual-tour/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Upload Playwright report and traces on failure
         if: failure()
         uses: actions/upload-artifact@v7

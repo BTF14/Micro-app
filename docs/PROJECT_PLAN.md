@@ -1,3 +1,17 @@
+# Plan vigente — Micro-PR 5 Scanner móvil / Vuelto / Criterio de evidencia — 2026-11-21
+
+- **Base:** main = 97b092ea8089207352ed6b30254464ed53d08592.
+- **Rama activa:** feat/mobile-scanner-cash-change-evidence-criterion-20261121; PR a mantener OPEN / Draft, sin merge ni auto-merge.
+- **Implementación:** expansión de BarcodeScanner a Productos, Inventario y Catálogo; vuelto exacto opcional en efectivo sin alterar payments.amount; copy actualizado de caja/turnos; skill de criterio basado en evidencia.
+- **Límites:** 0 backend, 0 SQL/migraciones, 0 package/dependencias, 0 workflows. No favicon/Tour Visual/USER_MANUAL en esta PR.
+- **Gates:** AC-6 OPEN; FX_CONTINGENCY_ENABLED=false; BCV_SYNC_ENABLED=false; Issue #53 OPEN/P0; freeze v1.1; PRODUCTION: NOT READY; USD 0.
+- **Validación:** sin checkout local; verificar todos los check-runs/workflows sobre el SHA final exacto.
+
+## Siguiente paso único
+favicon.svg + Tour Visual E2E de las 9 vistas en 390×844 y 1280×800 + docs/USER_MANUAL.md; seguido de Pre-prod Audit → ve-fx-compliance-review → AC-6 → Issue #53.
+
+---
+
 # Plan vigente — PR 4A integrada / Micro-PR 4B UI — 2026-11-21
 
 ## Estado

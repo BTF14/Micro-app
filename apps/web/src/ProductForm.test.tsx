@@ -3,6 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ProductForm from "./ProductForm";
+vi.mock("./BarcodeScanner", () => ({ default: ({ onDetected, onClose }: { onDetected: (code: string) => void; onClose: () => void }) => <div role="dialog"><button type="button" onClick={() => onDetected("7501234567890")}>Entregar código de prueba</button><button type="button" onClick={onClose}>Cerrar</button></div> }));
 
 let container: HTMLDivElement;
 let root: Root;
@@ -161,4 +162,12 @@ describe("product form", () => {
     expect(container.textContent).toContain("no pueden ser negativos");
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("fills the barcode from the shared scanner without submitting the form", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Escanear")?.click(); });
+    await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Entregar código de prueba")?.click(); });
+    expect(container.querySelector<HTMLInputElement>("#product-barcode")?.value).toBe("7501234567890");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
 });

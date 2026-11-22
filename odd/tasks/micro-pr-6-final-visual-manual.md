@@ -1,7 +1,7 @@
 # ODD task: Micro-PR 6 — Paquete Final Visual y Manual
 
 - Status: in progress
-- Issue / PR: Micro-PR 6 — PR Draft contra main (se completa al abrir)
+- Issue / PR: **PR #406** — https://github.com/BTF14/Micro-app/pull/406 — OPEN / Draft contra `main`; sin merge ni auto-merge.
 - Owner / reviewer: BTF14
 - Started: 2026-11-22
 - Risk: medium
@@ -9,7 +9,7 @@
 ## Objective and authorization
 
 - Desired outcome: entregar favicon corporativo, tour visual E2E de nueve pantallas y dos tamaños, manual de usuario en español y continuidad verificable.
-- Authorization boundary: solo repositorio BTF14/Micro-app, rama nueva basada exactamente en 012653ed9b8d72967580aa5a6dde0ef914ff656d; PR Draft sin merge ni auto-merge.
+- Authorization boundary: solo repositorio BTF14/Micro-app y rama existente `feat/final-visual-manual-micro-pr-6-20261122` de la **PR #406**; mantener Draft, sin merge ni auto-merge; todos los gates de release congelados.
 - Relevant original request: Micro-PR 6 — Paquete Final Visual y Manual.
 
 ## Scope and exclusions

@@ -92,7 +92,7 @@ jobs:
       - name: Prove remote restore target guard fails closed
         shell: bash
         run: bash scripts/db/test_restore_remote_backup_target_guard.sh
-      - name: Preserve historical main and BCV 0023–0029 ACL profiles
+      - name: Preserve historical main and BCV 0023–0030 ACL profiles
         shell: bash
         run: bash scripts/db/test_restore_role_grants_profiles.sh
       - name: Prove backup artifact name and checksum validation
@@ -100,7 +100,7 @@ jobs:
         run: bash scripts/db/test_verify_backup_artifact.sh
 
   restore-smoke:
-    name: Synthetic encrypted restore — BCV projection (0001–0029)
+    name: Synthetic encrypted restore — BCV projection (0001–0030)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

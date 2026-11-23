@@ -152,7 +152,7 @@ export function fxPinFailure(kind: FxPinFailureKind) {
     },
     unavailable: {
       status: 503,
-      body: { error: "FX_PIN_NOT_CONFIGURED", message: "Los dos secretos de seguridad del PIN no están configurados correctamente en el Worker." },
+      body: { error: "FX_PIN_NOT_CONFIGURED", message: "La verificación segura del PIN no está disponible. Revisa la configuración del Worker e inténtalo de nuevo." },
     },
   } as const;
   return failures[kind];

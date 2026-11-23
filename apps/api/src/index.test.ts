@@ -96,6 +96,8 @@ describe("Micro app API", () => {
     );
     expect(response.headers.get("access-control-allow-credentials")).toBe("true");
     expect(response.headers.get("access-control-allow-methods")).toContain("POST");
+    expect(response.headers.get("access-control-allow-methods")?.toLowerCase()).toContain("put");
+    expect(response.headers.get("access-control-expose-headers")?.toLowerCase()).toContain("content-disposition");
     const allowedHeaders = response.headers.get("access-control-allow-headers") ?? "";
     expect(allowedHeaders.toLowerCase()).toContain("content-type");
     expect(allowedHeaders.toLowerCase()).toContain("authorization");

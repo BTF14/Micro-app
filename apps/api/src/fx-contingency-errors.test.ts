@@ -5,7 +5,7 @@ describe("FX PIN failure responses", () => {
   it.each([
     ["invalid", 403, "FX_PIN_INVALID", "El PIN no coincide."],
     ["limited", 429, "FX_PIN_RATE_LIMITED", "Espera 15 minutos"],
-    ["unavailable", 503, "FX_PIN_NOT_CONFIGURED", "dos secretos de seguridad"],
+    ["unavailable", 503, "FX_PIN_NOT_CONFIGURED", "configuración del Worker"],
   ] as const)("returns a clear Spanish response for %s", (kind, status, error, message) => {
     const result = fxPinFailure(kind);
     expect(result.status).toBe(status);

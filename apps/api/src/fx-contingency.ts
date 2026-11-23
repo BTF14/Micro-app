@@ -615,9 +615,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         return { kind: "ok" as const };
       }));
       if (result.kind !== "ok") {
-        if (result.kind === "limited") return c.json({ error: "FX_PIN_RATE_LIMITED" }, 429);
-        if (result.kind === "invalid_pin") return c.json({ error: "FX_PIN_INVALID" }, 403);
-        if (result.kind === "unavailable") return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
+        if (result.kind === "limited") return pinFailure(c, "limited");
+        if (result.kind === "invalid_pin") return pinFailure(c, "invalid");
+        if (result.kind === "unavailable") return pinFailure(c, "unavailable");
         return authFailure(c, result.kind);
       }
       return c.json({ status: "revoked" });

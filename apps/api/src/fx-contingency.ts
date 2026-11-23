@@ -122,12 +122,16 @@ async function verifyAndRateLimitPin(
   const pepper = c.env.FX_PIN_PEPPER;
   const ratePepper = c.env.FX_PIN_RATE_LIMIT_PEPPER;
   if (!isFxPinSecretConfigValid(pepper, ratePepper)) return "unavailable";
+  // The shared validator above guarantees both values are present, long
+  // enough and distinct; keep narrowed local aliases for the crypto calls.
+  const configuredPepper = pepper!;
+  const configuredRatePepper = ratePepper!;
   // Cloudflare Workers supplies CF-Connecting-IP. Do not trust caller-
   // controlled X-Real-IP or collapse missing addresses into a shared bucket.
   const ip = c.req.header("CF-Connecting-IP");
   if (!ip || !isValidClientIp(ip)) return "unavailable";
-  const account = await consumeAuthRateLimit(tx, `fx-pin:user:${tenant.organizationId}:${tenant.userId}`, PIN_LIMIT, PIN_WINDOW_SECONDS, ratePepper);
-  const address = await consumeAuthRateLimit(tx, `fx-pin:ip:${ip}`, PIN_LIMIT * 3, PIN_WINDOW_SECONDS, ratePepper);
+  const account = await consumeAuthRateLimit(tx, `fx-pin:user:${tenant.organizationId}:${tenant.userId}`, PIN_LIMIT, PIN_WINDOW_SECONDS, configuredRatePepper);
+  const address = await consumeAuthRateLimit(tx, `fx-pin:ip:${ip}`, PIN_LIMIT * 3, PIN_WINDOW_SECONDS, configuredRatePepper);
   if (!account.allowed || !address.allowed) return "limited";
   const result = await tx.query<{
     kdf_version: string; iterations: number; salt_base64: string; hash_base64: string;
@@ -135,7 +139,7 @@ async function verifyAndRateLimitPin(
     `SELECT * FROM public.lock_fx_user_pin_credential($1::uuid,$2::uuid)`,
     [tenant.organizationId, tenant.userId],
   );
-  return await verifyFxPin(pin, result.rows[0] ?? null, tenant.organizationId, tenant.userId, pepper) ? "ok" : "invalid";
+  return await verifyFxPin(pin, result.rows[0] ?? null, tenant.organizationId, tenant.userId, configuredPepper) ? "ok" : "invalid";
 }
 
 export function isFxPinSecretConfigValid(pepper: string | undefined, ratePepper: string | undefined): boolean {

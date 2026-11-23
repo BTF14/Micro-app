@@ -440,8 +440,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         typeof body.pin !== "string" || !/^[0-9]{8,32}$/.test(body.pin)) {
       return c.json({ error: "INVALID_FX_AUTHORIZATION", message: "Revisa tasa, motivo, vencimiento y PIN." }, 400);
     }
-    if (!c.env.FX_PIN_PEPPER || c.env.FX_PIN_PEPPER.length < 32 ||
-        !c.env.FX_PIN_RATE_LIMIT_PEPPER || c.env.FX_PIN_RATE_LIMIT_PEPPER.length < 32) {
+    if (!isFxPinSecretConfigValid(c.env.FX_PIN_PEPPER, c.env.FX_PIN_RATE_LIMIT_PEPPER)) {
       return pinFailure(c, "unavailable");
     }
     try {

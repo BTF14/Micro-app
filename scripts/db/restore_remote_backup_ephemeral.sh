@@ -187,16 +187,16 @@ else
   if [[ "$ledger_profile" == "bcv-0024" || "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" || "$ledger_profile" == "bcv-0030" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0024_organization_structure_admin_operations.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ] || "$ledger_profile" == "bcv-0030" ]]; then
+  if [[ "$ledger_profile" == "bcv-0025" || "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" || "$ledger_profile" == "bcv-0030" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0025_inventory_receipts.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ] || "$ledger_profile" == "bcv-0030" ]]; then
+  if [[ "$ledger_profile" == "bcv-0026" || "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" || "$ledger_profile" == "bcv-0030" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0026_fx_contingency_management.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ] || "$ledger_profile" == "bcv-0030" ]]; then
+  if [[ "$ledger_profile" == "bcv-0027" || "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" || "$ledger_profile" == "bcv-0030" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0027_bcv_nonbusiness_day_effective_date.assertions.sql"
   fi
-  if [[ "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" ] || "$ledger_profile" == "bcv-0030" ]]; then
+  if [[ "$ledger_profile" == "bcv-0028" || "$ledger_profile" == "bcv-0029" || "$ledger_profile" == "bcv-0030" ]]; then
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql"
   fi
   if [[ "$ledger_profile" == "bcv-0029" || "$ledger_profile" == "bcv-0030" ]]; then

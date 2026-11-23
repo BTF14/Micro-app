@@ -17,7 +17,7 @@
 Included:
 - Reuse the canonical API URL, credential, timeout, preview and error handling for CSV downloads.
 - Correct credentialed CORS methods for the actual PIN and report flows.
-- Return actionable Spanish messages for PIN configuration, invalid PIN and rate-limit failures without exposing secret values.
+- Require two distinct PIN secrets of at least 32 characters and return actionable Spanish messages for configuration, invalid PIN and rate-limit failures without exposing secret values.
 - Add regression tests for API download behavior, CORS preflight and PIN error mapping.
 
 Excluded:
@@ -29,7 +29,7 @@ Excluded:
 
 - [ ] AC-1 — CSV requests use API_BASE_URL, credentials include, no-store, preview fail-closed behavior, 401 handling and consistent API error parsing.
 - [ ] AC-2 — CORS permits the required PUT method for FX PIN while retaining exact-origin credentialed policy.
-- [ ] AC-3 — PIN missing-secret, invalid-PIN and rate-limit responses have clear Spanish messages and never expose secret values.
+- [ ] AC-3 — PIN missing/short/equal-secret, invalid-PIN and rate-limit cases fail closed with clear Spanish messages and never expose secret values.
 - [ ] AC-4 — Regression tests cover the new behavior; web/API tests, typecheck and build are green on the final SHA.
 - [ ] AC-5 — Final PR diff is restricted to Block 1; no production secrets, deploy or Neon writes.
 
@@ -55,7 +55,7 @@ Excluded:
 
 - Reuse the existing API transport semantics rather than adding a second weaker fetch path.
 - Do not expose `Content-Disposition`: the UI uses deterministic filenames and does not need to read that response header.
-- Secret provisioning remains an operator action in Cloudflare Worker Secrets; secrets are never declared in `wrangler.toml`.
+- Secret provisioning remains an operator action in Cloudflare Worker Secrets; the application rejects missing, short or identical values and secrets are never declared in `wrangler.toml`.
 
 ## Closure and handoff
 

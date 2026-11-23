@@ -1,5 +1,16 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
+
+vi.mock("@neondatabase/serverless", async () => {
+  const postgres = await import("pg");
+  return {
+    Client: class extends postgres.Client {
+      constructor(connectionString: string) { super({ connectionString }); }
+    },
+  };
+});
+const appModule = await import("./index");
+const app = appModule.default;
 import { consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
 
 const env = (globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }).process?.env;
@@ -230,6 +241,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
       await admin.query("ALTER TABLE public.bcv_sync_success_observations DISABLE TRIGGER ALL");
       await admin.query("ALTER TABLE public.audit_logs DISABLE TRIGGER ALL");
       if (organizationId) {
+        await admin.query("DELETE FROM public.auth_sessions WHERE user_id=ANY($1::uuid[])", [[ownerId, adminId, cashierId]]);
         await admin.query("DELETE FROM public.fx_contingency_events WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.fx_contingency_authorizations WHERE organization_id=$1", [organizationId]);
         await admin.query("DELETE FROM public.fx_contingency_delegations WHERE organization_id=$1", [organizationId]);
@@ -601,6 +613,95 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
     const get = (key: string) => Number(parts.find((part) => part.type === key)?.value ?? 0);
     const nextMidnight = Date.UTC(get("year"), get("month") - 1, get("day") + 1, 4, 0, 0);
     await expect(createAuthorization(branch, "101.00000000", ownerId, OWNER, new Date(nextMidnight + 5000).toISOString())).rejects.toMatchObject({ code: "23514" });
+  });
+
+  it("PG-31 expired transition marks an overdue authorization expired without revocation and appends its event", async () => {
+    const branch = await createBranch("PG31");
+    const authId = await createAuthorization(branch, "101.00000000");
+    await admin.query(
+      "UPDATE public.fx_contingency_authorizations SET expires_at=pg_catalog.clock_timestamp()-interval '1 second' WHERE id=$1",
+      [authId],
+    );
+
+    await runtime.query(
+      "SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'expired',$4::uuid,'owner','PG-31 expiry regression')",
+      [organizationId, branch, authId, ownerId],
+    );
+
+    const state = await admin.query<{ status: string; revoked_at: Date | null }>(
+      "SELECT status,revoked_at FROM public.fx_contingency_authorizations WHERE id=$1",
+      [authId],
+    );
+    expect(state.rows[0]).toEqual({ status: "expired", revoked_at: null });
+    const event = await admin.query<{ event_type: string; count: number }>(
+      "SELECT event_type,count(*)::int AS count FROM public.fx_contingency_events WHERE authorization_id=$1 AND event_type='expired' GROUP BY event_type",
+      [authId],
+    );
+    expect(event.rows[0]).toEqual({ event_type: "expired", count: 1 });
+  });
+
+  it("PG-32 rejects an early expired transition with 23514 and FX_AUTHORIZATION_NOT_EXPIRED", async () => {
+    const branch = await createBranch("PG32");
+    const authId = await createAuthorization(branch, "101.00000000");
+    await expect(
+      runtime.query(
+        "SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'expired',$4::uuid,'owner','PG-32 early expiry regression')",
+        [organizationId, branch, authId, ownerId],
+      ),
+    ).rejects.toMatchObject({
+      code: "23514",
+      message: expect.stringContaining("FX_AUTHORIZATION_NOT_EXPIRED"),
+    });
+    const state = await admin.query<{ status: string }>(
+      "SELECT status FROM public.fx_contingency_authorizations WHERE id=$1",
+      [authId],
+    );
+    expect(state.rows[0].status).toBe("active");
+  });
+
+  it("PG-33 FX contingency GET expires an overdue authorization and allows a replacement", async () => {
+    const branch = await createBranch("PG33");
+    const expiredId = await createAuthorization(branch, "101.00000000");
+    await admin.query(
+      "UPDATE public.fx_contingency_authorizations SET expires_at=pg_catalog.clock_timestamp()-interval '1 second' WHERE id=$1",
+      [expiredId],
+    );
+
+    const sessionToken = `fx-expiration-route-${crypto.randomUUID()}`;
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sessionToken));
+    const tokenHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    await admin.query(
+      "INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,pg_catalog.clock_timestamp()+interval '10 minutes')",
+      [ownerId, tokenHash],
+    );
+
+    const response = await app.fetch(
+      new Request(`https://api.example/api/orgs/${organizationId}/branches/${branch}/fx-contingency`, {
+        headers: { Cookie: `microapp_session=${sessionToken}` },
+      }),
+      { DATABASE_URL: runtimeUrl, FRONTEND_ORIGIN: "https://micro-app.example" },
+    );
+    expect(response.status).toBe(200);
+    const payload = await response.json() as { authorization: unknown };
+    expect(payload.authorization).toBeNull();
+
+    const expired = await admin.query<{ status: string; revoked_at: Date | null }>(
+      "SELECT status,revoked_at FROM public.fx_contingency_authorizations WHERE id=$1",
+      [expiredId],
+    );
+    expect(expired.rows[0]).toEqual({ status: "expired", revoked_at: null });
+
+    const replacementId = await createAuthorization(branch, "102.00000000");
+    const active = await admin.query<{ id: string; count: number }>(
+      "SELECT id,count(*) OVER()::int AS count FROM public.fx_contingency_authorizations WHERE organization_id=$1 AND branch_id=$2 AND status='active'",
+      [organizationId, branch],
+    );
+    expect(active.rows).toEqual([{ id: replacementId, count: 1 }]);
+    const events = await admin.query<{ count: number }>(
+      "SELECT count(*)::int AS count FROM public.fx_contingency_events WHERE authorization_id=$1 AND event_type='expired'",
+      [expiredId],
+    );
+    expect(events.rows[0].count).toBe(1);
   });
 
   it("consumes independent account and IP rate-limit buckets for PIN verification", async () => {

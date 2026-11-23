@@ -101,6 +101,10 @@ function readAuthErrorFromUrl(): string {
 }
 
 type HelpModalKind = "faq" | "privacy";
+type WorkspaceView = "overview" | "catalog" | "inventory" | "quick-lookup" | "register-shifts" | "sales" | "reports" | "organization-structure" | "fx-contingency";
+const VIEW_HASHES: Record<WorkspaceView,string> = {overview:"resumen",catalog:"productos",inventory:"inventario","quick-lookup":"consultar-precio","register-shifts":"caja-turnos",sales:"ventas",reports:"reportes","organization-structure":"estructura","fx-contingency":"gestion-cambiaria"};
+function viewFromHash(hash:string):WorkspaceView { const slug=hash.replace(/^#/,"").toLowerCase(); if(!slug||slug==="inicio"||slug==="resumen")return "overview"; return (Object.entries(VIEW_HASHES) as [WorkspaceView,string][]).find(([,value])=>value===slug)?.[0]??"overview"; }
+function roleCanAccessView(role:string|undefined,view:WorkspaceView):boolean { if(view==="overview"||view==="catalog"||view==="inventory")return true; if(view==="quick-lookup"||view==="reports")return ["owner","admin","inventory","cashier"].includes(role??""); if(view==="register-shifts"||view==="sales")return ["owner","admin","cashier"].includes(role??""); if(view==="organization-structure")return role==="owner"; if(view==="fx-contingency")return role==="owner"||role==="admin"; return false; }
 
 type BcvRateResponse = {
   rate: string;
@@ -356,12 +360,36 @@ export default function App() {
   const [error, setError] = useState(() => readAuthErrorFromUrl());
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "catalog" | "inventory" | "quick-lookup" | "register-shifts" | "sales" | "reports" | "organization-structure" | "fx-contingency">("overview");
+  const [activeView, setActiveView] = useState<WorkspaceView>(() => viewFromHash(window.location.hash));
   const [selectedReportShift, setSelectedReportShift] = useState<{ branchId: string; shiftId: string } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
   const [bcvLoading, setBcvLoading] = useState(false);
   const [bcvError, setBcvError] = useState("");
+
+  useEffect(() => {
+    if (!session) return;
+    const role = session.organizations[0]?.role;
+    const restore = (hash:string) => {
+      const requested=viewFromHash(hash);
+      const next=roleCanAccessView(role,requested)?requested:"overview";
+      if(next!==requested||!hash||hash==="#inicio") window.history.replaceState({},"",`${window.location.pathname}${window.location.search}#${VIEW_HASHES[next]}`);
+      setActiveView(next);
+    };
+    restore(window.location.hash);
+    const onHashChange=()=>restore(window.location.hash);
+    window.addEventListener("hashchange",onHashChange);
+    return()=>window.removeEventListener("hashchange",onHashChange);
+  },[session]);
+
+  useEffect(()=>{
+    if(!session)return;
+    const role=session.organizations[0]?.role;
+    const safe=roleCanAccessView(role,activeView)?activeView:"overview";
+    if(safe!==activeView){setActiveView("overview");return;}
+    const hash=`#${VIEW_HASHES[safe]}`;
+    if(window.location.hash!==hash)window.history.replaceState({},"", `${window.location.pathname}${window.location.search}${hash}`);
+  },[activeView,session]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -477,7 +505,7 @@ export default function App() {
       <>
       <main className="auth-page">
         <section className="auth-brand-panel" aria-label="Micro app">
-          <a className="brand auth-brand" href="#inicio">
+          <a className="brand auth-brand" href="#resumen">
             <span className="brand-mark" aria-hidden="true">m</span>
             <span><strong>micro app</strong><small>GESTIÓN COMERCIAL</small></span>
           </a>
@@ -529,7 +557,7 @@ export default function App() {
     <>
     <main className="app-shell">
       <aside className="sidebar" aria-label="Navegación principal">
-        <a className="brand" href="#inicio" aria-label="Micro app, inicio">
+        <a className="brand" href="#resumen" aria-label="Micro app, inicio">
           <span className="brand-mark" aria-hidden="true">m</span>
           <span><strong>micro app</strong><small>GESTIÓN COMERCIAL</small></span>
         </a>
@@ -540,7 +568,7 @@ export default function App() {
         </div>
         <button className="mobile-nav-toggle" type="button" aria-expanded={mobileNavOpen} aria-controls="primary-navigation" onClick={() => setMobileNavOpen((open) => !open)}><span aria-hidden="true">{mobileNavOpen ? "×" : "☰"}</span>{mobileNavOpen ? "Cerrar menú" : "Menú"}</button>
         <nav id="primary-navigation" className={`side-nav ${mobileNavOpen ? "open" : ""}`} onClick={() => setMobileNavOpen(false)}>
-          <a className={`nav-item ${activeView === "overview" ? "active" : ""}`} href="#inicio" onClick={() => setActiveView("overview")} aria-current={activeView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
+          <a className={`nav-item ${activeView === "overview" ? "active" : ""}`} href="#resumen" onClick={() => setActiveView("overview")} aria-current={activeView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
           <button className={`nav-item nav-item-button ${activeView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={activeView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
           <button className={`nav-item nav-item-button ${activeView === "inventory" ? "active" : ""}`} type="button" onClick={() => setActiveView("inventory")} aria-current={activeView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
           {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${activeView === "quick-lookup" ? "active" : ""}`} type="button" onClick={() => setActiveView("quick-lookup")} aria-current={activeView === "quick-lookup" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌕</span>Consultar precio</button>}

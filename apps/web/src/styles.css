@@ -482,3 +482,6 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 .app-error-boundary { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
 .app-error-boundary section { width: min(100%, 34rem); }
 .app-error-boundary button { min-height: 44px; padding: 0.65rem 1rem; }
+
+/* Prevent mobile browser auto-zoom in the authenticated workspace. */
+.app-shell input,.app-shell select,.app-shell textarea{font-size:max(1rem,16px)}

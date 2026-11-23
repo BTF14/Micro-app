@@ -148,6 +148,8 @@ describe("Register shifts workspace", () => {
     expect(inputs[0]!.value).toBe("21.00");
   });
 
+  it("keeps the opening action available in the shift workspace", async () => { await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); }); await settle(); const open=[...container.querySelectorAll("button")].find(x=>x.textContent==="Abrir turno"); expect(open).toBeTruthy(); expect(open?.className).toContain("register-shifts-primary"); });
+
   it("shows a safe message when the API denies branch access", async () => {
     vi.mocked(fetch).mockImplementationOnce(async () => jsonResponse({ message: "Forbidden" }, 403));
     await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });

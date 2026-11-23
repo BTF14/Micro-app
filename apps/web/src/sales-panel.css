@@ -122,3 +122,8 @@
 .sales-receipt-disclaimer{margin:.75rem 0 1rem;padding:.8rem .9rem;border:1px solid #c9b98d;border-radius:.65rem;background:#f8f2df;color:#493f27;font-size:.78rem;font-weight:800;line-height:1.45;letter-spacing:.025em;text-align:center}
 
 .sales-cash-change{grid-column:1/-1;margin:0;color:#315f43;font-size:.7rem;font-weight:700;line-height:1.5}
+
+/* Keep authenticated form controls above the mobile auto-zoom threshold. */
+.catalog-panel input,.catalog-panel select,.catalog-panel textarea,.sales-panel input,.sales-panel select,.sales-panel textarea,.register-shifts-panel input,.register-shifts-panel select,.register-shifts-panel textarea,.reports-panel input,.reports-panel select,.reports-panel textarea{font-size:max(1rem,16px)}
+
+.sales-panel input,.sales-panel select,.sales-panel textarea{font-size:max(1rem,16px)}

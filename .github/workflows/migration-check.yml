@@ -497,6 +497,8 @@ jobs:
         run: docker exec -i -e PGPASSWORD=migrator-test-only "${{ job.services.postgres.id }}" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U microapp_migrator -d microapp_test -f /dev/stdin < apps/api/migrations/0030_fx_expiration_transition_fix.sql
       - name: Verify FX expiration transition migration 0030 contract
         run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql
+      - name: Re-verify 0027 compatibility after FX expiration migration 0030
+        run: docker exec -i "${{ job.services.postgres.id }}" psql -v ON_ERROR_STOP=1 -U microapp -d microapp_test -f /dev/stdin < apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
       - name: Verify application objects are owned by the non-superuser migrator
         run: |
           ownership="$(docker exec "${{ job.services.postgres.id }}" psql -At -U microapp -d microapp_test -c "SELECT NOT EXISTS (SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','S','v','m') AND relowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator')) AND NOT EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proowner <> (SELECT oid FROM pg_roles WHERE rolname='microapp_migrator'))")"

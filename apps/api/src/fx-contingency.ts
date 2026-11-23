@@ -121,7 +121,7 @@ async function verifyAndRateLimitPin(
 ): Promise<"ok" | "invalid" | "limited" | "unavailable"> {
   const pepper = c.env.FX_PIN_PEPPER;
   const ratePepper = c.env.FX_PIN_RATE_LIMIT_PEPPER;
-  if (!pepper || pepper.length < 32 || !ratePepper || ratePepper.length < 32) return "unavailable";
+  if (!isFxPinSecretConfigValid(pepper, ratePepper)) return "unavailable";
   // Cloudflare Workers supplies CF-Connecting-IP. Do not trust caller-
   // controlled X-Real-IP or collapse missing addresses into a shared bucket.
   const ip = c.req.header("CF-Connecting-IP");
@@ -136,6 +136,14 @@ async function verifyAndRateLimitPin(
     [tenant.organizationId, tenant.userId],
   );
   return await verifyFxPin(pin, result.rows[0] ?? null, tenant.organizationId, tenant.userId, pepper) ? "ok" : "invalid";
+}
+
+export function isFxPinSecretConfigValid(pepper: string | undefined, ratePepper: string | undefined): boolean {
+  return Boolean(
+    pepper && pepper.length >= 32 &&
+    ratePepper && ratePepper.length >= 32 &&
+    pepper !== ratePepper
+  );
 }
 
 export type FxPinFailureKind = "invalid" | "limited" | "unavailable";
@@ -216,8 +224,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         (body.current_pin !== undefined && typeof body.current_pin !== "string")) {
       return c.json({ error: "INVALID_FX_PIN", message: "El PIN debe contener entre 8 y 32 dígitos." }, 400);
     }
-    if (!c.env.FX_PIN_PEPPER || c.env.FX_PIN_PEPPER.length < 32 ||
-        !c.env.FX_PIN_RATE_LIMIT_PEPPER || c.env.FX_PIN_RATE_LIMIT_PEPPER.length < 32) {
+    if (!isFxPinSecretConfigValid(c.env.FX_PIN_PEPPER, c.env.FX_PIN_RATE_LIMIT_PEPPER)) {
       return pinFailure(c, "unavailable");
     }
     try {

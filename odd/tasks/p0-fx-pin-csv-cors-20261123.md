@@ -30,7 +30,7 @@ Excluded:
 - [x] AC-1 — CSV requests use API_BASE_URL, credentials include, no-store, preview fail-closed behavior, 401 handling and consistent API error parsing.
 - [x] AC-2 — CORS permits the required PUT method for FX PIN while retaining exact-origin credentialed policy.
 - [x] AC-3 — PIN missing/short/equal-secret, invalid-PIN and rate-limit cases fail closed with clear Spanish messages and never expose secret values.
-- [x] AC-4 — Regression tests cover the new behavior; web/API tests, typecheck and build are green on code SHA `d103b61d7abaa3527014e55a20d44e93f239bceb` (10/10 workflows SUCCESS). A docs-only checkpoint commit will receive a fresh exact-HEAD CI run.
+- [x] AC-4 — Regression tests cover the new behavior; web/API tests, typecheck and build are green on exact PR HEAD `fa2392735e4e07ca20563e70f9b67e761ab35c92` (10/10 workflows SUCCESS).
 - [x] AC-5 — Final PR diff is restricted to Block 1; no production secrets, deploy or Neon writes.
 
 ## Risks and guardrails
@@ -49,7 +49,7 @@ Excluded:
 | Inspect current main, callers, API/CORS and relevant tests | Confirm root causes and current contracts | GitHub main SHA c8e3bdc05207368bdaea803ec9895add247f3ff2; source inspection | completed |
 | Implement shared download transport and regression tests | Downloads follow apiRequest security behavior | CI run 45151027484 SUCCESS on code SHA `d103b61d7abaa3527014e55a20d44e93f239bceb`; web 142 passed/1 skipped | completed |
 | Fix CORS method and PIN error messages/tests | Correct preflight and actionable safe errors | CI run 45151027484 SUCCESS; API 377 passed; distinct secret validation tested | completed |
-| Review final diff and open focused PR | No out-of-scope changes | PR #407 Draft; 9 files, no review comments/threads; 10/10 workflows SUCCESS on code SHA | completed |
+| Review final diff and open focused PR | No out-of-scope changes | PR #407 open and ready for review (`draft=false`); 9 files, no review comments/threads; 10/10 workflows SUCCESS on exact HEAD | completed |
 
 ## Technical decisions
 
@@ -59,9 +59,9 @@ Excluded:
 
 ## Closure and handoff
 
-- Validated code SHA: `d103b61d7abaa3527014e55a20d44e93f239bceb`; a documentation-only checkpoint commit follows and its exact-HEAD CI must pass.
-- PR: https://github.com/BTF14/Micro-app/pull/407 (Draft, not merged)
-- Checks and exact outcomes on validated code SHA: 10/10 workflows SUCCESS; CI run `45151027484`, Playwright E2E `45151027585`, security `45151027465`, secret history `45151027590`, Semgrep `45151027509`, database migration `45151027481`, PostgreSQL migration runner `45151027507`, ODD docs `45151027539`, dependency review `45151027516`, dashboard `45151027764`.
+- Validated exact PR HEAD: `fa2392735e4e07ca20563e70f9b67e761ab35c92`.
+- PR: https://github.com/BTF14/Micro-app/pull/407 (open, ready for review; not merged)
+- Checks and exact outcomes on validated code SHA: 10/10 workflows SUCCESS; CI run `45151719256`, Playwright E2E `45151719312`, security `45151719349`, secret history `45151719370`, Semgrep `45151719361`, database migration `45151719346`, PostgreSQL migration runner `45151719224`, ODD docs `45151719633`, dependency review `45151719294`, dashboard `45151719259`.
 - Acceptance criteria: AC-1 through AC-5 met for code/tests. Production live acceptance remains pending until operator-only secrets are configured and PIN/authorization/CSV flows are tested after merge.
 - Limitations not verified: Cloudflare production secret values/configuration, live PIN save/authorize/renew/revoke, and real browser CSV downloads were not inspected or exercised. Production deploy and Neon remain untouched.
 - Residual risks: production Worker must have both distinct secrets configured with at least 32 characters each. The Pages Service Binding same-origin architecture and existing Lax session cookie are intentionally preserved.

@@ -138,6 +138,31 @@ async function verifyAndRateLimitPin(
   return await verifyFxPin(pin, result.rows[0] ?? null, tenant.organizationId, tenant.userId, pepper) ? "ok" : "invalid";
 }
 
+export type FxPinFailureKind = "invalid" | "limited" | "unavailable";
+
+export function fxPinFailure(kind: FxPinFailureKind) {
+  const failures = {
+    invalid: {
+      status: 403,
+      body: { error: "FX_PIN_INVALID", message: "El PIN no coincide. Verifica los dígitos e inténtalo de nuevo." },
+    },
+    limited: {
+      status: 429,
+      body: { error: "FX_PIN_RATE_LIMITED", message: "Se alcanzó el límite de intentos de PIN. Espera 15 minutos antes de volver a intentarlo." },
+    },
+    unavailable: {
+      status: 503,
+      body: { error: "FX_PIN_NOT_CONFIGURED", message: "Los dos secretos de seguridad del PIN no están configurados correctamente en el Worker." },
+    },
+  } as const;
+  return failures[kind];
+}
+
+function pinFailure(c: RequestContext, kind: FxPinFailureKind) {
+  const result = fxPinFailure(kind);
+  return c.json(result.body, result.status);
+}
+
 function authFailure(c: RequestContext, kind: string) {
   if (kind === "unauthenticated") { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
   if (kind === "delegation_required") return c.json({ error: "FX_DELEGATION_REQUIRED", message: "El administrador necesita una delegación activa para esta sucursal." }, 403);
@@ -193,7 +218,7 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
     }
     if (!c.env.FX_PIN_PEPPER || c.env.FX_PIN_PEPPER.length < 32 ||
         !c.env.FX_PIN_RATE_LIMIT_PEPPER || c.env.FX_PIN_RATE_LIMIT_PEPPER.length < 32) {
-      return c.json({ error: "FX_PIN_NOT_CONFIGURED", message: "La configuración segura del PIN no está disponible." }, 503);
+      return pinFailure(c, "unavailable");
     }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
@@ -219,9 +244,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         return { kind: "ok" as const };
       }));
       if (result.kind === "unauthenticated" || result.kind === "forbidden") return authFailure(c, result.kind);
-      if (result.kind === "limited") return c.json({ error: "FX_PIN_RATE_LIMITED" }, 429);
-      if (result.kind === "unavailable") return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
-      if (result.kind === "invalid") return c.json({ error: "FX_PIN_INVALID" }, 403);
+      if (result.kind === "limited") return pinFailure(c, "limited");
+      if (result.kind === "unavailable") return pinFailure(c, "unavailable");
+      if (result.kind === "invalid") return pinFailure(c, "invalid");
       return c.json({ status: "configured" }, 200);
     } catch (error) { return failure(c, error); }
   });
@@ -408,7 +433,10 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         typeof body.pin !== "string" || !/^[0-9]{8,32}$/.test(body.pin)) {
       return c.json({ error: "INVALID_FX_AUTHORIZATION", message: "Revisa tasa, motivo, vencimiento y PIN." }, 400);
     }
-    if (!c.env.FX_PIN_PEPPER || !c.env.FX_PIN_RATE_LIMIT_PEPPER) return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
+    if (!c.env.FX_PIN_PEPPER || c.env.FX_PIN_PEPPER.length < 32 ||
+        !c.env.FX_PIN_RATE_LIMIT_PEPPER || c.env.FX_PIN_RATE_LIMIT_PEPPER.length < 32) {
+      return pinFailure(c, "unavailable");
+    }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const actor = await resolveActor(tx, token, org);
@@ -546,9 +574,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         return { kind: "ok" as const, id: created.rows[0]!.id };
       }));
       if (result.kind !== "ok") {
-        if (result.kind === "limited") return c.json({ error: "FX_PIN_RATE_LIMITED" }, 429);
-        if (result.kind === "invalid_pin") return c.json({ error: "FX_PIN_INVALID" }, 403);
-        if (result.kind === "unavailable") return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
+        if (result.kind === "limited") return pinFailure(c, "limited");
+        if (result.kind === "invalid_pin") return pinFailure(c, "invalid");
+        if (result.kind === "unavailable") return pinFailure(c, "unavailable");
         if (result.kind === "reference_unavailable") return c.json({ error: "BCV_REFERENCE_UNAVAILABLE" }, 409);
         if (result.kind === "authorization_not_active") return c.json({ error: "FX_AUTHORIZATION_NOT_ACTIVE" }, 409);
         if (result.kind === "authorization_already_active") return c.json({ error: "FX_AUTHORIZATION_ALREADY_ACTIVE" }, 409);

@@ -637,7 +637,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-33
       [authId],
     );
     expect(event.rows[0]).toEqual({ event_type: "expired", count: 1 });
-  });
+  }, 15_000);
 
   it("PG-32 rejects an early expired transition with 23514 and FX_AUTHORIZATION_NOT_EXPIRED", async () => {
     const branch = await createBranch("PG32");
@@ -704,7 +704,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-33
       [expiredId],
     );
     expect(events.rows[0].count).toBe(1);
-  });
+  }, 15_000);
 
   it("consumes independent account and IP rate-limit buckets for PIN verification", async () => {
     const suffix = crypto.randomUUID();

@@ -617,11 +617,10 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
 
   it("PG-31 expired transition marks an overdue authorization expired without revocation and appends its event", async () => {
     const branch = await createBranch("PG31");
-    const authId = await createAuthorization(branch, "101.00000000");
-    await admin.query(
-      "UPDATE public.fx_contingency_authorizations SET expires_at=pg_catalog.clock_timestamp()-interval '1 second' WHERE id=$1",
-      [authId],
+    const authId = await createAuthorization(
+      branch, "101.00000000", ownerId, OWNER, new Date(Date.now() + 2_000).toISOString(),
     );
+    await new Promise((resolve) => setTimeout(resolve, 2_200));
 
     await runtime.query(
       "SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'expired',$4::uuid,'owner','PG-31 expiry regression')",
@@ -661,11 +660,10 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
 
   it("PG-33 FX contingency GET expires an overdue authorization and allows a replacement", async () => {
     const branch = await createBranch("PG33");
-    const expiredId = await createAuthorization(branch, "101.00000000");
-    await admin.query(
-      "UPDATE public.fx_contingency_authorizations SET expires_at=pg_catalog.clock_timestamp()-interval '1 second' WHERE id=$1",
-      [expiredId],
+    const expiredId = await createAuthorization(
+      branch, "101.00000000", ownerId, OWNER, new Date(Date.now() + 2_000).toISOString(),
     );
+    await new Promise((resolve) => setTimeout(resolve, 2_200));
 
     const sessionToken = `fx-expiration-route-${crypto.randomUUID()}`;
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sessionToken));

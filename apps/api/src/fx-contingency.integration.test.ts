@@ -660,6 +660,10 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-30
 
   it("PG-33 FX contingency GET expires an overdue authorization and allows a replacement", async () => {
     const branch = await createBranch("PG33");
+    await admin.query(
+      "INSERT INTO public.branch_memberships(organization_id,branch_id,user_id) VALUES($1,$2,$3)",
+      [organizationId, branch, ownerId],
+    );
     const expiredId = await createAuthorization(
       branch, "101.00000000", ownerId, OWNER, new Date(Date.now() + 2_000).toISOString(),
     );

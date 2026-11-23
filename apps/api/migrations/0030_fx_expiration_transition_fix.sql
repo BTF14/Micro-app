@@ -4,7 +4,7 @@ BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
-CREATE FUNCTION public.capture_sales_bcv_0027_snapshot()
+CREATE OR REPLACE FUNCTION public.capture_sales_bcv_0027_snapshot()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -63,7 +63,7 @@ $capture_sales_bcv_0027_snapshot$;
 ALTER FUNCTION public.capture_sales_bcv_0027_snapshot() OWNER TO microapp_migrator;
 REVOKE ALL ON FUNCTION public.capture_sales_bcv_0027_snapshot() FROM PUBLIC,microapp_runtime,microapp_bcv_sync;
 
-CREATE FUNCTION public.assert_sales_bcv_0027_snapshot()
+CREATE OR REPLACE FUNCTION public.assert_sales_bcv_0027_snapshot()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER

@@ -49,9 +49,9 @@ ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep
 export MIGRATION_DATABASE_URL="$bcv_migrator_url"
 bash scripts/db/migrate.sh
 
-# BCV profile: all 29 migrations, automatic creator edges, and the full 0022-0029 assertion chain.
+# BCV profile: all 30 migrations, automatic creator edges, and the full 0022-0030 assertion chain.
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
-  "SELECT count(*)=29 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+  "SELECT count(*)=30 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*)=2 FROM pg_catalog.pg_auth_members m
    JOIN pg_catalog.pg_roles granted_role ON granted_role.oid=m.roleid
@@ -182,10 +182,12 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
   --file "apps/api/migrations/0026_fx_contingency_management.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
   --file "apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
+  --file "apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$main_admin_url" \
   --file "scripts/db/restore_role_assertions_main.sql"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='bcv-membership-sentinel'")" = "1"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$main_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='main-membership-sentinel'")" = "1"
-echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0029; main 0001-0016; positive and fail-closed cases)"
+echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0030; main 0001-0016; positive and fail-closed cases)"

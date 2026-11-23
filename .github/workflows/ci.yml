@@ -93,6 +93,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql
       - name: Verify catalog import batches migration 0029 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0029_catalog_import_batches.assertions.sql
+      - name: Verify FX expiration transition migration 0030 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql
       - name: PostgreSQL 18 BCV 0027 effective-date matrix
         run: pnpm --filter @micro-app/api test:bcv-0027
       - name: Build and typecheck
@@ -161,7 +163,7 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/inventory-read.integration.test.ts
       - name: PostgreSQL atomic sales checkout integration tests
         run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/sales-checkout.integration.test.ts
-      - name: PostgreSQL FX contingency PG-01..PG-30 integration tests
+      - name: PostgreSQL FX contingency PG-01..PG-33 integration tests
         run: DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" RUNTIME_DATABASE_URL="$RUNTIME_DATABASE_URL" BCV_DATABASE_URL="$BCV_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/fx-contingency.integration.test.ts
       - name: PostgreSQL 18 isolated Cashier lifecycle (simulated OAuth → shift → checkout → reconciliation → logout)
         run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_RUNTIME="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" DATABASE_URL_BCV="$BCV_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/cashier-full-lifecycle.integration.test.ts

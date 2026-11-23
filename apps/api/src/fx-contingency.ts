@@ -121,13 +121,17 @@ async function verifyAndRateLimitPin(
 ): Promise<"ok" | "invalid" | "limited" | "unavailable"> {
   const pepper = c.env.FX_PIN_PEPPER;
   const ratePepper = c.env.FX_PIN_RATE_LIMIT_PEPPER;
-  if (!pepper || pepper.length < 32 || !ratePepper || ratePepper.length < 32) return "unavailable";
+  if (!isFxPinSecretConfigValid(pepper, ratePepper)) return "unavailable";
+  // The shared validator above guarantees both values are present, long
+  // enough and distinct; keep narrowed local aliases for the crypto calls.
+  const configuredPepper = pepper!;
+  const configuredRatePepper = ratePepper!;
   // Cloudflare Workers supplies CF-Connecting-IP. Do not trust caller-
   // controlled X-Real-IP or collapse missing addresses into a shared bucket.
   const ip = c.req.header("CF-Connecting-IP");
   if (!ip || !isValidClientIp(ip)) return "unavailable";
-  const account = await consumeAuthRateLimit(tx, `fx-pin:user:${tenant.organizationId}:${tenant.userId}`, PIN_LIMIT, PIN_WINDOW_SECONDS, ratePepper);
-  const address = await consumeAuthRateLimit(tx, `fx-pin:ip:${ip}`, PIN_LIMIT * 3, PIN_WINDOW_SECONDS, ratePepper);
+  const account = await consumeAuthRateLimit(tx, `fx-pin:user:${tenant.organizationId}:${tenant.userId}`, PIN_LIMIT, PIN_WINDOW_SECONDS, configuredRatePepper);
+  const address = await consumeAuthRateLimit(tx, `fx-pin:ip:${ip}`, PIN_LIMIT * 3, PIN_WINDOW_SECONDS, configuredRatePepper);
   if (!account.allowed || !address.allowed) return "limited";
   const result = await tx.query<{
     kdf_version: string; iterations: number; salt_base64: string; hash_base64: string;
@@ -135,7 +139,40 @@ async function verifyAndRateLimitPin(
     `SELECT * FROM public.lock_fx_user_pin_credential($1::uuid,$2::uuid)`,
     [tenant.organizationId, tenant.userId],
   );
-  return await verifyFxPin(pin, result.rows[0] ?? null, tenant.organizationId, tenant.userId, pepper) ? "ok" : "invalid";
+  return await verifyFxPin(pin, result.rows[0] ?? null, tenant.organizationId, tenant.userId, configuredPepper) ? "ok" : "invalid";
+}
+
+export function isFxPinSecretConfigValid(pepper: string | undefined, ratePepper: string | undefined): boolean {
+  return Boolean(
+    pepper && pepper.length >= 32 &&
+    ratePepper && ratePepper.length >= 32 &&
+    pepper !== ratePepper
+  );
+}
+
+export type FxPinFailureKind = "invalid" | "limited" | "unavailable";
+
+export function fxPinFailure(kind: FxPinFailureKind) {
+  const failures = {
+    invalid: {
+      status: 403,
+      body: { error: "FX_PIN_INVALID", message: "El PIN no coincide. Verifica los dígitos e inténtalo de nuevo." },
+    },
+    limited: {
+      status: 429,
+      body: { error: "FX_PIN_RATE_LIMITED", message: "Se alcanzó el límite de intentos de PIN. Espera 15 minutos antes de volver a intentarlo." },
+    },
+    unavailable: {
+      status: 503,
+      body: { error: "FX_PIN_NOT_CONFIGURED", message: "La verificación segura del PIN no está disponible. Revisa la configuración del Worker e inténtalo de nuevo." },
+    },
+  } as const;
+  return failures[kind];
+}
+
+function pinFailure(c: RequestContext, kind: FxPinFailureKind) {
+  const result = fxPinFailure(kind);
+  return c.json(result.body, result.status);
 }
 
 function authFailure(c: RequestContext, kind: string) {
@@ -191,9 +228,8 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         (body.current_pin !== undefined && typeof body.current_pin !== "string")) {
       return c.json({ error: "INVALID_FX_PIN", message: "El PIN debe contener entre 8 y 32 dígitos." }, 400);
     }
-    if (!c.env.FX_PIN_PEPPER || c.env.FX_PIN_PEPPER.length < 32 ||
-        !c.env.FX_PIN_RATE_LIMIT_PEPPER || c.env.FX_PIN_RATE_LIMIT_PEPPER.length < 32) {
-      return c.json({ error: "FX_PIN_NOT_CONFIGURED", message: "La configuración segura del PIN no está disponible." }, 503);
+    if (!isFxPinSecretConfigValid(c.env.FX_PIN_PEPPER, c.env.FX_PIN_RATE_LIMIT_PEPPER)) {
+      return pinFailure(c, "unavailable");
     }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
@@ -219,9 +255,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         return { kind: "ok" as const };
       }));
       if (result.kind === "unauthenticated" || result.kind === "forbidden") return authFailure(c, result.kind);
-      if (result.kind === "limited") return c.json({ error: "FX_PIN_RATE_LIMITED" }, 429);
-      if (result.kind === "unavailable") return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
-      if (result.kind === "invalid") return c.json({ error: "FX_PIN_INVALID" }, 403);
+      if (result.kind === "limited") return pinFailure(c, "limited");
+      if (result.kind === "unavailable") return pinFailure(c, "unavailable");
+      if (result.kind === "invalid") return pinFailure(c, "invalid");
       return c.json({ status: "configured" }, 200);
     } catch (error) { return failure(c, error); }
   });
@@ -408,7 +444,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         typeof body.pin !== "string" || !/^[0-9]{8,32}$/.test(body.pin)) {
       return c.json({ error: "INVALID_FX_AUTHORIZATION", message: "Revisa tasa, motivo, vencimiento y PIN." }, 400);
     }
-    if (!c.env.FX_PIN_PEPPER || !c.env.FX_PIN_RATE_LIMIT_PEPPER) return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
+    if (!isFxPinSecretConfigValid(c.env.FX_PIN_PEPPER, c.env.FX_PIN_RATE_LIMIT_PEPPER)) {
+      return pinFailure(c, "unavailable");
+    }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
         const actor = await resolveActor(tx, token, org);
@@ -546,9 +584,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         return { kind: "ok" as const, id: created.rows[0]!.id };
       }));
       if (result.kind !== "ok") {
-        if (result.kind === "limited") return c.json({ error: "FX_PIN_RATE_LIMITED" }, 429);
-        if (result.kind === "invalid_pin") return c.json({ error: "FX_PIN_INVALID" }, 403);
-        if (result.kind === "unavailable") return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
+        if (result.kind === "limited") return pinFailure(c, "limited");
+        if (result.kind === "invalid_pin") return pinFailure(c, "invalid");
+        if (result.kind === "unavailable") return pinFailure(c, "unavailable");
         if (result.kind === "reference_unavailable") return c.json({ error: "BCV_REFERENCE_UNAVAILABLE" }, 409);
         if (result.kind === "authorization_not_active") return c.json({ error: "FX_AUTHORIZATION_NOT_ACTIVE" }, 409);
         if (result.kind === "authorization_already_active") return c.json({ error: "FX_AUTHORIZATION_ALREADY_ACTIVE" }, 409);
@@ -587,9 +625,9 @@ export function registerFxContingencyRoutes(app: Hono<{ Bindings: Bindings }>): 
         return { kind: "ok" as const };
       }));
       if (result.kind !== "ok") {
-        if (result.kind === "limited") return c.json({ error: "FX_PIN_RATE_LIMITED" }, 429);
-        if (result.kind === "invalid_pin") return c.json({ error: "FX_PIN_INVALID" }, 403);
-        if (result.kind === "unavailable") return c.json({ error: "FX_PIN_NOT_CONFIGURED" }, 503);
+        if (result.kind === "limited") return pinFailure(c, "limited");
+        if (result.kind === "invalid_pin") return pinFailure(c, "invalid");
+        if (result.kind === "unavailable") return pinFailure(c, "unavailable");
         return authFailure(c, result.kind);
       }
       return c.json({ status: "revoked" });

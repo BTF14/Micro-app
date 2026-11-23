@@ -22,7 +22,11 @@ export function googleLoginUrl(): string {
 
 export type ApiRequestOptions = RequestInit & { skipAuth401Handling?: boolean };
 
-export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+async function apiResponse<T>(
+  path: string,
+  options: ApiRequestOptions,
+  consume: (response: Response) => Promise<T>,
+): Promise<T> {
   if (IS_PAGES_PREVIEW) {
     throw new Error("La API está deshabilitada en esta vista previa para proteger los datos de producción.");
   }
@@ -64,8 +68,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
       throw new ApiError(message, response.status, payload);
     }
 
-    if (response.status === 204) return undefined as T;
-    return await response.json() as T;
+    return await consume(response);
   } catch (reason) {
     if (reason instanceof ApiError) throw reason;
     if (callerSignal?.aborted) throw new Error("La solicitud fue cancelada.");
@@ -75,4 +78,15 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     window.clearTimeout(timeoutId);
     callerSignal?.removeEventListener("abort", abortFromCaller);
   }
+}
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  return apiResponse(path, options, async (response) => {
+    if (response.status === 204) return undefined as T;
+    return await response.json() as T;
+  });
+}
+
+export async function apiDownload(path: string, options: ApiRequestOptions = {}): Promise<Blob> {
+  return apiResponse(path, options, (response) => response.blob());
 }

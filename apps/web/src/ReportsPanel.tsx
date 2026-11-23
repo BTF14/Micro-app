@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {apiRequest} from "./auth";
+import {apiDownload,apiRequest} from "./auth";
 import {formatLocalizedDecimal} from "./decimal";
 import "./reports.css";
 type Role="owner"|"admin"|"inventory"|"cashier";
@@ -14,7 +14,7 @@ const methods:Record<string,string>={cash:"Efectivo",card:"Tarjeta / Punto",tran
 function money(v:string|null|undefined,scale=2){if(v==null)return "—";try{return (v.startsWith("-")?"−":"")+formatLocalizedDecimal(v.startsWith("-")?v.slice(1):v,38,scale,scale)}catch{return "No disponible"}}
 function localDate(){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Caracas",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const v=(t:string)=>parts.find(p=>p.type===t)?.value??"";return v("year")+"-"+v("month")+"-"+v("day")}
 function stamp(v:string|null){return v?new Intl.DateTimeFormat("es-VE",{dateStyle:"medium",timeStyle:"short",timeZone:"America/Caracas"}).format(new Date(v)):"Abierto"}
-async function download(path:string,name:string){const response=await fetch(path,{credentials:"include",cache:"no-store"});if(!response.ok)throw new Error("No se pudo descargar el archivo.");const blob=await response.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");try{a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click()}finally{a.remove();URL.revokeObjectURL(url)}}
+async function download(path:string,name:string){const blob=await apiDownload(path);const url=URL.createObjectURL(blob);const a=document.createElement("a");try{a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click()}finally{a.remove();URL.revokeObjectURL(url)}}
 export default function ReportsPanel({organizationId,role,initialShift}:{organizationId:string;role:Role;initialShift?:{branchId:string;shiftId:string}|null}){
  const tabs=role==="owner"?["Cierres de caja","Ventas","Inventario y valoración"]:role==="admin"?["Cierres de caja","Ventas","Inventario"]:role==="cashier"?["Cierres de caja","Mis ventas"]:["Inventario"];
  const [tab,setTab]=useState(tabs[0]),[shifts,setShifts]=useState<Shift[]>([]),[shiftId,setShiftId]=useState(initialShift?.shiftId??""),[branchId,setBranchId]=useState(initialShift?.branchId??""),[summary,setSummary]=useState<Summary|null>(null);

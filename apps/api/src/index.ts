@@ -59,7 +59,7 @@ app.use(
       if (!configuredOrigin) return "";
       return _origin === configuredOrigin ? configuredOrigin : "";
     },
-    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "Idempotency-Key"],
     credentials: true,
     maxAge: 600,

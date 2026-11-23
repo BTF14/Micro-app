@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { apiRequest, ApiError } from "./auth";
+import { apiDownload, apiRequest, ApiError } from "./auth";
 
 describe("apiRequest resilience", () => {
   beforeEach(() => { vi.stubGlobal("fetch", vi.fn()); });
@@ -35,6 +35,42 @@ describe("apiRequest resilience", () => {
     expect(listener).toHaveBeenCalledTimes(1);
     await expect(apiRequest("/auth/me")).rejects.toBeInstanceOf(ApiError);
     await expect(apiRequest("/api/private", { skipAuth401Handling: true })).rejects.toBeInstanceOf(ApiError);
+    expect(listener).toHaveBeenCalledTimes(1);
+    window.removeEventListener("micro-app:unauthorized", listener);
+  });
+});
+
+describe("apiDownload security and errors", () => {
+  beforeEach(() => { vi.stubGlobal("fetch", vi.fn()); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+  it("uses the shared API transport for binary downloads", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("sale_number,total\\n1,10.00", { status: 200 }));
+    const blob = await apiDownload("/api/orgs/example/reports/sales.csv");
+    expect(await blob.text()).toBe("sale_number,total\\n1,10.00");
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/orgs/example/reports/sales.csv",
+      expect.objectContaining({
+        credentials: "include",
+        cache: "no-store",
+        redirect: "error",
+      }),
+    );
+  });
+
+  it("preserves API error messages and unauthorized handling for downloads", async () => {
+    const listener = vi.fn();
+    window.addEventListener("micro-app:unauthorized", listener);
+    vi.mocked(fetch).mockResolvedValue(new Response(
+      JSON.stringify({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    ));
+
+    await expect(apiDownload("/api/private/report.csv")).rejects.toMatchObject({
+      name: "ApiError",
+      status: 401,
+      message: "Inicia sesión para continuar.",
+    });
     expect(listener).toHaveBeenCalledTimes(1);
     window.removeEventListener("micro-app:unauthorized", listener);
   });

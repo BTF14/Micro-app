@@ -11,7 +11,23 @@ type Stock={branch_name:string;warehouse_name:string;sku:string;product_name:str
 type Inventory={items:Stock[];include_valuation:boolean;total_retail_valuation_usd:string;total_cost_valuation_usd?:string};
 const disclaimer="COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL";
 const methods:Record<string,string>={cash:"Efectivo",card:"Tarjeta / Punto",transfer:"Transferencia",mobile_payment:"Pago móvil",other:"Otro"};
-function money(v:string|null|undefined,scale=2){if(v==null)return "—";try{return (v.startsWith("-")?"−":"")+formatLocalizedDecimal(v.startsWith("-")?v.slice(1):v,38,scale,scale)}catch{return "No disponible"}}
+function money(v:string|null|undefined,scale=2){
+ if(v==null)return "—";
+ const match=/^(-?)(0|[1-9][0-9]*)(?:\.([0-9]+))?$/.exec(v);
+ if(!match)return "No disponible";
+ try{
+  const [,sign,integer,fraction=""]=match;
+  const inputScale=Math.max(fraction.length,scale);
+  const factor=10n**BigInt(inputScale);
+  const scaled=BigInt(integer)*factor+BigInt(fraction.padEnd(inputScale,"0")||"0");
+  const divisor=10n**BigInt(inputScale-scale);
+  const rounded=divisor>1n?(scaled+divisor/2n)/divisor:scaled;
+  const outputFactor=10n**BigInt(scale);
+  const fixed=scale===0?rounded.toString():`${rounded/outputFactor}.${(rounded%outputFactor).toString().padStart(scale,"0")}`;
+  const localized=formatLocalizedDecimal(fixed,38,scale,scale);
+  return (sign?"−":"")+localized;
+ }catch{return "No disponible"}
+}
 function localDate(){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Caracas",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const v=(t:string)=>parts.find(p=>p.type===t)?.value??"";return v("year")+"-"+v("month")+"-"+v("day")}
 function stamp(v:string|null){return v?new Intl.DateTimeFormat("es-VE",{dateStyle:"medium",timeStyle:"short",timeZone:"America/Caracas"}).format(new Date(v)):"Abierto"}
 function effectiveDate(v:string|null){return v?new Intl.DateTimeFormat("es-VE",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"America/Caracas"}).format(new Date(v+"T12:00:00Z")):"Fecha no disponible"}

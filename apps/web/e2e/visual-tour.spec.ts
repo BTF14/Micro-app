@@ -200,7 +200,7 @@ test("visual tour: nine owner views at mobile, tablet and desktop sizes", async 
         const breakdown = page.getByRole("heading", { name: "Desglose de pagos", exact: true });
         await breakdown.scrollIntoViewIfNeeded();
         await expect(page.locator(".reports-table-wrap")).toContainText("Moneda");
-        await expect(page.locator(".reports-table-wrap")).toContainText("12,5000");
+        await expect(page.locator(".reports-table-wrap")).toContainText("12,50");
         await page.screenshot({ path: `apps/web/test-results/visual-tour/extra-reportes-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: false, animations: "disabled" });
       }
       expect(unexpectedPageErrors, `Errores inesperados en ${view.label} ${viewport.width}x${viewport.height}`).toEqual([]);

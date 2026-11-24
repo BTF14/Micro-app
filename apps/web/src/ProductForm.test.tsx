@@ -142,7 +142,7 @@ describe("product form", () => {
 
   it("rejects fractional minimum stock in integer mode before sending a request", async () => {
     await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
-    await act(async () => { setValue(field("SKU"), "SKU-1"); setValue(field("Nombre"), "Producto"); setValue(field("Precio USD"), "1.00"); setValue(field("Stock mínimo"), "0.500"); });
+    await act(async () => { setValue(field("SKU"), "SKU-1"); setValue(field("Nombre"), "Producto"); setValue(field("Precio USD"), "1.00"); setValue(field("Costo USD"), "1.00"); setValue(field("Stock mínimo"), "0.500"); });
     await submitForm();
     expect(fetch).not.toHaveBeenCalled();
     expect(container.textContent).toContain("El stock mínimo debe ser entero");
@@ -156,12 +156,20 @@ describe("product form", () => {
       setValue(field("SKU"), "BAD-001");
       setValue(field("Nombre"), "Producto inválido");
       setValue(field("Precio USD"), "-1.0000");
+      setValue(field("Costo USD"), "1.0000");
     });
     await submitForm();
 
     expect(container.textContent).toContain("no pueden ser negativos");
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("starts new product cost and minimum stock fields empty with placeholders", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    expect(field("Costo USD").value).toBe(""); expect(field("Costo USD").getAttribute("placeholder")).toBe("0.00");
+    expect(field("Stock mínimo").value).toBe(""); expect(field("Stock mínimo").getAttribute("placeholder")).toBe("0");
+    expect(field("Costo USD").hasAttribute("required")).toBe(true); expect(field("Stock mínimo").hasAttribute("required")).toBe(false);
+  });
+
   it("fills the barcode from the shared scanner without submitting the form", async () => {
     await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
     await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Escanear")?.click(); });

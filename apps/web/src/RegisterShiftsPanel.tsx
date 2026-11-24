@@ -32,8 +32,8 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
   const [registers, setRegisters] = useState<Register[]>([]);
   const [registerId, setRegisterId] = useState("");
   const [shift, setShift] = useState<Shift | null>(null);
-  const [openingUsd, setOpeningUsd] = useState("0.00");
-  const [openingVes, setOpeningVes] = useState("0.00");
+  const [openingUsd, setOpeningUsd] = useState("");
+  const [openingVes, setOpeningVes] = useState("");
   const [closingUsd, setClosingUsd] = useState("");
   const [closingVes, setClosingVes] = useState("");
   const [confirmClose, setConfirmClose] = useState(false);
@@ -93,7 +93,7 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
     try {
       const response = await apiRequest<{ shift: Record<string, unknown> }>(
         `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts`,
-        { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: normalizeDecimalInput(openingUsd), opening_cash_ves: normalizeDecimalInput(openingVes) }) },
+        { method: "POST", body: JSON.stringify({ register_id: registerId, opening_cash_usd: openingUsd.trim() ? normalizeDecimalInput(openingUsd) : "0.00", opening_cash_ves: openingVes.trim() ? normalizeDecimalInput(openingVes) : "0.00" }) },
       );
       const openedShift = normalizeOpenedShift(response.shift);
       setShift(openedShift); setClosingUsd(""); setClosingVes("");
@@ -138,8 +138,8 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
               <dl className="register-shift-values"><div><dt>Fondo inicial USD</dt><dd>$ {money(shift.openingCashUsd)}</dd></div><div><dt>Fondo inicial VES</dt><dd>Bs. {money(shift.openingCashVes)}</dd></div></dl>
               <form className="register-shift-form" onSubmit={closeShift}>
                 <h3>Cierre de turno</h3><p>Introduce el efectivo contado al cierre. Si tu tienda opera 100 % digital (Pago móvil, tarjeta o transferencia), puedes abrir y cerrar con $ 0,00 y Bs. 0,00. Si recibes efectivo y entregas vuelto, aunque abras con 0,00, Reportes suma las ventas en efectivo netas al efectivo esperado.</p>
-                <label className="register-shifts-field"><span>Conteo final USD</span><input inputMode="decimal" required value={closingUsd} onChange={(event) => { setClosingUsd(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
-                <label className="register-shifts-field"><span>Conteo final VES</span><input inputMode="decimal" required value={closingVes} onChange={(event) => { setClosingVes(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
+                <label className="register-shifts-field"><span>Conteo final USD</span><input inputMode="decimal" required placeholder="0.00" value={closingUsd} onChange={(event) => { setClosingUsd(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
+                <label className="register-shifts-field"><span>Conteo final VES</span><input inputMode="decimal" required placeholder="0.00" value={closingVes} onChange={(event) => { setClosingVes(normalizeDecimalInput(event.target.value)); setConfirmClose(false); }} /></label>
                 {confirmClose && <p className="register-shifts-confirm" role="status">Confirma que ambos importes corresponden al conteo físico final. El cierre no se puede editar después.</p>}
                 <button className="register-shifts-primary" type="submit" disabled={saving}>{saving ? "Guardando…" : confirmClose ? "Confirmar cierre" : "Revisar cierre"}</button>
               </form>
@@ -150,8 +150,8 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
                 <form className="register-shift-form" onSubmit={openShift}>
                   <label className="register-shifts-field"><span>Caja</span><select required value={registerId} onChange={(event) => setRegisterId(event.target.value)}>{registers.map((register) => <option value={register.id} key={register.id}>{register.name} · {register.code}</option>)}</select></label>
                   <div className="register-shift-form-grid">
-                    <label className="register-shifts-field"><span>Fondo inicial USD</span><input inputMode="decimal" required value={openingUsd} onChange={(event) => setOpeningUsd(normalizeDecimalInput(event.target.value))} /></label>
-                    <label className="register-shifts-field"><span>Fondo inicial VES</span><input inputMode="decimal" required value={openingVes} onChange={(event) => setOpeningVes(normalizeDecimalInput(event.target.value))} /></label>
+                    <label className="register-shifts-field"><span>Fondo inicial USD</span><input inputMode="decimal" placeholder="0.00" value={openingUsd} onChange={(event) => setOpeningUsd(normalizeDecimalInput(event.target.value))} /></label>
+                    <label className="register-shifts-field"><span>Fondo inicial VES</span><input inputMode="decimal" placeholder="0.00" value={openingVes} onChange={(event) => setOpeningVes(normalizeDecimalInput(event.target.value))} /></label>
                   </div>
                   <button className="register-shifts-primary" type="submit" disabled={saving || !registerId}>{saving ? "Abriendo…" : "Abrir turno"}</button>
                 </form>

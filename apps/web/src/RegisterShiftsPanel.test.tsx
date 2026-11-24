@@ -148,6 +148,21 @@ describe("Register shifts workspace", () => {
     expect(inputs[0]!.value).toBe("21.00");
   });
 
+  it("starts opening cash inputs empty with zero placeholders", async () => {
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); }); await settle();
+    const inputs=[...container.querySelectorAll<HTMLInputElement>(".register-shift-form-grid input")];
+    expect(inputs).toHaveLength(2); expect(inputs[0]!.value).toBe(""); expect(inputs[1]!.value).toBe("");
+    expect(inputs[0]!.placeholder).toBe("0.00"); expect(inputs[1]!.placeholder).toBe("0.00");
+    expect(inputs[0]!.required).toBe(false); expect(inputs[1]!.required).toBe(false);
+    const form=container.querySelector<HTMLFormElement>(".register-shift-form");
+    expect(form).toBeTruthy();
+    await act(async()=>{form!.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
+    const post=vi.mocked(fetch).mock.calls.find(call=>(call[1] as RequestInit|undefined)?.method==="POST");
+    expect(post).toBeTruthy();
+    const payload=JSON.parse(String((post![1] as RequestInit).body));
+    expect(payload.opening_cash_usd).toBe("0.00"); expect(payload.opening_cash_ves).toBe("0.00");
+  });
+
   it("keeps the opening action available in the shift workspace", async () => { await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); }); await settle(); const open=[...container.querySelectorAll("button")].find(x=>x.textContent==="Abrir turno"); expect(open).toBeTruthy(); expect(open?.className).toContain("register-shifts-primary"); });
 
   it("shows a safe message when the API denies branch access", async () => {

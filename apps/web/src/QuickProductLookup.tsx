@@ -407,7 +407,7 @@ export default function QuickProductLookup({
             enterKeyHint="search"
             autoComplete="off"
             maxLength={120}
-            placeholder="Escanea un código o escribe nombre / SKU"
+            placeholder="Código, SKU o nombre…"
             value={query}
             disabled={!warehouseId}
             onChange={(event) => { setHasSearched(false); setQuery(event.target.value); }}

@@ -45,9 +45,9 @@ function initialDraft(product?: CatalogProduct): ProductDraft {
     description: product?.description ?? "",
     unit: product?.unit ?? "unidad",
     quantity_mode: product?.quantity_mode ?? "integer",
-    cost_usd: product?.cost_usd ? formatMoneyForDisplay(product.cost_usd) : "0.00",
+    cost_usd: product ? (product.cost_usd ? formatMoneyForDisplay(product.cost_usd) : "0.00") : "",
     price_usd: product?.price_usd ? formatMoneyForDisplay(product.price_usd) : "",
-    minimum_stock: product ? "" : "0",
+    minimum_stock: "",
     is_active: product?.is_active ?? true,
   };
 }
@@ -109,7 +109,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
             is_active: draft.is_active,
             ...(minimumStockInput ? { minimum_stock: minimumStockInput } : {}),
           }
-        : { minimum_stock: minimumStockInput }),
+        : { minimum_stock: minimumStockInput || "0" }),
     };
 
     setSaving(true);
@@ -193,7 +193,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Stock mínimo
-          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode={draft.quantity_mode === "integer" ? "numeric" : "decimal"} step={draft.quantity_mode === "integer" ? "1" : "0.001"} autoComplete="off" placeholder="0" required={!product} />
+          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode={draft.quantity_mode === "integer" ? "numeric" : "decimal"} step={draft.quantity_mode === "integer" ? "1" : "0.001"} autoComplete="off" placeholder="0" />
           <span className="product-field-hint">{draft.quantity_mode === "integer" ? "Debe ser un número entero." : "Cantidad con hasta 3 decimales."} {product ? "Déjalo vacío para conservar el mínimo actual." : ""}</span>
         </label>
         {product && (

@@ -122,6 +122,8 @@ test("visual tour: nine owner views at mobile, tablet and desktop sizes", async 
     { name: "pc", width: 1280, height: 800 },
   ]) {
     await page.setViewportSize(viewport);
+    // Each viewport is an independent visual-tour scenario; do not inherit the previous viewport's tab-persisted module.
+    if (viewport.name !== "movil") await page.evaluate(() => window.sessionStorage.removeItem("micro-app:active-view"));
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Hola, Ana." })).toBeVisible();
     const navigation = page.locator("#primary-navigation");

@@ -59,12 +59,12 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
   const [receiptReason, setReceiptReason] = useState("");
   const [receiptProductId, setReceiptProductId] = useState("");
-  const [receiptQuantity, setReceiptQuantity] = useState("1");
-  const [receiptCost, setReceiptCost] = useState("0.00");
+  const [receiptQuantity, setReceiptQuantity] = useState("");
+  const [receiptCost, setReceiptCost] = useState("");
   const [receiptBusy, setReceiptBusy] = useState(false);
   const [countReason, setCountReason] = useState("");
   const [countProductId, setCountProductId] = useState("");
-  const [countQuantity, setCountQuantity] = useState("0");
+  const [countQuantity, setCountQuantity] = useState("");
   const [countBusy, setCountBusy] = useState(false);
   const sequence = useRef(0);
 
@@ -294,10 +294,10 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad
-              <input required inputMode={selectedReceiptProduct?.quantity_mode === "integer" ? "numeric" : "decimal"} step={selectedReceiptProduct?.quantity_mode === "integer" ? "1" : "0.001"} value={receiptQuantity} onChange={(event) => setReceiptQuantity(normalizeDecimalInput(event.target.value))} />
+              <input required inputMode={selectedReceiptProduct?.quantity_mode === "integer" ? "numeric" : "decimal"} step={selectedReceiptProduct?.quantity_mode === "integer" ? "1" : "0.001"} placeholder="1" value={receiptQuantity} onChange={(event) => setReceiptQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Costo unitario USD
-              <input required inputMode="decimal" value={receiptCost} onChange={(event) => setReceiptCost(normalizeDecimalInput(event.target.value))} />
+              <input required inputMode="decimal" placeholder="0.00" value={receiptCost} onChange={(event) => setReceiptCost(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={receiptReason} onChange={(event) => setReceiptReason(event.target.value)} />
@@ -312,7 +312,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               </select>
             </label>
             <label>Cantidad contada
-              <input required inputMode={selectedCountProduct?.quantity_mode === "integer" ? "numeric" : "decimal"} step={selectedCountProduct?.quantity_mode === "integer" ? "1" : "0.001"} value={countQuantity} onChange={(event) => setCountQuantity(normalizeDecimalInput(event.target.value))} />
+              <input required inputMode={selectedCountProduct?.quantity_mode === "integer" ? "numeric" : "decimal"} step={selectedCountProduct?.quantity_mode === "integer" ? "1" : "0.001"} placeholder="0" value={countQuantity} onChange={(event) => setCountQuantity(normalizeDecimalInput(event.target.value))} />
             </label>
             <label>Motivo
               <input required maxLength={500} value={countReason} onChange={(event) => setCountReason(event.target.value)} />

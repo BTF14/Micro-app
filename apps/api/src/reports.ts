@@ -70,6 +70,38 @@ export function formatSafeCsvCell(value: string): string {
   const safe = /^[\u0000-\u0020]*[=+\-@\t\r]/.test(value) ? "'" + value : value;
   return '"' + safe.replace(/"/g, '""') + '"';
 }
+export function formatCaracasTimestamp(value: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {timeZone:"America/Caracas",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date(value));
+  const part=(type:string)=>parts.find(item=>item.type===type)?.value??"";
+  return `${part("year")}-${part("month")}-${part("day")} ${part("hour")}:${part("minute")}:${part("second")}`;
+}
+export function formatCaracasReportDate(value:string|Date):string {
+  const date=value instanceof Date?value:new Date(value);
+  const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Caracas",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(date);
+  const part=(type:string)=>parts.find(item=>item.type===type)?.value??"";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+type CsvPayment={method:string;currency:string;amount:string;usd_equivalent_snapshot:string;reference?:string|null};
+export function formatPaymentsCsvSummary(payments:CsvPayment[]):string {
+  const labels:Record<string,string>={cash:"Efectivo",card:"Tarjeta / Punto",transfer:"Transferencia",mobile_payment:"Pago móvil",other:"Otro"};
+  return payments.map(payment=>{
+    const method=labels[payment.method]??"Otro";
+    const reference=payment.reference?` (Ref: ${payment.reference}; eq. USD ${payment.usd_equivalent_snapshot})`:` (eq. USD ${payment.usd_equivalent_snapshot})`;
+    return `${method}: ${payment.currency} ${payment.amount}${reference}`;
+  }).join(" | ");
+}
+export function buildSalesCsvTotalRow(totalUsd:string,totalVes:string):string[]{
+  return ["TOTAL","","","","",formatCsvNumericCell(totalUsd),formatCsvNumericCell(totalVes),"","","","",formatSafeCsvCell(DISCLAIMER)];
+}
+function salesCsvFilename(period:Period,range:Range):string {
+  const start=formatCaracasReportDate(range.start),end=formatCaracasReportDate(new Date(Date.parse(range.end)-1));
+  if(period==="daily")return `reporte-ventas-diario-${start}.csv`;
+  if(period==="weekly")return `reporte-ventas-semanal-${start}-${end}.csv`;
+  if(period==="monthly")return `reporte-ventas-mensual-${start.slice(0,7)}.csv`;
+  return `reporte-ventas-periodo-${start}-${end}.csv`;
+}
+function inventoryCsvFilename():string{return `reporte-inventario-${formatCaracasReportDate(new Date())}.csv`;}
+
 export function formatCsvNumericCell(value: string): string {
   if (!/^-?(0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(value)) throw new TypeError("Invalid CSV numeric value.");
   return value;
@@ -284,13 +316,13 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
       if(result.kind!=="ok")return c.json({error:"FORBIDDEN"},403);
       if(asCsv){
         const data=[["fecha_completada","sucursal","cajero","venta","moneda_liquidacion","total_usd","total_ves","tasa_snapshot","origen_fx","pagos","referencias_pago","leyenda"]];
-        for(const row of result.items)data.push([formatSafeCsvCell(row.completed_at),formatSafeCsvCell(row.branch_name),formatSafeCsvCell(row.cashier_name),
+        for(const row of result.items)data.push([formatSafeCsvCell(formatCaracasTimestamp(row.completed_at)),formatSafeCsvCell(row.branch_name),formatSafeCsvCell(row.cashier_name),
           formatSafeCsvCell(row.sale_number),formatSafeCsvCell(row.settlement_currency),formatCsvNumericCell(row.total_usd),
-          formatCsvNumericCell(row.total_ves_snapshot),formatCsvNumericCell(row.exchange_rate_snapshot),formatSafeCsvCell(row.fx_source),
-          formatSafeCsvCell(JSON.stringify(row.payments)),formatSafeCsvCell(row.payments.map((payment:any)=>payment.reference??"").filter(Boolean).join(" | ")),formatSafeCsvCell(DISCLAIMER)]);
-        data.push(["","","","","","","","","","","",""]);
-        data.push(["","","","","","","","","","","",formatSafeCsvCell(DISCLAIMER)]);
-        return csvResponse(c,`reporte-ventas-${period}.csv`,data);
+          formatCsvNumericCell(row.total_ves_snapshot),formatCsvNumericCell(row.exchange_rate_snapshot),
+          formatSafeCsvCell(row.fx_source==="bcv_official"?"Tasa oficial BCV":row.fx_source==="manual_contingency"?"Contingencia manual":row.fx_source),
+          formatSafeCsvCell(formatPaymentsCsvSummary(row.payments)),formatSafeCsvCell(row.payments.map((payment:any)=>payment.reference??"").filter(Boolean).join(" | ")),formatSafeCsvCell(DISCLAIMER)]);
+        data.push(buildSalesCsvTotalRow(result.totalUsd,result.totalVes));
+        return csvResponse(c,salesCsvFilename(period,result.range),data);
       }
       return c.json({period,range:result.range,items:result.items,total_usd:result.totalUsd,total_ves_snapshot:result.totalVes,excluded_non_completed_count:result.excluded,disclaimer:DISCLAIMER},200);
     }catch(error){return failure(c,error);}
@@ -353,7 +385,10 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         const totals=["TOTAL","","","","","","","","","",formatCsvNumericCell(result.totalRetail)];
         if(result.includeValuation)totals.push("",formatCsvNumericCell(result.totalCost!));
         data.push(totals);
-        return csvResponse(c,"reporte-inventario.csv",data);
+        const closing=Array.from({length:header.length},()=>"");
+        closing[closing.length-1]=formatSafeCsvCell(DISCLAIMER);
+        data.push(closing);
+        return csvResponse(c,inventoryCsvFilename(),data);
       }
       return c.json({items:result.items,include_valuation:result.includeValuation,total_retail_valuation_usd:result.totalRetail,...(result.includeValuation?{total_cost_valuation_usd:result.totalCost}: {})},200);
     }catch(error){return failure(c,error);}

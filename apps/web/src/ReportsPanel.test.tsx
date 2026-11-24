@@ -44,7 +44,7 @@ describe("ReportsPanel",()=>{
   const click=vi.spyOn(HTMLAnchorElement.prototype,"click").mockImplementation(()=>{});
   await act(async()=>button("Exportar CSV").click());
   expect(apiDownload).toHaveBeenCalledWith(expect.stringContaining("/reports/sales.csv"));
-  expect((click.mock.contexts[0] as HTMLAnchorElement).download).toMatch(/^reporte-ventas-diario-\d{4}-\d{2}-\d{2}\.csv$/);
+  expect((click.mock.contexts[0] as HTMLAnchorElement).download).toMatch(/^reporte-ventas-periodo-2026-11-20-2026-11-21\.csv$/);
   expect(click).toHaveBeenCalled();
   expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test");
  });

@@ -1,0 +1,235 @@
+name: Playwright E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, "feat/**", "fix/**", "integration/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-playwright-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-tests:
+    name: Chromium authentication smoke tests
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.0-noble
+      options: --ipc=host
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.9
+      - name: Install locked workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install pinned Playwright runner in an isolated temporary directory
+        run: npm install --prefix /tmp/micro-app-playwright --no-save --package-lock=false @playwright/test@1.55.0
+      - name: Expose runner to the app without touching pnpm-managed packages
+        run: |
+          mkdir -p apps/web/node_modules/@playwright
+          ln -s /tmp/micro-app-playwright/node_modules/@playwright/test apps/web/node_modules/@playwright/test
+      # The pinned Playwright container includes Chromium and its OS libraries.
+      # Avoid apt/browser bootstrap on each run; this step was repeatedly failing
+      # before the browser tests could start, and GitHub's job log blob was unavailable.
+      - name: Verify bundled browser runtime
+        run: |
+          test -d "${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}"
+          test -n "$(find "${PLAYWRIGHT_BROWSERS_PATH:-/ms-playwright}" -maxdepth 1 -type d -name 'chromium-*' -print -quit)"
+      - name: Run browser tests
+        run: >-
+          /tmp/micro-app-playwright/node_modules/.bin/playwright test
+          --config apps/web/playwright.config.ts
+          apps/web/e2e/auth.spec.ts
+          apps/web/e2e/register-shifts.spec.ts
+          apps/web/e2e/visual-tour.spec.ts
+      - name: Upload visual tour screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-tour-screenshots-${{ github.run_id }}
+          path: apps/web/test-results/visual-tour/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Upload Playwright report and traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-e2e-failure-${{ github.run_id }}
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  fullstack-commerce:
+    name: Real full-stack commerce E2E (PostgreSQL 18)
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.0-noble
+      options: --ipc=host
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_test
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL_ADMIN: postgresql://microapp:microapp-test-only@postgres:5432/microapp_test
+      DATABASE_URL_RUNTIME: postgresql://microapp_runtime:runtime-test-only@postgres:5432/microapp_test
+      DATABASE_URL_BCV_SYNC: postgresql://microapp_bcv_sync:bcv-sync-test-only@postgres:5432/microapp_test
+      MIGRATION_DATABASE_URL: postgresql://microapp_migrator:migrator-test-only@postgres:5432/microapp_test
+      E2E_API_PORT: "4174"
+      E2E_FRONTEND_ORIGIN: http://127.0.0.1:4173
+      E2E_RATE_LIMIT_PEPPER: disposable-fullstack-e2e-rate-limit-pepper
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.9
+      - name: Install locked workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install ephemeral PostgreSQL test driver
+        run: |
+          npm install --prefix /tmp/micro-app-test-deps --no-save --no-package-lock pg @types/pg
+          mkdir -p node_modules/@types
+          ln -s /tmp/micro-app-test-deps/node_modules/pg node_modules/pg
+          ln -s /tmp/micro-app-test-deps/node_modules/@types/pg node_modules/@types/pg
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            apt-get update
+            apt-get install -y postgresql-client
+          fi
+          psql --version
+      - name: Provision isolated least-privilege database logins
+        run: |
+          psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only'
+            NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+          CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only'
+            NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+          CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-sync-test-only'
+            NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+          REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+          GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator;
+          GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync;
+          GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;
+          SQL
+      - name: Apply the complete numbered migration chain
+        run: bash scripts/db/migrate.sh
+      - name: Assert the complete migration ledger
+        run: |
+          expected_migrations="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort | wc -l | tr -d '[:space:]')"
+          latest_version="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | sort | tail -n 1 | sed 's#.*/##' | cut -c1-4)"
+          applied_migrations="$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM public.schema_migrations WHERE state = 'applied'")"
+          migration_range="$(psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -Atc "SELECT min(version) || ':' || max(version) FROM public.schema_migrations")"
+          test "$applied_migrations" = "$expected_migrations"
+          test "$migration_range" = "0001:$latest_version"
+      - name: Verify BCV 0027 SQL security and effective-date contract
+        run: psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
+      - name: Verify Carril B1 0028 quantity-mode and sale-snapshot contract
+        run: psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql
+      - name: Verify catalog import batches migration 0029 contract
+        run: psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0029_catalog_import_batches.assertions.sql
+      - name: Verify FX expiration transition migration 0030 contract
+        run: psql "$DATABASE_URL_ADMIN" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql
+      - name: Run BCV 0027 PostgreSQL 18 effective-date matrix
+        run: pnpm --filter @micro-app/api test:bcv-0027
+      - name: Install pinned Playwright runner in an isolated temporary directory
+        run: npm install --prefix /tmp/micro-app-playwright --no-save --package-lock=false @playwright/test@1.55.0
+      - name: Expose runner to the app without touching pnpm-managed packages
+        run: |
+          mkdir -p apps/web/node_modules/@playwright
+          ln -s /tmp/micro-app-playwright/node_modules/@playwright/test apps/web/node_modules/@playwright/test
+      - name: Build the real frontend for same-origin API requests
+        env:
+          VITE_API_BASE_URL: ""
+        run: pnpm --filter @micro-app/web build
+      - name: Run the real Hono API and full-stack Chromium commerce flow
+        shell: bash
+        run: |
+          set -euo pipefail
+          export E2E_FIXTURE_PATH="/tmp/real-fullstack-commerce-fixture.json"
+          export E2E_API_PID_FILE="/tmp/real-fullstack-commerce-api.pid"
+          API_LOG="$GITHUB_WORKSPACE/.real-fullstack-api.log"
+          pnpm --filter @micro-app/api exec vitest run --pool=forks src/real-fullstack-e2e-server.manual.test.ts >"$API_LOG" 2>&1 &
+          VITEST_PID=$!
+          cleanup() {
+            local original_status=$?
+            if [ -f "$E2E_API_PID_FILE" ]; then
+              API_PID="$(cat "$E2E_API_PID_FILE")"
+              kill -USR2 "$API_PID" 2>/dev/null || true
+            else
+              kill "$VITEST_PID" 2>/dev/null || true
+            fi
+            if wait "$VITEST_PID"; then
+              :
+            else
+              local wait_status=$?
+              if [ "$original_status" -eq 0 ]; then original_status=$wait_status; fi
+            fi
+            exit "$original_status"
+          }
+          trap cleanup EXIT
+
+          ready=false
+          for attempt in $(seq 1 90); do
+            if [ -f "$E2E_API_PID_FILE" ] && curl --fail --silent http://127.0.0.1:4174/health >/dev/null; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$VITEST_PID" 2>/dev/null; then
+              cat "$API_LOG"
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat "$API_LOG"
+            exit 1
+          fi
+
+          E2E_API_PROXY_TARGET=http://127.0.0.1:4174 \
+            /tmp/micro-app-playwright/node_modules/.bin/playwright test \
+            --config apps/web/playwright.config.ts \
+            --retries=0 \
+            apps/web/e2e/real-fullstack-commerce.spec.ts
+      - name: Upload full-stack Playwright report and API harness log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-fullstack-commerce-e2e-failure-${{ github.run_id }}
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+            .real-fullstack-api.log
+          if-no-files-found: ignore
+          retention-days: 7

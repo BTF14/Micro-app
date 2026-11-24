@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # The repo is a pnpm workspace (apps/web + apps/api); Dependabot reads
+  # pnpm-lock.yaml under the "npm" ecosystem.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      # Bundle routine patch/minor bumps into one PR per week instead of
+      # dozens of individual ones; security-relevant majors still get their
+      # own PR via the default (ungrouped) behavior for semver-major.
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Keep the GitHub Actions used in .github/workflows/*.yml current too —
+  # an outdated action is as much a supply-chain risk as an outdated
+  # npm package.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

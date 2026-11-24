@@ -1,0 +1,40 @@
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
+# Public build-time value (the client-side API base URL), not a secret.
+# Needed because the Cloudflare Pages dashboard does not expose
+# "Variables y secretos" to the Vite build step for this project type.
+!apps/web/.env.production
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/
+.DS_Store
+
+# Local credentials, certificates, and database exports
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+*.backup
+*.sql.gz
+.env.local
+.env.*.local
+.dev.vars.local
+
+*.tsbuildinfo
+
+# Claude Code / Claude CLI local sessions, memory, and settings
+.claude/
+.claude.json

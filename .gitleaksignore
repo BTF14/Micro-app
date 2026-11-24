@@ -1,0 +1,4 @@
+# Verified false positive: a Git commit SHA in historical STATE_JOURNAL prose was
+# classified as generic-api-key because it immediately followed the text "GitHub API:".
+# Ignore only this exact historical finding; do not suppress the rule or the file.
+a78bb9699ea00c09f9fae88b964c2aac5a08f337:docs/STATE_JOURNAL.md:generic-api-key:2124

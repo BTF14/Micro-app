@@ -1,0 +1,240 @@
+# Arquitectura SaaS de Micro app — decisiones y criterios de evolución
+
+**Fecha:** 2026-10-30  
+**Estado:** dirección arquitectónica recomendada para guiar el diseño; no autoriza por sí sola cambios de esquema, políticas comerciales sensibles, despliegues ni migraciones.  
+**Repositorio:** https://github.com/BTF14/Micro-app  
+**PR documental de continuidad:** https://github.com/BTF14/Micro-app/pull/156
+
+> **Reconciliación de estado — 2026-11-14:** las entradas iniciales de este documento que describían ausencia de endpoints comerciales corresponden al estado histórico de 2026-10-30 y quedaron supersedidas por el código integrado en main. Actualmente main incluye rutas de catálogo, inventario/recepciones, POS/checkout, cajas/turnos, autorización server-side, rate limiting y sincronización BCV. Las propuestas y decisiones de arquitectura de este documento conservan su alcance; esta nota no convierte propuestas futuras en funciones implementadas ni declara producción lista.
+
+## 1. Propósito y reglas de interpretación
+
+Este documento conserva decisiones y criterios para que cualquier chat, agente o desarrollador pueda continuar sin reconstruir conversaciones. El repositorio es la fuente de continuidad. Distinguir siempre:
+
+- **Dirección adoptada para diseño:** guía técnica recomendada por el propietario al delegar criterio arquitectónico.
+- **Propuesta pendiente de aprobación:** especialmente permisos detallados, límites comerciales, descuentos, excepciones operativas y políticas financieras.
+- **Implementado y verificado:** solo cuando existe código y evidencia identificable.
+- **Pendiente:** no presentarlo como funcionalidad existente.
+
+No inferir que una propuesta documental ya está implementada. No modificar producción, secretos, Neon `main`, datos reales ni recursos de pago. Presupuesto objetivo: **USD 0**.
+
+## 2. Producto y modelo organizacional
+
+Micro app será **una plataforma SaaS multi-organización, multi-sucursal y multiusuario**, no tres productos separados por tamaño.
+
+- **Organización:** tenant y frontera de aislamiento de datos; representa el negocio que contrata Micro app, no necesariamente una entidad legal.
+- **Sucursal:** unidad operativa dentro de una organización.
+- **Usuario:** persona que puede pertenecer a una o varias organizaciones.
+- **Membresía:** relación usuario-organización con un único rol organizacional y estado; las asignaciones de sucursal se modelan por separado.
+- **Almacén:** ubicación de existencias dentro de una sucursal; permitir más de uno cuando el negocio lo necesite.
+- **Caja/terminal:** pertenece a una sucursal; turnos y cierres deben estar asociados a caja, sucursal y operador.
+- **Operaciones:** ventas, devoluciones, compras/recepciones, movimientos, transferencias y cierres deben incluir la organización y el ámbito operativo correcto.
+
+Un negocio de una sola ubicación debe poder empezar con una sucursal predeterminada creada durante onboarding; no obligarlo a administrar una estructura compleja.
+
+### Propiedad y ámbito recomendado
+
+| Dato/entidad | Ámbito predeterminado | Regla |
+|---|---|---|
+| Catálogo, categorías, SKU/barcodes | Organización | Compartido; evitar duplicación por sucursal |
+| Proveedores y clientes | Organización | Compartidos salvo necesidad probada |
+| Precio/lista de precios | Organización | Compartido por defecto; excepciones por sucursal en fase posterior |
+| Existencias y reservas | Sucursal + almacén | Nunca sumar ni mostrar stock de otra sucursal como propio |
+| Compras y recepciones | Organización + sucursal receptora | Recepción trazable por almacén |
+| Ventas, pagos y devoluciones | Organización + sucursal + caja/turno cuando aplique | Instantáneas históricas e idempotencia |
+| Movimientos de inventario | Organización + sucursal + almacén | Libro de movimientos trazable |
+| Usuarios/membresías | Organización | Un único rol organizacional; las asignaciones de sucursal son independientes del rol y no conceden permisos comerciales |
+| Informes | Organización y sucursal | Vistas por sucursal y consolidadas según permiso |
+| Transferencias | Origen y destino | Salida y recepción formal, con autorizadores y trazabilidad |
+
+No añadir `branch_id` indiscriminadamente a cada tabla. Añadirlo a las entidades operativas que realmente pertenecen a una sucursal y reforzar las relaciones con claves foráneas compuestas tenant-scoped.
+
+## 3. Roles y autorización
+
+Roles base de la organización: `owner`, `admin`, `cashier`, `inventory`. La decisión estructural vigente es **un solo rol por miembro dentro de cada organización**, almacenado en `organization_members.role`. Ese rol es uniforme en toda la organización; una persona no puede ser `cashier` en una sucursal e `inventory` en otra.
+
+`branch_memberships` tiene una responsabilidad distinta: concede o revoca la asignación/acceso de un miembro a una sucursal. No contiene un rol y no redefine el rol organizacional. El rol por sí solo no sustituye la comprobación de la asignación de sucursal ni constituye autorización de una operación.
+
+**Reglas de diseño obligatorias:** autorización server-side por operación y recurso; denegar por defecto; validar organización y sucursal en cada consulta; no confiar en IDs del cliente; evitar que una organización quede sin owner activo; revocar sesiones al desactivar membresía/usuario; auditar cambios de rol y acciones sensibles.
+
+La matriz `docs/sdd/role-permission-decision-matrix.md` sigue **NO APROBADA**. La decisión estructural anterior no aprueba qué operaciones puede realizar cada rol. Cada organización define sus políticas comerciales, incluidos descuentos, límites y aprobaciones; quién puede configurarlas y quién puede ejecutar excepciones debe quedar definido en la matriz aprobada. Ver `docs/sdd/ORGANIZATION_COMMERCIAL_POLICY_CONFIGURATION.md`. No implementar permisos comerciales basándose solo en este apartado.
+
+## 4. BCV y conversión USD/VES
+
+Objetivo: USD como moneda base del catálogo/contabilidad interna y VES como conversión basada en una tasa identificable, sin inventar ni ocultar la frescura de la tasa.
+
+### Diseño
+
+1. Investigar y validar una fuente BCV fiable. No asumir que existe una API oficial gratuita ni codificar una URL no verificada.
+2. Un Cron Trigger de Cloudflare consulta la fuente en horario programado; convertir correctamente el horario local de Venezuela a UTC y contemplar fines de semana/feriados.
+3. Validar estructura, valor positivo, fecha efectiva, fuente, duplicados y cambios anómalos antes de persistir.
+4. Persistir el histórico en `exchange_rates` (la tabla ya existe en el esquema revisado), con fuente, fecha efectiva, valor y estado de validación.
+5. No escribir filas vacías ni repetir escrituras si no hay tasa nueva. Sin bucles de reintento.
+6. Ante caída o dato inválido, conservar la última tasa válida y exponer su fecha/frescura y estado stale; no sustituirla por cero ni presentar una tasa inventada.
+7. KV puede distribuir una copia de lectura de la tasa, con clave y versión controladas. Neon permanece como fuente persistente de verdad.
+8. Cada venta/línea debe conservar la tasa, moneda, importe original, importe convertido, fecha efectiva y referencia/fuente usados en ese momento. Actualizar la tasa nunca recalcula ventas pasadas.
+
+La automatización BCV y la API de consulta no están implementadas por el mero hecho de estar documentadas. El proveedor, la licencia/condiciones de acceso y la estabilidad de extracción son gates previos.
+
+## 5. Buscador de productos y precio vigente
+
+“Precio al momento” significa devolver el precio de venta vigente que Micro app tiene registrado, junto con la tasa BCV aplicable y su frescura cuando se muestra equivalencia en VES. No implica consultar un marketplace externo ni rastrear precios de competidores.
+
+### Secuencia de búsqueda
+
+1. Código de barras exacto.
+2. SKU exacto.
+3. Prefijo/normalización del nombre, usando índices apropiados.
+4. Búsqueda parcial más costosa solo cuando sea necesaria y limitada.
+
+Aplicar debounce en el cliente, longitud mínima razonable para búsquedas por texto, límite pequeño de resultados, paginación/cursor cuando corresponda, consultas parametrizadas, índices tenant-scoped y límites de frecuencia. La respuesta debe respetar la organización y, para existencias, sucursal/almacén.
+
+### Fuente de verdad y caché
+
+- Empezar con consulta SQL indexada y medir. No introducir KV para el catálogo antes de demostrar que Neon es cuello de botella.
+- Neon/PostgreSQL es autoridad para catálogo, precio y stock.
+- Caché es opcional, reconstruible, con TTL corto/versionado e invalidación al cambiar precio/producto; nunca debe cruzar tenants.
+- No escribir una clave KV por producto en cada importación masiva. Los límites gratuitos de KV documentados históricamente incluyen una cuota de escrituras mucho menor que lecturas y límite de frecuencia por clave; verificar límites actuales de cuenta antes de depender de ellos.
+- Si las mediciones justifican caché de catálogo, preferir snapshots/páginas por organización con versión y publicación agrupada, o caché HTTP cuidadosamente privada; comparar coste/consistencia y aislar sucursal cuando la respuesta incluya stock.
+- No cachear respuestas autenticadas en caché pública compartida. No confiar en KV para autorización ni inventario transaccional.
+
+La UI no debe emitir una petición por cada tecla. Agrupar consultas para listas y evitar N+1. Instrumentar cache hit ratio, SQL calls, latencia y coste por operación.
+
+### Confirmación de venta
+
+La caché solo acelera lectura. Al confirmar venta, la API debe volver a validar en PostgreSQL, dentro de una transacción, el precio autorizado, la existencia de la sucursal/almacén, la tasa seleccionada según la política vigente y los permisos. Guardar snapshots de precio, coste/tasa cuando aplique, descripción/SKU y cantidades para que el recibo histórico no cambie.
+
+## 6. Integridad transaccional y finanzas
+
+- Usar unidades monetarias decimales/NUMERIC; definir redondeo una sola vez y documentarlo.
+- Cada venta, pago, devolución, compra, recepción y transferencia debe tener clave idempotente para que un reintento no duplique efectos.
+- Venta, líneas, pagos, movimientos de stock y caja deben reconciliarse mediante transacciones y restricciones/validaciones.
+- Controlar concurrencia al vender la última unidad; no permitir stock negativo por defecto.
+- No borrar ventas cerradas ni editar hechos históricos: usar reversos/ajustes auditados.
+- Registrar quién, cuándo, organización, sucursal, caja/turno, motivo y referencia.
+- Los movimientos polimórficos deben validar que la referencia realmente pertenece al tenant y al tipo esperado.
+- Probar pagos parciales/múltiples, redondeos, devoluciones parciales/totales, doble envío, timeout y concurrencia.
+
+No activar offline-first de ventas en esta etapa. Es una decisión de complejidad y riesgo; reconsiderar solo con evidencia de una necesidad operativa real y una política explícita de reconciliación.
+
+## 7. Seguridad, privacidad y operación
+
+- Aislamiento multi-tenant como propiedad central: FKs compuestas, consultas filtradas por tenant, pruebas negativas cross-tenant y, si se evalúa RLS, primero probar contexto por request y pooling de Neon.
+- Separar autenticación de autorización; sesión/membresía válida no concede acceso a toda operación.
+- Validación de entradas, límites de cuerpo, rate limiting/abuse controls, paginación, timeouts y errores sin filtración de datos.
+- Auditoría append-only desde las rutas normales para operaciones sensibles.
+- Minimizar datos personales, limitar exportaciones y definir retención antes de añadir analítica.
+- Backups cifrados y restauración técnica ya tienen evidencia; quedan pruebas de integridad de datos representativos, RPO/RTO, alertas, retención y coste total.
+
+## 8. Capacidad y coste
+
+No prometer número de organizaciones, sucursales, usuarios concurrentes ni búsquedas por segundo sin pruebas. Neon y Cloudflare tienen cuotas y límites independientes. Antes de fijar planes o límites comerciales, ejecutar pruebas sintéticas autorizadas y medir:
+- latencia p50/p95/p99, errores y throughput;
+- CU/compute, conexiones, almacenamiento y crecimiento de Neon;
+- Workers requests/CPU/duración, KV reads/writes, Pages, egress/transferencia;
+- tasa de aciertos de caché, consultas por búsqueda y coste por operación;
+- concurrencia por organización y sucursal, y comportamiento bajo picos.
+
+Definir umbrales conservadores, alertas, cuotas server-side y política de degradación. Los planes comerciales pueden diferenciarse por sucursales/capacidades/uso razonable, pero no fijar precios ni cuotas hasta medir costes reales. Evitar pérdida/bloqueo de datos al exceder cuota.
+
+## 9. Secuencia de implementación
+
+1. Reconciliar documentación y estado vivo de GitHub.
+2. Completar auditoría read-only de esquema, rutas, índices, constraints, consultas y límites.
+3. Aprobar el modelo de sucursal/almacén/caja y la matriz de permisos por operación y ámbito del recurso, manteniendo un único rol organizacional; dibujar ERD y reglas de integridad.
+4. Diseñar migraciones compatibles y pruebas cross-tenant/cross-branch en PostgreSQL efímero.
+5. Implementar por etapas: catálogo/búsqueda → inventario → compras/recepciones → caja/turnos → ventas/pagos → devoluciones/transferencias/reportes.
+6. Investigar fuente BCV y automatización en paralelo documental; implementar después de contrato y pruebas de frescura/fallback.
+7. Medir carga/coste y definir límites comerciales después de tener flujos reales.
+8. Validar producción, backups, observabilidad, seguridad y recuperación antes de declarar readiness.
+
+No habilitar endpoints comerciales mientras la matriz de permisos por operación siga sin aprobarse. Las migraciones estructurales pueden avanzar en una PR aislada cuando el modelo de datos esté definido, con pruebas PostgreSQL efímeras y sin aplicar cambios a Neon main.
+
+## 10. Pendientes explícitos
+
+- Fuente BCV fiable/gratuita y mecanismo de extracción verificado.
+- Contrato API para consulta de tasa y buscador de productos.
+- Política de frescura/TTL de tasa y manejo de feriados/fuente caída.
+- ERD de organización/sucursal/almacén/caja documentado en `docs/sdd/MULTI_BRANCH_DATA_MODEL.md`; sucursales/asignaciones en 0003 y cajas/turnos en 0004 (PR #167 fusionada). Almacenes y stock por almacén siguen pendientes.
+- Matriz de permisos por operación y ámbito del recurso (organización, sucursal, caja/turno), sin crear roles por sucursal. La autoridad de rol sigue siendo un único `organization_members.role` por miembro/organización; `branch_memberships` solo concede asignación/acceso a sucursales. Definir qué operaciones y recursos puede administrar o ejecutar cada rol, incluidas la configuración de políticas comerciales de la organización y la ejecución de excepciones. Los valores y límites comerciales los define cada organización, no la plataforma. La matriz permanece **NO APROBADA** hasta aprobación explícita.
+- Método de valoración de inventario y política de costo/margen.
+- Capacidades y permisos para descuentos, cancelación/devolución y aprobaciones; cada organización configura sus propios límites comerciales.
+- Estrategia de caché de catálogo solo tras benchmark.
+- Pruebas de capacidad de Neon y Cloudflare, cuotas y coste total.
+- RPO/RTO, retención/alertas y validación de integridad del backup.
+
+## 11. Snapshot histórico pre-PR #165 (supersedido por el estado vigente de la sección 12)
+
+- API Hono tiene autenticación y `GET /health`; no se han verificado rutas comerciales HTTP para catálogo/inventario/ventas/pagos/devoluciones.
+- `exchange_rates` existe en el esquema inicial; Cron BCV y API pública/interna de tasa no están implementados.
+- Índices tenant-scoped para nombre/SKU/barcode ya existen en el esquema inicial; buscador de producto todavía no está implementado como flujo comercial HTTP.
+- El stock existente es por organización, no por sucursal.
+- El DDL inicial 0001 no contenía sucursales/cajas/turnos; PR #165 añadió sucursales/asignaciones en 0003 y PR #167 fusionó 0004 para cajas/turnos en main.
+- La matriz de roles sigue sin aprobación.
+- Capacidad sostenible y cuotas vivas de Cloudflare no están demostradas.
+- Producción: **NO lista**.
+
+## 12. Referencias del proyecto
+
+Consultar `docs/INSPIRATION.md` y `docs/POS_REFERENCE_MATRIX.md` para patrones funcionales de OSPOS, NexoPOS, Lakasir y POSNext. Son referencias para requisitos y pruebas, no permiso para copiar código. Revisar licencias antes de reutilizar cualquier material.
+
+
+## 13. Estrategia de consultas y conexiones Neon/Workers
+
+La optimización debe reducir conexiones y trabajo de base de datos sin debilitar la consistencia:
+
+- Para búsquedas/lecturas independientes de una sola consulta o batch fijo, evaluar el helper HTTP `neon()` de `@neondatabase/serverless`; evita abrir una sesión WebSocket interactiva para cada lectura.
+- Reservar `Client` con transacción interactiva para operaciones que realmente necesitan varias sentencias atómicas: venta, pago, stock, ledger, devolución, recepción y transferencia.
+- No usar el driver HTTP para simular una transacción de varias sentencias: no ofrece la misma semántica interactiva.
+- El código actual `apps/api/src/database.ts` crea un `Client` request-scoped en `withDatabaseClient`; los endpoints de autenticación también lo usan para lecturas sencillas. Es un punto de medición/optimización, no un defecto demostrado ni permiso para refactorizar a ciegas.
+- Antes de cambiar el helper, comparar en PostgreSQL efímero/preview aislado: latencia p50/p95, número de conexiones/sesiones, compute, errores, comportamiento en Workers y pruebas de integración. Mantener transacciones con `Client` hasta que se demuestre el patrón seguro.
+- Cloudflare Hyperdrive es una opción futura de pooling, no una dependencia asumida: no está configurado en el repo y debe verificarse disponibilidad, cuotas y coste $0 antes de adoptarlo.
+- Evitar N+1: la búsqueda devuelve campos necesarios en una sola consulta, y las pantallas cargan listas con límites/paginación. No ejecutar una consulta por cada resultado.
+- Índices observados en `0001_initial.sql`: unicidad tenant-scoped para SKU y barcode y B-tree sobre `(organization_id, lower(name))`. Barcode/SKU exactos pueden aprovechar índices únicos. Para nombre, medir plan de ejecución de prefijo normalizado; no asumir que `ILIKE '%texto%'` usará el índice B-tree. Considerar `text_pattern_ops` o trigram/GIN solo si un benchmark realista demuestra necesidad y el coste de escritura/almacenamiento es aceptable.
+- Usar `EXPLAIN (ANALYZE, BUFFERS)` con datos sintéticos representativos, nunca datos de clientes, para justificar índices. No añadir índices redundantes por anticipado: elevan almacenamiento y coste de escrituras.
+
+**Criterio:** optimizar primero consultas, conexión y paginación; introducir caché distribuida o pooling solo cuando las mediciones demuestren un cuello de botella y la cuota gratuita vigente lo soporte.
+
+
+## 14. Rol organizacional y asignación de sucursal — decisión vigente
+
+La autoridad de rol se mantiene en `organization_members.role`: cada miembro tiene **un único rol por organización** (`owner`, `admin`, `cashier` o `inventory`). El mismo rol aplica en todas las sucursales de esa organización. No existe ni se proyecta en esta decisión un rol distinto por sucursal.
+
+`branch_memberships` es únicamente una relación de asignación de acceso a sucursales: permite conceder o revocar el acceso de un miembro a una sucursal y no tiene columna de rol. Una asignación activa no autoriza por sí sola ventas, pagos, inventario, anulaciones, configuración de políticas ni supervisión. El servidor debe comprobar la membresía organizacional, el rol global, la asignación a la sucursal y el permiso específico de la operación cuando la matriz sea aprobada.
+
+Cambiar `organization_members.role` afecta al miembro en toda la organización; revocar una fila de `branch_memberships` afecta únicamente esa asignación y no cambia su rol ni las otras asignaciones. No introducir roles por sucursal ni migraciones para ese propósito sin nueva decisión explícita del propietario.
+
+La matriz de permisos por operación permanece **NO APROBADA**. No inferir facultades de los nombres de rol. Las políticas comerciales son propiedad de cada organización; las facultades para configurarlas y ejecutar excepciones siguen pendientes de aprobación. Para caja, conservar el modelo de turnos con apertura y cierre ordinario; no crear un cierre especial de supervisor incompatible con él.
+
+## Modelo de datos multi-sucursal — diseño inicial (snapshot pre-PR #165; estado vigente en sección 12)
+
+El modelo detallado propuesto está en docs/sdd/MULTI_BRANCH_DATA_MODEL.md. Resume la dirección:
+- organización = tenant; sucursal = unidad operativa; almacén = ámbito de stock; caja/turno = ámbito de cobro.
+- membresía organizacional y asignaciones de sucursal deben modelarse por separado; cashier/inventory no deben heredar acceso a todas las sucursales.
+- catálogo compartido por organización; stock por almacén/producto, con movimientos como historial y balances como proyección transaccional.
+- ventas, pagos, recepciones y transferencias llevan claves tenant-scoped y relaciones compuestas.
+- migrar desde products.stock_quantity mediante backfill/reconciliación, sin borrar el campo legacy en el primer paso.
+- no se implementan roles, rutas, esquema ni migraciones en este diseño. La matriz de permisos continúa NO APROBADA.
+
+
+## 10. Estado post-PR #165 y baseline de caja/turnos (2026-10-30 UTC)
+
+- La migración versionada 0003 añade `branches` y `branch_memberships`; PR #165 está fusionada. Esta migración todavía no se ha aplicado a Neon main.
+- `resolveBranchContext` está implementado y probado en PostgreSQL efímero, pero no está conectado a rutas ni concede permisos por operación.
+- Decisión de diseño para caja: cada register pertenece a una sucursal. Un register_shift abierto pertenece a un único cajero y una única caja; no se comparte ni se transfiere. Cambio de cajero requiere cierre con conteo y nueva apertura. Máximo un turno abierto por caja y por cajero dentro de la organización, protegido por índices únicos parciales.
+- Owner/admin pueden tener alcance organizacional para resolver sucursales, pero eso no les concede operar el turno de otro cajero. Los overrides requieren permiso separado, motivo y auditoría; siguen pendientes de matriz aprobada.
+- Especificación: `docs/sdd/REGISTER_SHIFT_MODEL.md`. PR #167 fusionó `0004_register_shifts.sql`, assertions y pruebas de integración en main. No se aplicó a Neon. No hay endpoints comerciales.
+- Entorno: PostgreSQL 18 desechable de CI para migraciones desde cero. Neon branches son opcionales para pruebas que CI no cubra; evitar su creación rutinaria y establecer expiración/limpieza. Neon main no es entorno de desarrollo.
+
+
+## 12. Estado vigente post PR #166 y PR #167 fusionadas — 2026-10-30 UTC
+
+- Main verificado: `1d10befe0cd3367e04bd8998a192e93d9b228063`. PR #165 fusionada; 0003 crea `branches` y `branch_memberships`. La migración 0003 no se ha aplicado a Neon main.
+- `resolveBranchContext` está implementado y probado, pero no conectado a rutas. `branch_memberships` no contiene rol por sucursal; cashier/inventory siguen en `organization_members.role`.
+- PR #166 fusionó la reconciliación documental mediante merge commit `8a16b4bf70e3b35c45e91366148f4a37aa43b5e7`.
+- PR #167 fusionó 0004 en main: `registers`, `register_shifts`, FKs compuestas, índices únicos parciales, lifecycle triggers y protección ante desactivación/revocación con turnos abiertos. No se aplicó a Neon.
+- La primera ejecución de PR #167 detectó una expectativa SQLSTATE incorrecta en un test; se corrigió antes del HEAD final. En el HEAD final `ad45911368e9e9a714ebbe014de2d84a7b3cf1de`, los 10 workflows Actions terminaron success.
+- Conteos de efectivo se guardan separados USD/VES. No existe ledger de caja ni cálculo de efectivo esperado/diferencias.
+- La matriz de permisos comerciales sigue NO APROBADA. No hay endpoints comerciales ni autorización de supervisor para turnos.
+- PostgreSQL 18 efímero es la validación primaria; Neon branches solo si aportan evidencia adicional; Neon main no es laboratorio.
+- PR #166/#167 están fusionadas con autorización del propietario y checks completos. La autorización de merge no autoriza cambios directos en Neon main, configuración Cloudflare, secretos, DNS, billing ni despliegues manuales.

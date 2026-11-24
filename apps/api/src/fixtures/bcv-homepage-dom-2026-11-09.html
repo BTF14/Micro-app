@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="lt-ie9 lt-ie8 lt-ie7" lang="es"> <![endif]-->
+<!--[if IE 7]>    <html class="lt-ie9 lt-ie8" lang="es"> <![endif]-->
+<!--[if IE 8]>    <html class="lt-ie9" lang="es"> <![endif]-->
+<!--[if gt IE 8]>
+<!--><html>
+<!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta name="generator" content="Drupal 7 (http://drupal.org)">
+<link rel="shortcut icon" type="image/png" href="/sites/default/files/favicon.png">
+<link rel="canonical" href="/">
+<link rel="shortlink" href="/">
+<title>Banco Central de Venezuela |</title>
+
+<!-- CSS //-->
+<link type="text/css" rel="stylesheet" href="/sites/default/files/css/css_xE-rltqS26_g4y81c6k_n_eX-Pcvd0b_lW_j98NlBqk.css" media="all">
+<link type="text/css" rel="stylesheet" href="/sites/default/files/css/css_28632187c44e9e52f5b6a868225594bb.css" media="all">
+<!--[if IE 6]>
+<link type="text/css" rel="stylesheet" href="/sites/default/files/css/css_j_zJ06v9_M_U67H5Ue_t_4W4L5u9W9rY1M0Ua5W1uAU.css" media="all">
+<![endif]-->
+<style type="text/css">
+@import url("http://www.bcv.org.ve/modules/user/user.css?q=en");
+</style>
+
+<!--[if IE]>
+<script type="text/javascript" src="/sites/all/modules/contrib/jsi18n/jquery.jsi18n.min.js"></script>
+<![endif]-->
+
+
+<!--[if IE]>
+<link type="text/css" rel="stylesheet" href="/sites/default/files/css/css_RkYx05k2s4q1uN0L5_oY3p1Y9oUa7uB-5m4t8y42j-w.css" media="all">
+<![endif]-->
+
+
+<script type="text/javascript" src="/misc/jquery.js?v=1.4.4"></script>
+<script type="text/javascript" src="/misc/drupal.js?v=7.50"></script>
+<script type="text/javascript" src="/sites/all/modules/contrib/views/js/viewsGeolocation.js?v=7.50"></script>
+<script type="text/javascript" src="/sites/all/modules/contrib/views/js/viewsScroll.js?v=7.50"></script>
+<script type="text/javascript" src="/sites/default/files/js/js_7n5f4hS83-t-p70n10lX3Xn2H1jB50aA2I2pY53Wb6s.js"></script>
+<script type="text/javascript" src="/sites/all/modules/contrib/views_slideshow/views_slideshow.js?v=7.50"></script>
+<script type="text/javascript" src="/sites/all/modules/contrib/views_slideshow/contrib/views_slideshow_jquery_cycle/views_slideshow_jquery_cycle.js?v=7.50"></script>
+<script type="text/javascript" src="/sites/default/files/js/js_xO9XN0_i3L4y3-0j-B5hWk28b74K731Xy9I8577Y5x0.js"></script>
+<script type="text/javascript" src="/sites/all/modules/contrib/views_slideshow/views_slideshow_bxslider/views_slideshow_bxslider.js?v=7.50"></script>
+<script type="text/javascript" src="/sites/default/files/js/js_p4X15G4jI9t17jE7y31P_674w6z0q2nF2754y74z90w.js"></script>
+<!--[if IE]>
+<script type="text/javascript" src="/sites/all/modules/contrib/views_slideshow/contrib/views_slideshow_jquery_cycle/jquery.cycle.all.min.js"></script>
+<![endif]-->
+<!--[if IE]>
+<script type="text/javascript" src="/sites/all/modules/contrib/views_slideshow/views_slideshow.ie.js"></script>
+<![endif]-->
+<script type="text/javascript">
+(function($) {
+
+/**
+ * @file
+ * JavaScript for views_slideshow.
+ */
+
+Drupal.behaviors.viewsSlideshow = {
+  attach: function(context, settings) {
+    // Make sure viewsSlideshow is defined.
+    if (typeof Drupal.viewsSlideshow === 'undefined') {
+      Drupal.viewsSlideshow = {};
+    }
+
+    // Add the settings for each slideshow.
+    if (settings.viewsSlideshow) {
+      $.extend(Drupal.viewsSlideshow, settings.viewsSlideshow);
+    }
+
+    // Make sure that the slideshow is attached to the right element.
+    $('.views-slideshow-container', context).once('viewsSlideshow', function() {
+      var slideshow = $(this);
+      var slideshow_id = slideshow.attr('id');
+
+      if (slideshow.hasClass('views-slideshow-slider')) {
+        var options = Drupal.viewsSlideshow.slideshows[slideshow_id];
+        if (options.transition == 'fade' && options.forceAutoplay === true && options.pauseOnHover === false) {
+          options.pauseOnHover = true;
+        }
+        if (options.transition == 'fade' && options.forceAutoplay === true && options.pauseOnHover === true) {
+          options.pauseOnHover = true;
+        }
+        options.after = function(currentSlideElement, nextSlideElement, isPlay) {
+          if (options.forceAutoplay === true && options.pauseOnHover === true && typeof options.pause !== 'undefined' && options.pause === 'hover') {
+            if (isPlay === true) {
+              $(slideshow).cycle('resume');
+            }
+            else {
+              $(slideshow).cycle('pause');
+            }
+          }
+        }
+        slideshow.cycle(options);
+      }
+      else if (slideshow.hasClass('views-slideshow-bxslider')) {
+        var options = Drupal.viewsSlideshow.slideshows[slideshow_id];
+        slideshow.bxSlider(options);
+      }
+    });
+  }
+};
+
+})(jQuery);
+</script>
+<script type="text/javascript">
+$(document).ready(function(){
+  $("#views-slideshow-grid-1").views_slideshow({continuous: true, fadeOut: 1000, fadeSpeed: 1000, transition: "fade", delay: 5000, pauseOnHover: true, randomize: false});
+});
+</script>
+<script type="text/javascript" src="/sites/default/files/js/js_4Axt-80-w2Kx0T55_5j7k72q4b26Q8Z98g4bW99F0cQ.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+  $("#views-slideshow-grid-2").views_slideshow({continuous: true, fadeOut: 1000, fadeSpeed: 1000, transition: "fade", delay: 5000, pauseOnHover: true, randomize: false});
+});
+</script>
+<!-- Start Alexa Certify Javascript -->
+<script type="text/javascript" src="https://certify.alexametrics.com/alexametrics.js"></script>
+<script type="text/javascript">
+  _atrk_opts = {
+    atrk_acct: "gq57T1aM4x004A",
+    domain: "bcv.org.ve"
+  };
+  _atrk_domain = "bcv.org.ve";
+  AMum.loadFromHost();
+</script>
+<noscript>
+  <img src="http://www.alexametrics.com/atrk?account=gq57T1aM4x004A" height="1" width="1" alt="" style="display:none">
+</noscript>
+<!-- End Alexa Certify Javascript -->
+
+<!--[if lt IE 9]>
+<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+<script type="text/javascript">
+var _gaq = _gaq || [];
+_gaq.push(["_setAccount", "UA-22225718-1"]);
+_gaq.push(["_trackPageview"]);
+
+(function() {
+  var ga = document.createElement("script");
+ga.type = "text/javascript";
+ga.async = true;
+ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+  var s = document.getElementsByTagName("script")[0];
+s.parentNode.insertBefore(ga, s);
+})();
+</script>
+
+</head>
+<body class="not-front not-logged-in page-node node-type-page">
+<div id="skip-link"><a href="#main-content" class="element-invisible element-focusable">Pasar al contenido principal</a></div>
+
+<div id="page-wrapper">
+  <div id="page">
+    <header id="header" role="banner">
+      <div class="section clearfix">
+        <div id="logo">
+          <a href="/" title="Inicio" rel="home">
+            <img src="/sites/default/files/slogobcv2_0.png" alt="Inicio"/>
+          </a>
+        </div>
+        
+        <div class="region region-header">
+  <div id="block-search-apachesolr-search-widget" class="block block-search">
+
+    <h2>Formulario de búsqueda</h2>
+  
+  <div class="content">
+    <form action="/search" method="post" id="search-block-form" accept-charset="UTF-8">
+<div><div class="container-inline">
+    <h2 class="element-invisible">Buscar</h2>
+    <div class="form-item form-type-textfield form-item-search-block-form">
+        <label class="element-invisible" for="edit-search-block-form--2">Buscar <span class="form-required" title="Este campo es obligatorio.">*</span></label>
+      <input type="text" id="edit-search-block-form--2" name="search_block_form" value="" size="15" maxlength="128" class="form-text required">
+</div>
+<input type="submit" name="op" value="Buscar" class="form-submit">
+</div><input type="hidden" name="form_build_id" value="[REDACTED]">
+<input type="hidden" name="form_token" value="[REDACTED]">
+<input type="hidden" name="form_id" value="search_block_form">
+</div></form>
+  </div>
+
+</div>
+</div>
+      </div>
+    </header>
+    
+    <div id="main-wrapper" class="clearfix">
+      <div id="main">
+        <div id="content" class="column">
+          <div class="section">
+            <a id="main-content"></a>
+            <div class="region region-content">
+  <div id="block-system-main" class="block block-system">
+
+    
+  
+  <div class="content">
+    <article class="node node-page node-promoted clearfix" id="node-185" about="/" typeof="sioc:Item foaf:Document">
+  <div class="content clearfix">
+    <div class="field field-name-body field-type-text-with-summary field-label-hidden">
+    <div class="field-items">
+      <div class="field-item even" property="content:encoded"><p>Sorry, you need to enable JavaScript to visit this website.</p>
+
+<p>[Pasar al contenido principal](#main-content)</p>
+
+<p><img src="https://www.bcv.org.ve/sites/default/files/banners/1140x141.png" alt="banner"></p>
+
+<p>[![Inicio](/sites/default/files/slogobcv2_0.png)](# "Inicio")</p>
+
+<h2>Formulario de búsqueda</h2>
+
+<p>Buscar</p>
+
+<p>[![](/sites/default/files/Trigrama.jpg)](# "Inicio")</p>
+
+<p>Ocultar o Mostrar la Navegación</p>
+
+<p>Buscar</p>
+
+<ul>
+<li><a href="#">BCV</a>
+<ul>
+<li><a href="#">Quiénes somos</a>
+<ul>
+<li><a href="/bcv/mision-y-vision">Misión y visión</a></li>
+<li><a href="/bcv/funciones">Funciones</a></li>
+<li><a href="/bcv/autoridades">Autoridades</a></li>
+<li><a href="#">Organización</a>
+<ul>
+<li><a href="/bcv/organigrama">Organigrama</a></li>
+<li><a href="/bcv/subsede-maracaibo">Subsede Maracaibo</a></li>
+<li><a href="/bcv/casa-de-la-moneda-de-venezuela">Casa de la Moneda de Venezuela</a></li>
+</ul>
+</li>
+<li><a href="#">Historia del BCV</a>
+<ul>
+<li><a href="/bcv/resena-historica">Reseña histórica</a></li>
+<li><a href="/bcv/galeria-de-expresidentes">Galería de expresidentes</a></li>
+</ul>
+</li>
+<li><a href="http://www.bcv.org.ve/codigo-de-etica">Código de Ética</a></li>
+</ul>
+</li>
+<li><a href="#">Marco jurídico</a>
+<ul>
+<li><a href="/marco/leyes_bcv">Legislación</a></li>
+<li><a href="#">Normativa cambiaria</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-cambiaria">Avisos oficiales</a></li>
+<li><a href="/marco/convenios-cambiarios">Convenios cambiarios</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-cambiaria">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa monetaria</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-monetaria">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-monetaria">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa sobre sistema de pagos</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-pago">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-pago">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa sobre minerales estratégicos</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-minerales">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-minerales">Resoluciones</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/bcv/acuerdo-anual-de-pol-ticas">Acuerdo Anual de Políticas Económicas</a></li>
+<li><a href="#">Comunicaciones institucionales</a>
+<ul>
+<li><a href="/comunicados-de-prensa/comunicados">Comunicados</a></li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa">Notas de Prensa</a></li>
+<li><a href="#">Recursos comunicacionales</a>
+<ul>
+<li><a href="/bcv/videos">Videos</a></li>
+<li><a href="/bcv/audios">Audios</a></li>
+<li><a href="/bcv/galeria-de-imagenes">Galería de imágenes</a></li>
+<li><a href="/bcv/descargables">Descargables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Publicaciones</a>
+<ul>
+<li><a href="/bcv/publicaciones">Publicaciones periódicas</a></li>
+<li><a href="/bcv/publicaciones-no-periodica">Publicaciones no periódicas</a></li>
+<li><a href="https://publicaciones.extra.bcv.org.ve">Fondo editorial del BCV</a></li>
+<li><a href="/bcv/la-libreria-del-bcv">La Librería del BCV</a></li>
+</ul>
+</li>
+<li><a href="/bcv/estados-financieros">Estados financieros</a></li>
+<li><a href="#">Corresponsabilidad social</a>
+<ul>
+<li><a href="/bcv/oficina_atencion_al_ciudadano">Oficina de Atención Ciudadana</a></li>
+<li><a href="/bcv/economia-en-la-escuela-encuentro-de-saberes">Economía en la escuela, encuentro de saberes</a></li>
+<li><a href="/bcv/premio-ernesto-peltzer">Premio Ernesto Peltzer</a></li>
+<li><a href="/bcv/centro-de-formacion-capacitacion-e-innovacion-orfebreria-y-joyeria">Centro de Formación Capacitación e Innovación Orfebrería y Joyería</a></li>
+<li><a href="/bcv/programa-de-cooperacion-interinstitucional">Programa de Cooperación Interinstitucional</a></li>
+<li><a href="#">Biblioteca</a>
+<ul>
+<li><a href="/bcv/informacion">Información</a></li>
+<li><a href="http://www.bcv.org.ve/biblioteca/biblioteca.html">Servicios</a>
+<ul>
+<li><a href="https://biblioteca.extra.bcv.org.ve/">Catálogo Público</a></li>
+<li><a href="http://www.bcv.org.ve/bcv/coleccion-electronica">Colección Electrónica</a></li>
+</ul>
+</li>
+<li><a href="http://www.bcv.org.ve/biblioteca/eventos_biblioteca/carabobo200">Eventos</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/biblioteca/eventos_biblioteca/carabobo200">La Batalla de Carabobo en la colección de la Biblioteca</a></li>
+<li><a href="/bcv/pensadores-economicos-latinoamericanos-0">Pensadores Económicos Latinoamericanos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/glosario">Glosario de Términos</a></li>
+<li><a href="#">Actividad cultural</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/bcv/icom_capitulo_venezuela">Participación en el ICOM</a></li>
+<li><a href="#">Colecciones patrimoniales</a>
+<ul>
+<li><a href="https://www.bcv.org.ve/actividad-cultural-colecciones-descargables">Descargables</a></li>
+<li><a href="/bcv/joyas-de-el-libertador">Joyas de El Libertador</a></li>
+<li><a href="/bcv/obras-de-arte">Obras de arte</a></li>
+<li><a href="/bcv/filatelia">Filatelia</a></li>
+<li><a href="/bcv/herrajes">Herrajes</a></li>
+<li><a href="/billetes-y-monedas/coleccion-numismatica">Colección Numismática</a></li>
+</ul>
+</li>
+<li><a href="/actividad-cultural/audivisuales">Audiovisuales</a></li>
+<li><a href="/bcv/centro-cultural-salvador-de-la-plaza">Centro Cultural Salvador de la Plaza</a></li>
+<li><a href="#">Programación cultural</a>
+<ul>
+<li><a href="/bcv/agenda-cultural-caracas">Agenda cultural Caracas</a></li>
+<li><a href="/bcv/agenda-cultural-maracaibo">Agenda cultural Maracaibo</a></li>
+<li><a href="/bcv/agrupaciones-musicales">Agrupaciones musicales</a></li>
+<li><a href="/bcv/aprendizaje-significativo">Aprendizaje significativo</a></li>
+<li><a href="/bcv/actualizacion-y-formacion">Actualización y formación</a></li>
+</ul>
+</li>
+<li><a href="#">Salas numismáticas</a>
+<ul>
+<li><a href="/bcv/numi-caracas">NUMI – Caracas</a></li>
+<li><a href="/bcv/numi-maracaibo">NUMI - Maracaibo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/bcv/calendario-bancario">Calendario bancario</a></li>
+<li><a href="#">Contrataciones</a>
+<ul>
+<li><a href="/concursos-abiertos">Llamados a Concursos Abiertos</a></li>
+<li><a href="/bcv/contrataciones/planificacion-anual-de-compras">Planificación Anual de Compras</a></li>
+<li><a href="/contrataciones/notificaciones">Notificaciones</a></li>
+</ul>
+</li>
+<li><a href="/bcv/enlaces-de-interes">Enlaces de interés</a></li>
+<li><a href="/bcv/contactos">Contactos</a></li>
+</ul>
+</li>
+<li><a href="#">Política cambiaria</a>
+<ul>
+<li><a href="#">Operaciones a través de mesas de cambio</a>
+<ul>
+<li><a href="/politica-cambiaria/mesas-cambio/actos-administrativos" title="Politica Cambiaria /Mesas de cambio/ Actos administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Operaciones cambiarias al menudeo</a>
+<ul>
+<li><a href="https://occc.extra.bcv.org.ve/occc-pw">Ingresar al sistema</a></li>
+<li><a href="/politica-cambiaria/menudeo/actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Operaciones de compra de divisas por turismo</a>
+<ul>
+<li><a href="/actos-adm-turismo">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Posición en moneda extranjera</a>
+<ul>
+<li><a href="https://oinpc.extra.bcv.org.ve/NormasPrudenciales/">Ingresar al sistema</a></li>
+<li><a href="/actos-adm-moneda-ext">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema de Integración con Entes Externos (SINEX)</a>
+<ul>
+<li><a href="https://sinex.extra.bcv.org.ve/Sinex/">Ingresar al sistema</a></li>
+<li><a href="/actos-adm-sinex">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Intervención cambiaria</a>
+<ul>
+<li><a href="/politica-cambiaria/intervencion/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/politica-cambiaria/intervencion-cambiaria">Intervenciones</a></li>
+</ul>
+</li>
+<li><a href="/tasas-informativas-sistema-bancario">Tasas Informativas del Sistema Bancario</a></li>
+</ul>
+</li>
+<li><a href="#">Política monetaria</a>
+<ul>
+<li><a href="/politica-monetaria/lineamientos-de-pol-tica-monetaria">Lineamientos de política monetaria</a></li>
+<li><a href="#">Actuación del BCV como autoridad monetaria</a>
+<ul>
+<li><a href="#">Operaciones en mercado abierto</a>
+<ul>
+<li><a href="#">Títulos de Cobertura</a>
+<ul>
+<li><a href="/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas">Personas Naturales y Jurídicas</a>
+<ul>
+<li><a href="/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas">Convocatorias</a></li>
+<li><a href="/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-actos-adm">Actos Administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Instituciones Bancarias</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias">Convocatorias</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-actos-adm">Actos Administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/operaciones-absorcion-diaria">Operaciones de absorción diaria</a></li>
+<li><a href="/politica-monetaria/operaciones-absorcion-extraordinaria">Operaciones de absorción extraordinarias</a></li>
+<li><a href="/politica-monetaria/operaciones-inyeccion-diaria">Operaciones de inyección diaria</a></li>
+<li><a href="/politica-monetaria/operaciones-recompra-rescate">Operaciones de recompra y rescate de certificados de depósito</a></li>
+<li><a href="/actos-adm-operaciones-mercado-abierto">Actos administrativos</a></li>
+<li><a href="/estadisticas/operaciones-mercado-abierto">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Encaje Legal</a>
+<ul>
+<li><a href="/politica-monetaria/encaje-legal">Requerimiento de Encaje a constituir</a></li>
+<li><a href="/actos-adm-encaje-legal">Actos administrativos</a></li>
+<li><a href="/estadisticas/encaje-legal">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Asistencia Financiera</a>
+<ul>
+<li><a href="/politica-monetaria/asistencia-financiera/condiciones-financieras">Condiciones financieras</a></li>
+<li><a href="/politica-monetaria/asistencia-financiera">Resultados de Operaciones de Crédito Intradía</a></li>
+<li><a href="/actos-adm-asistencia-financiera">Actos administrativos</a></li>
+<li><a href="/estadisticas/asistencia-financiera">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Instrumento de inversión Directo BCV</a>
+<ul>
+<li><a href="/politica-monetaria/instrumento-inversion-directo-bcv">Convocatorias / Resultados</a></li>
+<li><a href="/actos-adm-instrumento-directo-bcv">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Tasas interés de los instrumentos de política monetaria</a>
+<ul>
+<li><a href="/estadisticas/tasas-interes-instrumentos-politica-monetaria">Estadísticas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Actuación del BCV como Agente Financiero</a>
+<ul>
+<li><a href="#">Gobierno Central (Ministerio con competencia en el área de finanzas)</a>
+<ul>
+<li><a href="/politica-monetaria/letras-del-tesoro">Letras del Tesoro</a></li>
+<li><a href="/politica-monetaria/bonos-dpn">Bonos DPN</a></li>
+<li><a href="/politica-monetaria/ofertas-espaciales-bonos-dpn">Ofertas Especiales de Bonos de la Deuda Pública Nacional</a></li>
+<li><a href="/politica-monetaria/bono-agricola">Bono Agrícola</a></li>
+<li><a href="/politica-monetaria/recompra-titulos-publicos">Recompra de Títulos Públicos</a></li>
+<li><a href="/politica-monetaria/mercado-deuda-publica-interna">Programa de Reordenamiento de Mercado de Deuda Pública Interna</a></li>
+<li><a href="/politica-monetaria/dacion-pagos-bonos-dpn">Dación en Pago de Bonos DPN</a></li>
+<li><a href="/politica-monetaria/venta-bonos-dpn-cero-cupon">Venta de Bonos DPN Cero Cupón</a></li>
+<li><a href="/politica-monetaria/canje-bonos-dpn">Canje de Bonos DPN</a></li>
+<li><a href="/politica-monetaria/bonos-soberanos">Bonos Soberanos</a></li>
+<li><a href="/politica-monetaria/bonos-venezolanos">Bonos Venezolanos</a></li>
+<li><a href="/politica-monetaria/bonos-del-sur">Bonos del Sur</a></li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/pdvsa">Petróleos de Venezuela, S.A. (PDVSA)</a>
+<ul>
+<li><a href="/politica-monetaria/bono-pdvsa">Bono PDVSA</a></li>
+<li><a href="/politica-monetaria/bono-pdvsa-agricola">Bono PDVSA Agrícola</a></li>
+<li><a href="/politica-monetaria/bono-pdvsa-2017">Bono PDVSA 2017</a></li>
+<li><a href="/politica-monetaria/bono-amortizable-pdvsa-2022">Bono Amortizable PDVSA 2022</a></li>
+<li><a href="/politica-monetaria/petrobono">Petrobono 2011</a></li>
+<li><a href="/politica-monetaria/petrobono-2014-2016">Petrobono 2014, 2015 y 2016</a></li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/banavih">Banco Nacional del Vivienda y Hábitat (Banavih)</a></li>
+<li><a href="/politica-monetaria/bandes">Banco de Desarrollo Económico y Social de Venezuela (Bandes)</a></li>
+<li><a href="/politica-monetaria/fonden">Fondo de Desarrollo Nacional (Fonden)</a></li>
+<li><a href="/politica-monetaria/fondo-simon-bolivar">Fondo Simón Bolívar para la Reconstrucción, S.A.</a></li>
+<li><a href="/actos-adm-politica-monetaria-agente-financiero">Actos administrativos</a></li>
+<li><a href="/estadisticas/gobierno-central">Estadísticas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Billetes y monedas</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/billetes-y-monedas/nueva-expresion-monetaria">Cono Monetario</a></li>
+<li><a href="/billetes-y-monedas/coleccion-numismatica">Colección Numismática</a></li>
+<li><a href="#">Criptoactivos</a>
+<ul>
+<li><a href="#">Petro</a>
+<ul>
+<li><a href="/estadisticas/graficos/precios-petro">Referencia en Otras Divisas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Sistemas de pago</a>
+<ul>
+<li><a href="#">Nacionales</a>
+<ul>
+<li><a href="#">Sistema de Liquidación Bruta en Tiempo Real (SLBTR)</a>
+<ul>
+<li><a href="/sistemas-de-pago/sistema-de-liquidacion-bruta-en-tiempo-real-slbtr">Información</a></li>
+<li><a href="/sistemas-de-pago/slbtr/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/slbtr/estadisticas">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Cámara de Compensación Electrónica (CCE)</a>
+<ul>
+<li><a href="/sistema-de-pagos/nacionales/camara-de-compensacion-electronica-cce">Información</a></li>
+<li><a href="/sistema-de-pagos/cce/actos-administrativos">Actos Administrativos</a></li>
+<li><a href="/sistemas-de-pago/cee/estadisticas">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema de Custodia Electrónica de Titulos (SICET)</a>
+<ul>
+<li><a href="/sistemas-de-pago/sistema-de-custodia-electronica-de-titulos-sicet">Información</a></li>
+<li><a href="/sistemas-de-pago/sicet/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/sicet/estadisticas">Estadísticas</a></li>
+<li><a href="https://oncp.extra.bcv.org.ve/">Sistema de Consulta de Posiciones de Títulos en Moneda Nacional</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Transfronterizos</a>
+<ul>
+<li><a href="#">Convenios de Pagos y Créditos Recíprocos de la ALADI</a>
+<ul>
+<li><a href="/sistemas-de-pago/informacion-0">Información</a></li>
+<li><a href="/sistemas-de-pago/transfronterizos/aladi-actos-administrativos">Actos administrativos</a></li>
+<li><a href="https://www.aladi.org/sitioaladi/">Asociación Latinoamericana de Integración (ALADI) Página WEB</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema Unitario de Compensación Regional de Pagos (SUCRE)</a>
+<ul>
+<li><a href="/sistemas-de-pago/informacion">Información</a></li>
+<li><a href="/sistemas-de-pago/transfronterizos/sucre-actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Tarifas y comisiones bancarias</a>
+<ul>
+<li><a href="/sistemas-de-pago/tarifario-bancario">Tarifario bancario</a></li>
+<li><a href="/sistemas-de-pago/tarifas-y-comisiones/actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="/sistemas-de-pago/anuario-de-estadisticas-sobre-sistemas-de-pago">Anuario de Estadísticas sobre Sistemas de Pago</a></li>
+<li><a href="#">Aspectos legales y otras estadísticas sobre Sistemas de Pago</a>
+<ul>
+<li><a href="/sistema-de-pagos/aspectos-legales/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/aspectos-legales/numero-de-terminales-de-puntos-de-venta-y-cajeros-automaticos">Número de Terminales de Puntos de Venta y Cajeros Automáticos</a></li>
+<li><a href="/sistemas-de-pago/aspectos-legales/canales-y-servicios-de-pago">Canales y servicios de pago</a></li>
+</ul>
+</li>
+<li><a href="/sistemas-de-pago/documentos">Documentos</a></li>
+<li><a href="/sistemas-de-pago/proveedores-servicios-pago">Proveedores No Bancarios de Servicios de Pago</a></li>
+</ul>
+</li>
+<li><a href="#">Estadísticas</a>
+<ul>
+<li><a href="#">Tipos de Cambio</a>
+<ul>
+<li><a href="/estadisticas/tipo-cambio-de-referencia-smc">Tipo de Cambio de Referencia del SMC</a></li>
+</ul>
+</li>
+<li><a href="#">Precios</a>
+<ul>
+<li><a href="/estadisticas/consumidor">Consumidor</a></li>
+<li><a href="/estadisticas/comercio-mayorista">Mayorista</a></li>
+<li><a href="/estadisticas/productor-manufacturero">Productor Manufacturero</a></li>
+<li><a href="/estadisticas/insumos-de-la-construccion">Insumos de la Construcción</a></li>
+<li><a href="/estadisticas/precios-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Monetario</a>
+<ul>
+<li><a href="/estadisticas/base-monetaria">Base Monetaria</a></li>
+<li><a href="/estadisticas/liquidez-monetaria">Liquidez Monetaria</a></li>
+<li><a href="/estadisticas/balances-monetarios">Balances Monetarios</a></li>
+<li><a href="/estadisticas/operaciones-mercado-abierto">Operaciones en Mercado Abierto</a></li>
+<li><a href="/estadisticas/encaje-legal">Encaje legal</a></li>
+<li><a href="/estadisticas/asistencia-financiera">Asistencia Financiera</a></li>
+<li><a href="/estadisticas/gobierno-central">Gobierno Central</a></li>
+<li><a href="/estadisticas/reservas-bancarias-excedentes">Reservas Bancarias Excedentes</a></li>
+<li><a href="/estadisticas/tasas-interes-instrumentos-politica-monetaria">Tasas interés de los instrumentos de política monetaria</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Financiero</a>
+<ul>
+<li><a href="/estadisticas/tasas-de-interes">Tasas de Interés</a></li>
+<li><a href="/estadisticas/series-historicas-tasas-de-interes">Series históricas de tasas de interés</a></li>
+<li><a href="/estadisticas/otras-monedas">Series históricas de otras monedas</a></li>
+<li><a href="/estadisticas/resumenes-de-balances">Resúmenes de Balances de las Instituciones Bancarias</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Externo</a>
+<ul>
+<li><a href="/estadisticas/balanza-de-pagos">Balanza de pagos</a></li>
+<li><a href="/estadisticas/comercio-exterior">Comercio Exterior</a></li>
+<li><a href="/estadisticas/inversion-extranjera">Inversión extranjera</a></li>
+<li><a href="/estadisticas/reservas-internacionales">Reservas Internacionales</a></li>
+<li><a href="/estadisticas/posicion-de-inversion-internacional">Posición de inversión internacional</a></li>
+<li><a href="/estadisticas/deuda-externa">Deuda Externa</a></li>
+<li><a href="/estadisticas/indice-de-inversion">Indice de Inversión</a></li>
+<li><a href="/estadisticas/sector-externo-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Cuentas Nacionales</a>
+<ul>
+<li><a href="/estadisticas/producto-interno-bruto">Producto Interno Bruto</a></li>
+<li><a href="/estadisticas/oferta-y-demanda">Oferta y Demanda</a></li>
+<li><a href="/estadisticas/cuentas-consolidadas-de-la-nacion">Cuentas Consolidadas de la Nación</a></li>
+<li><a href="/estadisticas/matriz-insumo-producto">Matriz insumo producto</a></li>
+<li><a href="/estadisticas/flujo-de-fondos">Flujo de fondos</a></li>
+<li><a href="/estadisticas/cuentas-nacionales-series-historicas">Series Históricas</a></li>
+<li><a href="/estadisticas/cuentas-nacionales-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Indicadores sectoriales</a>
+<ul>
+<li><a href="/estadisticas/manufactura">Manufactura</a></li>
+<li><a href="/estadisticas/comercio">Comercio</a></li>
+<li><a href="/estadisticas/indicadores-sectoriales-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Mercado Laboral</a>
+<ul>
+<li><a href="/estadisticas/indice-de-remuneraciones">Índice de Remuneraciones</a></li>
+<li><a href="/estadisticas/mercado-laboral-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Indicadores de la Región Zuliana</a>
+<ul>
+<li><a href="/estadisticas/indicadores-de-la-region-zuliana-precios">Precios</a></li>
+<li><a href="/estadisticas/indicadores-de-la-region-zuliana-sectoriales">Sectoriales</a></li>
+<li><a href="/estadisticas/region-zuliana-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="/estadisticas/billetes-y-monedas">Billetes y monedas</a></li>
+<li><a href="#">Minerales estratégicos</a>
+<ul>
+<li><a href="/minerales-estrategicos/diamante/estadisticas">Diamante</a></li>
+<li><a href="/minerales-estrategicos/oro/compras-de-oro-en-el-mercado-interno">Oro</a></li>
+</ul>
+</li>
+<li><a href="/estadisticas/simbologia-utilizada">Simbología utilizada</a></li>
+</ul>
+</li>
+<li><a href="#">Minerales estratégicos</a>
+<ul>
+<li><a href="#">Oro</a>
+<ul>
+<li><a href="#">Plan de Ahorro</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/minerales-estrategicos/plan-de-ahorro">Información</a></li>
+<li><a href="http://www.bcv.org.ve/minerales_estrategicos/oro/convocatoria_plan_de_ahorro">Convocatorias</a></li>
+<li><a href="http://www.bcv.org.ve/minerales_estrategicos/oro/plan_de_ahorro/actos_administrativos_plan_de_ahorro">Actos administrativos</a></li>
+<li><a href="http://www.bcv.org.ve/comunicados-de-prensa/notas-de-prensa?field_tags_tid=667">Notas de Prensa</a></li>
+<li><a href="http://www.bcv.org.ve/bcv/galeria-de-imagenes?title=Ahorro">Galería de imágenes</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/resena-del-oro">Reseña del Oro</a></li>
+<li><a href="/minerales-estrategicos/oro/compras-de-oro-en-el-mercado-interno">Estadísticas</a></li>
+<li><a href="/minerales-estrategicos/oro/metales">Metales</a></li>
+<li><a href="/minerales-estrategicos/precio-del-oro">Precio del Oro</a></li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa?field_tags_tid=529">Notas de Prensa</a></li>
+<li><a href="/minerales-estrategicos/oro/actos-administrativos">Actos Administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Diamante</a>
+<ul>
+<li><a href="/minerales-estrategicos/resena">Reseña</a></li>
+<li><a href="/minerales-estrategicos/diamante/normativa-internacional">Normativa internacional</a></li>
+<li><a href="#">Sistema de Certificación del Proceso Kimberley</a>
+<ul>
+<li><a href="/minerales-estrategicos/antecedentes">Antecedentes</a></li>
+<li><a href="#">Adopción del SCPK</a>
+<ul>
+<li><a href="/minerales-estrategicos/oficina-de-seguimiento-y-control-de-la-implementacion-del-scpk">Oficina de Seguimiento y Control de la Implementación del SCPK</a></li>
+<li><a href="/minerales-estrategicos/entes-y-organos-participantes">Entes y Órganos Participantes</a></li>
+<li><a href="/minerales-estrategicos/diamante/estadisticas">Estadísticas</a></li>
+<li><a href="/minerales-estrategicos/diamante/certificado-del-proceso-kimberley">Certificado del Proceso Kimberley</a></li>
+<li><a href="#">Eventos internacionales</a>
+<ul>
+<li><a href="/minerales-estrategicos/diamante/reunion-intersesional">Reunión Intersesional</a></li>
+<li><a href="/minerales-estrategicos/diamante/reunion-plenaria">Reunión Plenaria</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/diamante/reporte-anual-de-actuacion">Reporte Anual de Actuación</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/diamante/documentos-scpk">Documentos SCPK</a></li>
+</ul>
+</li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa?field_tags_tid=530">Notas de Prensa</a></li>
+<li><a href="/minerales-estrategicos/diamante/actos-administrativos">Actos Administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">BCV »</a>
+<ul>
+<li><a href="#">Quiénes somos »</a>
+<ul>
+<li><a href="/bcv/mision-y-vision">Misión y visión</a></li>
+<li><a href="/bcv/funciones">Funciones</a></li>
+<li><a href="/bcv/autoridades">Autoridades</a></li>
+<li><a href="#">Organización »</a>
+<ul>
+<li><a href="/bcv/organigrama">Organigrama</a></li>
+<li><a href="/bcv/subsede-maracaibo">Subsede Maracaibo</a></li>
+<li><a href="/bcv/casa-de-la-moneda-de-venezuela">Casa de la Moneda de Venezuela</a></li>
+</ul>
+</li>
+<li><a href="#">Historia del BCV »</a>
+<ul>
+<li><a href="/bcv/resena-historica">Reseña histórica</a></li>
+<li><a href="/bcv/galeria-de-expresidentes">Galería de expresidentes</a></li>
+</ul>
+</li>
+<li><a href="http://www.bcv.org.ve/codigo-de-etica">Código de Ética</a></li>
+</ul>
+</li>
+<li><a href="#">Marco jurídico »</a>
+<ul>
+<li><a href="/marco/leyes_bcv">Legislación</a></li>
+<li><a href="#">Normativa cambiaria »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-cambiaria">Avisos oficiales</a></li>
+<li><a href="/marco/convenios-cambiarios">Convenios cambiarios</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-cambiaria">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa monetaria »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-monetaria">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-monetaria">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa sobre sistema de pagos »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-pago">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-pago">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa sobre minerales estratégicos »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-minerales">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-minerales">Resoluciones</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/bcv/acuerdo-anual-de-pol-ticas">Acuerdo Anual de Políticas Económicas</a></li>
+<li><a href="#">Comunicaciones institucionales »</a>
+<ul>
+<li><a href="/comunicados-de-prensa/comunicados">Comunicados</a></li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa">Notas de Prensa</a></li>
+<li><a href="#">Recursos comunicacionales »</a>
+<ul>
+<li><a href="/bcv/videos">Videos</a></li>
+<li><a href="/bcv/audios">Audios</a></li>
+<li><a href="/bcv/galeria-de-imagenes">Galería de imágenes</a></li>
+<li><a href="/bcv/descargables">Descargables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Publicaciones »</a>
+<ul>
+<li><a href="/bcv/publicaciones">Publicaciones periódicas</a></li>
+<li><a href="/bcv/publicaciones-no-periodica">Publicaciones no periódicas</a></li>
+<li><a href="https://publicaciones.extra.bcv.org.ve">Fondo editorial del BCV</a></li>
+<li><a href="/bcv/la-libreria-del-bcv">La Librería del BCV</a></li>
+</ul>
+</li>
+<li><a href="/bcv/estados-financieros">Estados financieros</a></li>
+<li><a href="#">Corresponsabilidad social »</a>
+<ul>
+<li><a href="/bcv/oficina_atencion_al_ciudadano">Oficina de Atención Ciudadana</a></li>
+<li><a href="/bcv/economia-en-la-escuela-encuentro-de-saberes">Economía en la escuela, encuentro de saberes</a></li>
+<li><a href="/bcv/premio-ernesto-peltzer">Premio Ernesto Peltzer</a></li>
+<li><a href="/bcv/centro-de-formacion-capacitacion-e-innovacion-orfebreria-y-joyeria">Centro de Formación Capacitación e Innovación Orfebrería y Joyería</a></li>
+<li><a href="/bcv/programa-de-cooperacion-interinstitucional">Programa de Cooperación Interinstitucional</a></li>
+<li><a href="#">Biblioteca »</a>
+<ul>
+<li><a href="/bcv/informacion">Información</a></li>
+<li><a href="http://www.bcv.org.ve/biblioteca/biblioteca.html">Servicios »</a>
+<ul>
+<li><a href="https://biblioteca.extra.bcv.org.ve/">Catálogo Público</a></li>
+<li><a href="http://www.bcv.org.ve/bcv/coleccion-electronica">Colección Electrónica</a></li>
+</ul>
+</li>
+<li><a href="http://www.bcv.org.ve/biblioteca/eventos_biblioteca/carabobo200">Eventos »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/biblioteca/eventos_biblioteca/carabobo200">La Batalla de Carabobo en la colección de la Biblioteca</a></li>
+<li><a href="/bcv/pensadores-economicos-latinoamericanos-0">Pensadores Económicos Latinoamericanos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/glosario">Glosario de Términos</a></li>
+<li><a href="#">Actividad cultural »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/bcv/icom_capitulo_venezuela">Participación en el ICOM</a></li>
+<li><a href="#">Colecciones patrimoniales »</a>
+<ul>
+<li><a href="https://www.bcv.org.ve/actividad-cultural-colecciones-descargables">Descargables</a></li>
+<li><a href="/bcv/joyas-de-el-libertador">Joyas de El Libertador</a></li>
+<li><a href="/bcv/obras-de-arte">Obras de arte</a></li>
+<li><a href="/bcv/filatelia">Filatelia</a></li>
+<li><a href="/bcv/herrajes">Herrajes</a></li>
+<li><a href="/billetes-y-monedas/coleccion-numismatica">Colección Numismática</a></li>
+</ul>
+</li>
+<li><a href="/actividad-cultural/audivisuales">Audiovisuales</a></li>
+<li><a href="/bcv/centro-cultural-salvador-de-la-plaza">Centro Cultural Salvador de la Plaza</a></li>
+<li><a href="#">Programación cultural »</a>
+<ul>
+<li><a href="/bcv/agenda-cultural-caracas">Agenda cultural Caracas</a></li>
+<li><a href="/bcv/agenda-cultural-maracaibo">Agenda cultural Maracaibo</a></li>
+<li><a href="/bcv/agrupaciones-musicales">Agrupaciones musicales</a></li>
+<li><a href="/bcv/aprendizaje-significativo">Aprendizaje significativo</a></li>
+<li><a href="/bcv/actualizacion-y-formacion">Actualización y formación</a></li>
+</ul>
+</li>
+<li><a href="#">Salas numismáticas »</a>
+<ul>
+<li><a href="/bcv/numi-caracas">NUMI – Caracas</a></li>
+<li><a href="/bcv/numi-maracaibo">NUMI - Maracaibo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/bcv/calendario-bancario">Calendario bancario</a></li>
+<li><a href="#">Contrataciones »</a>
+<ul>
+<li><a href="/concursos-abiertos">Llamados a Concursos Abiertos</a></li>
+<li><a href="/bcv/contrataciones/planificacion-anual-de-compras">Planificación Anual de Compras</a></li>
+<li><a href="/contrataciones/notificaciones">Notificaciones</a></li>
+</ul>
+</li>
+<li><a href="/bcv/enlaces-de-interes">Enlaces de interés</a></li>
+<li><a href="/bcv/contactos">Contactos</a></li>
+</ul>
+</li>
+<li><a href="#">Política cambiaria »</a>
+<ul>
+<li><a href="#">Operaciones a través de mesas de cambio »</a>
+<ul>
+<li><a href="/politica-cambiaria/mesas-cambio/actos-administrativos" title="Politica Cambiaria /Mesas de cambio/ Actos administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Operaciones cambiarias al menudeo »</a>
+<ul>
+<li><a href="https://occc.extra.bcv.org.ve/occc-pw">Ingresar al sistema</a></li>
+<li><a href="/politica-cambiaria/menudeo/actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Operaciones de compra de divisas por turismo »</a>
+<ul>
+<li><a href="/actos-adm-turismo">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Posición en moneda extranjera  »</a>
+<ul>
+<li><a href="https://oinpc.extra.bcv.org.ve/NormasPrudenciales/">Ingresar al sistema</a></li>
+<li><a href="/actos-adm-moneda-ext">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema de Integración con Entes Externos (SINEX) »</a>
+<ul>
+<li><a href="https://sinex.extra.bcv.org.ve/Sinex/">Ingresar al sistema</a></li>
+<li><a href="/actos-adm-sinex">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Intervención cambiaria »</a>
+<ul>
+<li><a href="/politica-cambiaria/intervencion/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/politica-cambiaria/intervencion-cambiaria">Intervenciones</a></li>
+</ul>
+</li>
+<li><a href="/tasas-informativas-sistema-bancario">Tasas Informativas del Sistema Bancario</a></li>
+</ul>
+</li>
+<li><a href="#">Política monetaria »</a>
+<ul>
+<li><a href="/politica-monetaria/lineamientos-de-pol-tica-monetaria">Lineamientos de política monetaria</a></li>
+<li><a href="#">Actuación del BCV como autoridad monetaria »</a>
+<ul>
+<li><a href="#">Operaciones en mercado abierto  »</a>
+<ul>
+<li><a href="#">Títulos de Cobertura »</a>
+<ul>
+<li><a href="#">Personas Naturales y Jurídicas »</a>
+<ul>
+<li><a href="/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas">Convocatorias</a></li>
+<li><a href="/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-actos-adm">Actos Administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Instituciones Bancarias »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias">Convocatorias</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-actos-adm">Actos Administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/operaciones-absorcion-diaria">Operaciones de absorción diaria</a></li>
+<li><a href="/politica-monetaria/operaciones-absorcion-extraordinaria">Operaciones de absorción extraordinarias</a></li>
+<li><a href="/politica-monetaria/operaciones-inyeccion-diaria">Operaciones de inyección diaria</a></li>
+<li><a href="/politica-monetaria/operaciones-recompra-rescate">Operaciones de recompra y rescate de certificados de depósito</a></li>
+<li><a href="/actos-adm-operaciones-mercado-abierto">Actos administrativos</a></li>
+<li><a href="/estadisticas/operaciones-mercado-abierto">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Encaje Legal »</a>
+<ul>
+<li><a href="/politica-monetaria/encaje-legal">Requerimiento de Encaje a constituir</a></li>
+<li><a href="/actos-adm-encaje-legal">Actos administrativos</a></li>
+<li><a href="/estadisticas/encaje-legal">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Asistencia Financiera »</a>
+<ul>
+<li><a href="/politica-monetaria/asistencia-financiera/condiciones-financieras">Condiciones financieras</a></li>
+<li><a href="/politica-monetaria/asistencia-financiera">Resultados de Operaciones de Crédito Intradía</a></li>
+<li><a href="/actos-adm-asistencia-financiera">Actos administrativos</a></li>
+<li><a href="/estadisticas/asistencia-financiera">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Instrumento de inversión Directo BCV »</a>
+<ul>
+<li><a href="/politica-monetaria/instrumento-inversion-directo-bcv">Convocatorias / Resultados</a></li>
+<li><a href="/actos-adm-instrumento-directo-bcv">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Tasas interés de los instrumentos de política monetaria »</a>
+<ul>
+<li><a href="/estadisticas/tasas-interes-instrumentos-politica-monetaria">Estadísticas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Actuación del BCV como Agente Financiero »</a>
+<ul>
+<li><a href="#">Gobierno Central (Ministerio con competencia en el área de finanzas) »</a>
+<ul>
+<li><a href="/politica-monetaria/letras-del-tesoro">Letras del Tesoro</a></li>
+<li><a href="/politica-monetaria/bonos-dpn">Bonos DPN</a></li>
+<li><a href="/politica-monetaria/ofertas-espaciales-bonos-dpn">Ofertas Especiales de Bonos de la Deuda Pública Nacional</a></li>
+<li><a href="/politica-monetaria/bono-agricola">Bono Agrícola</a></li>
+<li><a href="/politica-monetaria/recompra-titulos-publicos">Recompra de Títulos Públicos</a></li>
+<li><a href="/politica-monetaria/mercado-deuda-publica-interna">Programa de Reordenamiento de Mercado de Deuda Pública Interna</a></li>
+<li><a href="/politica-monetaria/dacion-pagos-bonos-dpn">Dación en Pago de Bonos DPN</a></li>
+<li><a href="/politica-monetaria/venta-bonos-dpn-cero-cupon">Venta de Bonos DPN Cero Cupón</a></li>
+<li><a href="/politica-monetaria/canje-bonos-dpn">Canje de Bonos DPN</a></li>
+<li><a href="/politica-monetaria/bonos-soberanos">Bonos Soberanos</a></li>
+<li><a href="/politica-monetaria/bonos-venezolanos">Bonos Venezolanos</a></li>
+<li><a href="/politica-monetaria/bonos-del-sur">Bonos del Sur</a></li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/pdvsa">Petróleos de Venezuela, S.A. (PDVSA) »</a>
+<ul>
+<li><a href="/politica-monetaria/bono-pdvsa">Bono PDVSA</a></li>
+<li><a href="/politica-monetaria/bono-pdvsa-agricola">Bono PDVSA Agrícola</a></li>
+<li><a href="/politica-monetaria/bono-pdvsa-2017">Bono PDVSA 2017</a></li>
+<li><a href="/politica-monetaria/bono-amortizable-pdvsa-2022">Bono Amortizable PDVSA 2022</a></li>
+<li><a href="/politica-monetaria/petrobono">Petrobono 2011</a></li>
+<li><a href="/politica-monetaria/petrobono-2014-2016">Petrobono 2014, 2015 y 2016</a></li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/banavih">Banco Nacional del Vivienda y Hábitat (Banavih)</a></li>
+<li><a href="/politica-monetaria/bandes">Banco de Desarrollo Económico y Social de Venezuela (Bandes)</a></li>
+<li><a href="/politica-monetaria/fonden">Fondo de Desarrollo Nacional (Fonden)</a></li>
+<li><a href="/politica-monetaria/fondo-simon-bolivar">Fondo Simón Bolívar para la Reconstrucción, S.A.</a></li>
+<li><a href="/actos-adm-politica-monetaria-agente-financiero">Actos administrativos</a></li>
+<li><a href="/estadisticas/gobierno-central">Estadísticas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Billetes y monedas »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/billetes-y-monedas/nueva-expresion-monetaria">Cono Monetario</a></li>
+<li><a href="/billetes-y-monedas/coleccion-numismatica">Colección Numismática</a></li>
+<li><a href="#">Criptoactivos »</a>
+<ul>
+<li><a href="#">Petro »</a>
+<ul>
+<li><a href="/estadisticas/graficos/precios-petro">Referencia en Otras Divisas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Sistemas de pago »</a>
+<ul>
+<li><a href="#">Nacionales »</a>
+<ul>
+<li><a href="#">Sistema de Liquidación Bruta en Tiempo Real (SLBTR) »</a>
+<ul>
+<li><a href="/sistemas-de-pago/sistema-de-liquidacion-bruta-en-tiempo-real-slbtr">Información</a></li>
+<li><a href="/sistemas-de-pago/slbtr/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/slbtr/estadisticas">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Cámara de Compensación Electrónica (CCE) »</a>
+<ul>
+<li><a href="/sistema-de-pagos/nacionales/camara-de-compensacion-electronica-cce">Información</a></li>
+<li><a href="/sistema-de-pagos/cce/actos-administrativos">Actos Administrativos</a></li>
+<li><a href="/sistemas-de-pago/cee/estadisticas">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema de Custodia Electrónica de Titulos (SICET) »</a>
+<ul>
+<li><a href="/sistemas-de-pago/sistema-de-custodia-electronica-de-titulos-sicet">Información</a></li>
+<li><a href="/sistemas-de-pago/sicet/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/sicet/estadisticas">Estadísticas</a></li>
+<li><a href="https://oncp.extra.bcv.org.ve/">Sistema de Consulta de Posiciones de Títulos en Moneda Nacional</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Transfronterizos »</a>
+<ul>
+<li><a href="#">Convenios de Pagos y Créditos Recíprocos de la ALADI »</a>
+<ul>
+<li><a href="/sistemas-de-pago/informacion-0">Información</a></li>
+<li><a href="/sistemas-de-pago/transfronterizos/aladi-actos-administrativos">Actos administrativos</a></li>
+<li><a href="https://www.aladi.org/sitioaladi/">Asociación Latinoamericana de Integración (ALADI) Página WEB</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema Unitario de Compensación Regional de Pagos (SUCRE) »</a>
+<ul>
+<li><a href="/sistemas-de-pago/informacion">Información</a></li>
+<li><a href="/sistemas-de-pago/transfronterizos/sucre-actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Tarifas y comisiones bancarias »</a>
+<ul>
+<li><a href="/sistemas-de-pago/tarifario-bancario">Tarifario bancario</a></li>
+<li><a href="/sistemas-de-pago/tarifas-y-comisiones/actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="/sistemas-de-pago/anuario-de-estadisticas-sobre-sistemas-de-pago">Anuario de Estadísticas sobre Sistemas de Pago</a></li>
+<li><a href="#">Aspectos legales y otras estadísticas sobre Sistemas de Pago »</a>
+<ul>
+<li><a href="/sistema-de-pagos/aspectos-legales/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/aspectos-legales/numero-de-terminales-de-puntos-de-venta-y-cajeros-automaticos">Número de Terminales de Puntos de Venta y Cajeros Automáticos</a></li>
+<li><a href="/sistemas-de-pago/aspectos-legales/canales-y-servicios-de-pago">Canales y servicios de pago</a></li>
+</ul>
+</li>
+<li><a href="/sistemas-de-pago/documentos">Documentos</a></li>
+<li><a href="/sistemas-de-pago/proveedores-servicios-pago">Proveedores No Bancarios de Servicios de Pago</a></li>
+</ul>
+</li>
+<li><a href="#">Estadísticas »</a>
+<ul>
+<li><a href="#">Tipos de Cambio »</a>
+<ul>
+<li><a href="/estadisticas/tipo-cambio-de-referencia-smc">Tipo de Cambio de Referencia del SMC</a></li>
+</ul>
+</li>
+<li><a href="#">Precios »</a>
+<ul>
+<li><a href="/estadisticas/consumidor">Consumidor</a></li>
+<li><a href="/estadisticas/comercio-mayorista">Mayorista</a></li>
+<li><a href="/estadisticas/productor-manufacturero">Productor Manufacturero</a></li>
+<li><a href="/estadisticas/insumos-de-la-construccion">Insumos de la Construcción</a></li>
+<li><a href="/estadisticas/precios-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Monetario »</a>
+<ul>
+<li><a href="/estadisticas/base-monetaria">Base Monetaria</a></li>
+<li><a href="/estadisticas/liquidez-monetaria">Liquidez Monetaria</a></li>
+<li><a href="/estadisticas/balances-monetarios">Balances Monetarios</a></li>
+<li><a href="/estadisticas/operaciones-mercado-abierto">Operaciones en Mercado Abierto</a></li>
+<li><a href="/estadisticas/encaje-legal">Encaje legal</a></li>
+<li><a href="/estadisticas/asistencia-financiera">Asistencia Financiera</a></li>
+<li><a href="/estadisticas/gobierno-central">Gobierno Central</a></li>
+<li><a href="/estadisticas/reservas-bancarias-excedentes">Reservas Bancarias Excedentes</a></li>
+<li><a href="/estadisticas/tasas-interes-instrumentos-politica-monetaria">Tasas interés de los instrumentos de política monetaria</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Financiero »</a>
+<ul>
+<li><a href="/estadisticas/tasas-de-interes">Tasas de Interés</a></li>
+<li><a href="/estadisticas/series-historicas-tasas-de-interes">Series históricas de tasas de interés</a></li>
+<li><a href="/estadisticas/otras-monedas">Series históricas de otras monedas</a></li>
+<li><a href="/estadisticas/resumenes-de-balances">Resúmenes de Balances de las Instituciones Bancarias</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Externo »</a>
+<ul>
+<li><a href="/estadisticas/balanza-de-pagos">Balanza de pagos</a></li>
+<li><a href="/estadisticas/comercio-exterior">Comercio Exterior</a></li>
+<li><a href="/estadisticas/inversion-extranjera">Inversión extranjera</a></li>
+<li><a href="/estadisticas/reservas-internacionales">Reservas Internacionales</a></li>
+<li><a href="/estadisticas/posicion-de-inversion-internacional">Posición de inversión internacional</a></li>
+<li><a href="/estadisticas/deuda-externa">Deuda Externa</a></li>
+<li><a href="/estadisticas/indice-de-inversion">Indice de Inversión</a></li>
+<li><a href="/estadisticas/sector-externo-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Cuentas Nacionales »</a>
+<ul>
+<li><a href="/estadisticas/producto-interno-bruto">Producto Interno Bruto</a></li>
+<li><a href="/estadisticas/oferta-y-demanda">Oferta y Demanda</a></li>
+<li><a href="/estadisticas/cuentas-consolidadas-de-la-nacion">Cuentas Consolidadas de la Nación</a></li>
+<li><a href="/estadisticas/matriz-insumo-producto">Matriz insumo producto</a></li>
+<li><a href="/estadisticas/flujo-de-fondos">Flujo de fondos</a></li>
+<li><a href="/estadisticas/cuentas-nacionales-series-historicas">Series Históricas</a></li>
+<li><a href="/estadisticas/cuentas-nacionales-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Indicadores sectoriales »</a>
+<ul>
+<li><a href="/estadisticas/manufactura">Manufactura</a></li>
+<li><a href="/estadisticas/comercio">Comercio</a></li>
+<li><a href="/estadisticas/indicadores-sectoriales-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Mercado Laboral »</a>
+<ul>
+<li><a href="/estadisticas/indice-de-remuneraciones">Índice de Remuneraciones</a></li>
+<li><a href="/estadisticas/mercado-laboral-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Indicadores de la Región Zuliana »</a>
+<ul>
+<li><a href="/estadisticas/indicadores-de-la-region-zuliana-precios">Precios</a></li>
+<li><a href="/estadisticas/indicadores-de-la-region-zuliana-sectoriales">Sectoriales</a></li>
+<li><a href="/estadisticas/region-zuliana-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="/estadisticas/billetes-y-monedas">Billetes y monedas</a></li>
+<li><a href="#">Minerales estratégicos »</a>
+<ul>
+<li><a href="/minerales-estrategicos/diamante/estadisticas">Diamante</a></li>
+<li><a href="/minerales-estrategicos/oro/compras-de-oro-en-el-mercado-interno">Oro</a></li>
+</ul>
+</li>
+<li><a href="/estadisticas/simbologia-utilizada">Simbología utilizada</a></li>
+</ul>
+</li>
+<li><a href="#">Minerales estratégicos »</a>
+<ul>
+<li><a href="#">Oro »</a>
+<ul>
+<li><a href="#">Plan de Ahorro »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/minerales-estrategicos/plan-de-ahorro">Información</a></li>
+<li><a href="http://www.bcv.org.ve/minerales_estrategicos/oro/convocatoria_plan_de_ahorro">Convocatorias</a></li>
+<li><a href="http://www.bcv.org.ve/minerales_estrategicos/oro/plan_de_ahorro/actos_administrativos_plan_de_ahorro">Actos administrativos</a></li>
+<li><a href="http://www.bcv.org.ve/comunicados-de-prensa/notas-de-prensa?field_tags_tid=667">Notas de Prensa</a></li>
+<li><a href="http://www.bcv.org.ve/bcv/galeria-de-imagenes?title=Ahorro">Galería de imágenes</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/resena-del-oro">Reseña del Oro</a></li>
+<li><a href="/minerales-estrategicos/oro/compras-de-oro-en-el-mercado-interno">Estadísticas</a></li>
+<li><a href="/minerales-estrategicos/oro/metales">Metales</a></li>
+<li><a href="/minerales-estrategicos/precio-del-oro">Precio del Oro</a></li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa?field_tags_tid=529">Notas de Prensa</a></li>
+<li><a href="/minerales-estrategicos/oro/actos-administrativos">Actos Administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Diamante »</a>
+<ul>
+<li><a href="/minerales-estrategicos/resena">Reseña</a></li>
+<li><a href="/minerales-estrategicos/diamante/normativa-internacional">Normativa internacional</a></li>
+<li><a href="#">Sistema de Certificación del Proceso Kimberley »</a>
+<ul>
+<li><a href="/minerales-estrategicos/antecedentes">Antecedentes</a></li>
+<li><a href="#">Adopción del SCPK »</a>
+<ul>
+<li><a href="/minerales-estrategicos/oficina-de-seguimiento-y-control-de-la-implementacion-del-scpk">Oficina de Seguimiento y Control de la Implementación del SCPK</a></li>
+<li><a href="/minerales-estrategicos/entes-y-organos-participantes">Entes y Órganos Participantes</a></li>
+<li><a href="/minerales-estrategicos/diamante/estadisticas">Estadísticas</a></li>
+<li><a href="/minerales-estrategicos/diamante/certificado-del-proceso-kimberley">Certificado del Proceso Kimberley</a></li>
+<li><a href="#">Eventos internacionales »</a>
+<ul>
+<li><a href="/minerales-estrategicos/diamante/reunion-intersesional">Reunión Intersesional</a></li>
+<li><a href="/minerales-estrategicos/diamante/reunion-plenaria">Reunión Plenaria</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/diamante/reporte-anual-de-actuacion">Reporte Anual de Actuación</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/diamante/documentos-scpk">Documentos SCPK</a></li>
+</ul>
+</li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa?field_tags_tid=530">Notas de Prensa</a></li>
+<li><a href="/minerales-estrategicos/diamante/actos-administrativos">Actos Administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#"></a>
+<ul>
+<li><a href="#">Quiénes somos »</a>
+<ul>
+<li><a href="/bcv/mision-y-vision">Misión y visión</a></li>
+<li><a href="/bcv/funciones">Funciones</a></li>
+<li><a href="/bcv/autoridades">Autoridades</a></li>
+<li><a href="#">Organización »</a>
+<ul>
+<li><a href="/bcv/organigrama">Organigrama</a></li>
+<li><a href="/bcv/subsede-maracaibo">Subsede Maracaibo</a></li>
+<li><a href="/bcv/casa-de-la-moneda-de-venezuela">Casa de la Moneda de Venezuela</a></li>
+</ul>
+</li>
+<li><a href="#">Historia del BCV »</a>
+<ul>
+<li><a href="/bcv/resena-historica">Reseña histórica</a></li>
+<li><a href="/bcv/galeria-de-expresidentes">Galería de expresidentes</a></li>
+</ul>
+</li>
+<li><a href="http://www.bcv.org.ve/codigo-de-etica">Código de Ética</a></li>
+</ul>
+</li>
+<li><a href="#">Marco jurídico »</a>
+<ul>
+<li><a href="/marco/leyes_bcv">Legislación</a></li>
+<li><a href="#">Normativa cambiaria »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-cambiaria">Avisos oficiales</a></li>
+<li><a href="/marco/convenios-cambiarios">Convenios cambiarios</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-cambiaria">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa monetaria »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-monetaria">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-monetaria">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa sobre sistema de pagos »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-pago">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-pago">Resoluciones</a></li>
+</ul>
+</li>
+<li><a href="#">Normativa sobre minerales estratégicos »</a>
+<ul>
+<li><a href="/marco/aviso-oficiales-minerales">Avisos oficiales</a></li>
+<li><a href="/marco/decreto-reglamentos-resolucion-minerales">Resoluciones</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/bcv/acuerdo-anual-de-pol-ticas">Acuerdo Anual de Políticas Económicas</a></li>
+<li><a href="#">Comunicaciones institucionales »</a>
+<ul>
+<li><a href="/comunicados-de-prensa/comunicados">Comunicados</a></li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa">Notas de Prensa</a></li>
+<li><a href="#">Recursos comunicacionales »</a>
+<ul>
+<li><a href="/bcv/videos">Videos</a></li>
+<li><a href="/bcv/audios">Audios</a></li>
+<li><a href="/bcv/galeria-de-imagenes">Galería de imágenes</a></li>
+<li><a href="/bcv/descargables">Descargables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Publicaciones »</a>
+<ul>
+<li><a href="/bcv/publicaciones">Publicaciones periódicas</a></li>
+<li><a href="/bcv/publicaciones-no-periodica">Publicaciones no periódicas</a></li>
+<li><a href="https://publicaciones.extra.bcv.org.ve">Fondo editorial del BCV</a></li>
+<li><a href="/bcv/la-libreria-del-bcv">La Librería del BCV</a></li>
+</ul>
+</li>
+<li><a href="/bcv/estados-financieros">Estados financieros</a></li>
+<li><a href="#">Corresponsabilidad social »</a>
+<ul>
+<li><a href="/bcv/oficina_atencion_al_ciudadano">Oficina de Atención Ciudadana</a></li>
+<li><a href="/bcv/economia-en-la-escuela-encuentro-de-saberes">Economía en la escuela, encuentro de saberes</a></li>
+<li><a href="/bcv/premio-ernesto-peltzer">Premio Ernesto Peltzer</a></li>
+<li><a href="/bcv/centro-de-formacion-capacitacion-e-innovacion-orfebreria-y-joyeria">Centro de Formación Capacitación e Innovación Orfebrería y Joyería</a></li>
+<li><a href="/bcv/programa-de-cooperacion-interinstitucional">Programa de Cooperación Interinstitucional</a></li>
+<li><a href="#">Biblioteca »</a>
+<ul>
+<li><a href="/bcv/informacion">Información</a></li>
+<li><a href="http://www.bcv.org.ve/biblioteca/biblioteca.html">Servicios »</a>
+<ul>
+<li><a href="https://biblioteca.extra.bcv.org.ve/">Catálogo Público</a></li>
+<li><a href="http://www.bcv.org.ve/bcv/coleccion-electronica">Colección Electrónica</a></li>
+</ul>
+</li>
+<li><a href="http://www.bcv.org.ve/biblioteca/eventos_biblioteca/carabobo200">Eventos »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/biblioteca/eventos_biblioteca/carabobo200">La Batalla de Carabobo en la colección de la Biblioteca</a></li>
+<li><a href="/bcv/pensadores-economicos-latinoamericanos-0">Pensadores Económicos Latinoamericanos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/glosario">Glosario de Términos</a></li>
+<li><a href="#">Actividad cultural »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/bcv/icom_capitulo_venezuela">Participación en el ICOM</a></li>
+<li><a href="#">Colecciones patrimoniales »</a>
+<ul>
+<li><a href="https://www.bcv.org.ve/actividad-cultural-colecciones-descargables">Descargables</a></li>
+<li><a href="/bcv/joyas-de-el-libertador">Joyas de El Libertador</a></li>
+<li><a href="/bcv/obras-de-arte">Obras de arte</a></li>
+<li><a href="/bcv/filatelia">Filatelia</a></li>
+<li><a href="/bcv/herrajes">Herrajes</a></li>
+<li><a href="/billetes-y-monedas/coleccion-numismatica">Colección Numismática</a></li>
+</ul>
+</li>
+<li><a href="/actividad-cultural/audivisuales">Audiovisuales</a></li>
+<li><a href="/bcv/centro-cultural-salvador-de-la-plaza">Centro Cultural Salvador de la Plaza</a></li>
+<li><a href="#">Programación cultural »</a>
+<ul>
+<li><a href="/bcv/agenda-cultural-caracas">Agenda cultural Caracas</a></li>
+<li><a href="/bcv/agenda-cultural-maracaibo">Agenda cultural Maracaibo</a></li>
+<li><a href="/bcv/agrupaciones-musicales">Agrupaciones musicales</a></li>
+<li><a href="/bcv/aprendizaje-significativo">Aprendizaje significativo</a></li>
+<li><a href="/bcv/actualizacion-y-formacion">Actualización y formación</a></li>
+</ul>
+</li>
+<li><a href="#">Salas numismáticas »</a>
+<ul>
+<li><a href="/bcv/numi-caracas">NUMI – Caracas</a></li>
+<li><a href="/bcv/numi-maracaibo">NUMI - Maracaibo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/bcv/calendario-bancario">Calendario bancario</a></li>
+<li><a href="#">Contrataciones »</a>
+<ul>
+<li><a href="/concursos-abiertos">Llamados a Concursos Abiertos</a></li>
+<li><a href="/bcv/contrataciones/planificacion-anual-de-compras">Planificación Anual de Compras</a></li>
+<li><a href="/contrataciones/notificaciones">Notificaciones</a></li>
+</ul>
+</li>
+<li><a href="/bcv/enlaces-de-interes">Enlaces de interés</a></li>
+<li><a href="/bcv/contactos">Contactos</a></li>
+</ul>
+</li>
+<li><a href="#">Política cambiaria »</a>
+<ul>
+<li><a href="#">Operaciones a través de mesas de cambio »</a>
+<ul>
+<li><a href="/politica-cambiaria/mesas-cambio/actos-administrativos" title="Politica Cambiaria /Mesas de cambio/ Actos administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Operaciones cambiarias al menudeo »</a>
+<ul>
+<li><a href="https://occc.extra.bcv.org.ve/occc-pw">Ingresar al sistema</a></li>
+<li><a href="/politica-cambiaria/menudeo/actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Operaciones de compra de divisas por turismo »</a>
+<ul>
+<li><a href="/actos-adm-turismo">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Posición en moneda extranjera  »</a>
+<ul>
+<li><a href="https://oinpc.extra.bcv.org.ve/NormasPrudenciales/">Ingresar al sistema</a></li>
+<li><a href="/actos-adm-moneda-ext">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema de Integración con Entes Externos (SINEX) »</a>
+<ul>
+<li><a href="https://sinex.extra.bcv.org.ve/Sinex/">Ingresar al sistema</a></li>
+<li><a href="/actos-adm-sinex">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Intervención cambiaria »</a>
+<ul>
+<li><a href="/politica-cambiaria/intervencion/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/politica-cambiaria/intervencion-cambiaria">Intervenciones</a></li>
+</ul>
+</li>
+<li><a href="/tasas-informativas-sistema-bancario">Tasas Informativas del Sistema Bancario</a></li>
+</ul>
+</li>
+<li><a href="#">Política monetaria »</a>
+<ul>
+<li><a href="/politica-monetaria/lineamientos-de-pol-tica-monetaria">Lineamientos de política monetaria</a></li>
+<li><a href="#">Actuación del BCV como autoridad monetaria »</a>
+<ul>
+<li><a href="#">Operaciones en mercado abierto  »</a>
+<ul>
+<li><a href="#">Títulos de Cobertura »</a>
+<ul>
+<li><a href="#">Personas Naturales y Jurídicas »</a>
+<ul>
+<li><a href="/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas">Convocatorias</a></li>
+<li><a href="/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-actos-adm">Actos Administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Instituciones Bancarias »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias">Convocatorias</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-actos-adm">Actos Administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/operaciones-absorcion-diaria">Operaciones de absorción diaria</a></li>
+<li><a href="/politica-monetaria/operaciones-absorcion-extraordinaria">Operaciones de absorción extraordinarias</a></li>
+<li><a href="/politica-monetaria/operaciones-inyeccion-diaria">Operaciones de inyección diaria</a></li>
+<li><a href="/politica-monetaria/operaciones-recompra-rescate">Operaciones de recompra y rescate de certificados de depósito</a></li>
+<li><a href="/actos-adm-operaciones-mercado-abierto">Actos administrativos</a></li>
+<li><a href="/estadisticas/operaciones-mercado-abierto">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Encaje Legal »</a>
+<ul>
+<li><a href="/politica-monetaria/encaje-legal">Requerimiento de Encaje a constituir</a></li>
+<li><a href="/actos-adm-encaje-legal">Actos administrativos</a></li>
+<li><a href="/estadisticas/encaje-legal">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Asistencia Financiera »</a>
+<ul>
+<li><a href="/politica-monetaria/asistencia-financiera/condiciones-financieras">Condiciones financieras</a></li>
+<li><a href="/politica-monetaria/asistencia-financiera">Resultados de Operaciones de Crédito Intradía</a></li>
+<li><a href="/actos-adm-asistencia-financiera">Actos administrativos</a></li>
+<li><a href="/estadisticas/asistencia-financiera">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Instrumento de inversión Directo BCV »</a>
+<ul>
+<li><a href="/politica-monetaria/instrumento-inversion-directo-bcv">Convocatorias / Resultados</a></li>
+<li><a href="/actos-adm-instrumento-directo-bcv">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Tasas interés de los instrumentos de política monetaria »</a>
+<ul>
+<li><a href="/estadisticas/tasas-interes-instrumentos-politica-monetaria">Estadísticas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Actuación del BCV como Agente Financiero »</a>
+<ul>
+<li><a href="#">Gobierno Central (Ministerio con competencia en el área de finanzas) »</a>
+<ul>
+<li><a href="/politica-monetaria/letras-del-tesoro">Letras del Tesoro</a></li>
+<li><a href="/politica-monetaria/bonos-dpn">Bonos DPN</a></li>
+<li><a href="/politica-monetaria/ofertas-espaciales-bonos-dpn">Ofertas Especiales de Bonos de la Deuda Pública Nacional</a></li>
+<li><a href="/politica-monetaria/bono-agricola">Bono Agrícola</a></li>
+<li><a href="/politica-monetaria/recompra-titulos-publicos">Recompra de Títulos Públicos</a></li>
+<li><a href="/politica-monetaria/mercado-deuda-publica-interna">Programa de Reordenamiento de Mercado de Deuda Pública Interna</a></li>
+<li><a href="/politica-monetaria/dacion-pagos-bonos-dpn">Dación en Pago de Bonos DPN</a></li>
+<li><a href="/politica-monetaria/venta-bonos-dpn-cero-cupon">Venta de Bonos DPN Cero Cupón</a></li>
+<li><a href="/politica-monetaria/canje-bonos-dpn">Canje de Bonos DPN</a></li>
+<li><a href="/politica-monetaria/bonos-soberanos">Bonos Soberanos</a></li>
+<li><a href="/politica-monetaria/bonos-venezolanos">Bonos Venezolanos</a></li>
+<li><a href="/politica-monetaria/bonos-del-sur">Bonos del Sur</a></li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/pdvsa">Petróleos de Venezuela, S.A. (PDVSA) »</a>
+<ul>
+<li><a href="/politica-monetaria/bono-pdvsa">Bono PDVSA</a></li>
+<li><a href="/politica-monetaria/bono-pdvsa-agricola">Bono PDVSA Agrícola</a></li>
+<li><a href="/politica-monetaria/bono-pdvsa-2017">Bono PDVSA 2017</a></li>
+<li><a href="/politica-monetaria/bono-amortizable-pdvsa-2022">Bono Amortizable PDVSA 2022</a></li>
+<li><a href="/politica-monetaria/petrobono">Petrobono 2011</a></li>
+<li><a href="/politica-monetaria/petrobono-2014-2016">Petrobono 2014, 2015 y 2016</a></li>
+</ul>
+</li>
+<li><a href="/politica-monetaria/banavih">Banco Nacional del Vivienda y Hábitat (Banavih)</a></li>
+<li><a href="/politica-monetaria/bandes">Banco de Desarrollo Económico y Social de Venezuela (Bandes)</a></li>
+<li><a href="/politica-monetaria/fonden">Fondo de Desarrollo Nacional (Fonden)</a></li>
+<li><a href="/politica-monetaria/fondo-simon-bolivar">Fondo Simón Bolívar para la Reconstrucción, S.A.</a></li>
+<li><a href="/actos-adm-politica-monetaria-agente-financiero">Actos administrativos</a></li>
+<li><a href="/estadisticas/gobierno-central">Estadísticas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Billetes y monedas »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/billetes-y-monedas/nueva-expresion-monetaria">Cono Monetario</a></li>
+<li><a href="/billetes-y-monedas/coleccion-numismatica">Colección Numismática</a></li>
+<li><a href="#">Criptoactivos »</a>
+<ul>
+<li><a href="#">Petro »</a>
+<ul>
+<li><a href="/estadisticas/graficos/precios-petro">Referencia en Otras Divisas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Sistemas de pago »</a>
+<ul>
+<li><a href="#">Nacionales »</a>
+<ul>
+<li><a href="#">Sistema de Liquidación Bruta en Tiempo Real (SLBTR) »</a>
+<ul>
+<li><a href="/sistemas-de-pago/sistema-de-liquidacion-bruta-en-tiempo-real-slbtr">Información</a></li>
+<li><a href="/sistemas-de-pago/slbtr/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/slbtr/estadisticas">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Cámara de Compensación Electrónica (CCE) »</a>
+<ul>
+<li><a href="/sistema-de-pagos/nacionales/camara-de-compensacion-electronica-cce">Información</a></li>
+<li><a href="/sistema-de-pagos/cce/actos-administrativos">Actos Administrativos</a></li>
+<li><a href="/sistemas-de-pago/cee/estadisticas">Estadísticas</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema de Custodia Electrónica de Titulos (SICET) »</a>
+<ul>
+<li><a href="/sistemas-de-pago/sistema-de-custodia-electronica-de-titulos-sicet">Información</a></li>
+<li><a href="/sistemas-de-pago/sicet/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/sicet/estadisticas">Estadísticas</a></li>
+<li><a href="https://oncp.extra.bcv.org.ve/">Sistema de Consulta de Posiciones de Títulos en Moneda Nacional</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Transfronterizos »</a>
+<ul>
+<li><a href="#">Convenios de Pagos y Créditos Recíprocos de la ALADI »</a>
+<ul>
+<li><a href="/sistemas-de-pago/informacion-0">Información</a></li>
+<li><a href="/sistemas-de-pago/transfronterizos/aladi-actos-administrativos">Actos administrativos</a></li>
+<li><a href="https://www.aladi.org/sitioaladi/">Asociación Latinoamericana de Integración (ALADI) Página WEB</a></li>
+</ul>
+</li>
+<li><a href="#">Sistema Unitario de Compensación Regional de Pagos (SUCRE) »</a>
+<ul>
+<li><a href="/sistemas-de-pago/informacion">Información</a></li>
+<li><a href="/sistemas-de-pago/transfronterizos/sucre-actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#">Tarifas y comisiones bancarias »</a>
+<ul>
+<li><a href="/sistemas-de-pago/tarifario-bancario">Tarifario bancario</a></li>
+<li><a href="/sistemas-de-pago/tarifas-y-comisiones/actos-administrativos">Actos administrativos</a></li>
+</ul>
+</li>
+<li><a href="/sistemas-de-pago/anuario-de-estadisticas-sobre-sistemas-de-pago">Anuario de Estadísticas sobre Sistemas de Pago</a></li>
+<li><a href="#">Aspectos legales y otras estadísticas sobre Sistemas de Pago »</a>
+<ul>
+<li><a href="/sistema-de-pagos/aspectos-legales/actos-administrativos">Actos administrativos</a></li>
+<li><a href="/sistemas-de-pago/aspectos-legales/numero-de-terminales-de-puntos-de-venta-y-cajeros-automaticos">Número de Terminales de Puntos de Venta y Cajeros Automáticos</a></li>
+<li><a href="/sistemas-de-pago/aspectos-legales/canales-y-servicios-de-pago">Canales y servicios de pago</a></li>
+</ul>
+</li>
+<li><a href="/sistemas-de-pago/documentos">Documentos</a></li>
+<li><a href="/sistemas-de-pago/proveedores-servicios-pago">Proveedores No Bancarios de Servicios de Pago</a></li>
+</ul>
+</li>
+<li><a href="#">Estadísticas »</a>
+<ul>
+<li><a href="#">Tipos de Cambio »</a>
+<ul>
+<li><a href="/estadisticas/tipo-cambio-de-referencia-smc">Tipo de Cambio de Referencia del SMC</a></li>
+</ul>
+</li>
+<li><a href="#">Precios »</a>
+<ul>
+<li><a href="/estadisticas/consumidor">Consumidor</a></li>
+<li><a href="/estadisticas/comercio-mayorista">Mayorista</a></li>
+<li><a href="/estadisticas/productor-manufacturero">Productor Manufacturero</a></li>
+<li><a href="/estadisticas/insumos-de-la-construccion">Insumos de la Construcción</a></li>
+<li><a href="/estadisticas/precios-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Monetario »</a>
+<ul>
+<li><a href="/estadisticas/base-monetaria">Base Monetaria</a></li>
+<li><a href="/estadisticas/liquidez-monetaria">Liquidez Monetaria</a></li>
+<li><a href="/estadisticas/balances-monetarios">Balances Monetarios</a></li>
+<li><a href="/estadisticas/operaciones-mercado-abierto">Operaciones en Mercado Abierto</a></li>
+<li><a href="/estadisticas/encaje-legal">Encaje legal</a></li>
+<li><a href="/estadisticas/asistencia-financiera">Asistencia Financiera</a></li>
+<li><a href="/estadisticas/gobierno-central">Gobierno Central</a></li>
+<li><a href="/estadisticas/reservas-bancarias-excedentes">Reservas Bancarias Excedentes</a></li>
+<li><a href="/estadisticas/tasas-interes-instrumentos-politica-monetaria">Tasas interés de los instrumentos de política monetaria</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Financiero »</a>
+<ul>
+<li><a href="/estadisticas/tasas-de-interes">Tasas de Interés</a></li>
+<li><a href="/estadisticas/series-historicas-tasas-de-interes">Series históricas de tasas de interés</a></li>
+<li><a href="/estadisticas/otras-monedas">Series históricas de otras monedas</a></li>
+<li><a href="/estadisticas/resumenes-de-balances">Resúmenes de Balances de las Instituciones Bancarias</a></li>
+</ul>
+</li>
+<li><a href="#">Sector Externo »</a>
+<ul>
+<li><a href="/estadisticas/balanza-de-pagos">Balanza de pagos</a></li>
+<li><a href="/estadisticas/comercio-exterior">Comercio Exterior</a></li>
+<li><a href="/estadisticas/inversion-extranjera">Inversión extranjera</a></li>
+<li><a href="/estadisticas/reservas-internacionales">Reservas Internacionales</a></li>
+<li><a href="/estadisticas/posicion-de-inversion-internacional">Posición de inversión internacional</a></li>
+<li><a href="/estadisticas/deuda-externa">Deuda Externa</a></li>
+<li><a href="/estadisticas/indice-de-inversion">Indice de Inversión</a></li>
+<li><a href="/estadisticas/sector-externo-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Cuentas Nacionales »</a>
+<ul>
+<li><a href="/estadisticas/producto-interno-bruto">Producto Interno Bruto</a></li>
+<li><a href="/estadisticas/oferta-y-demanda">Oferta y Demanda</a></li>
+<li><a href="/estadisticas/cuentas-consolidadas-de-la-nacion">Cuentas Consolidadas de la Nación</a></li>
+<li><a href="/estadisticas/matriz-insumo-producto">Matriz insumo producto</a></li>
+<li><a href="/estadisticas/flujo-de-fondos">Flujo de fondos</a></li>
+<li><a href="/estadisticas/cuentas-nacionales-series-historicas">Series Históricas</a></li>
+<li><a href="/estadisticas/cuentas-nacionales-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Indicadores sectoriales »</a>
+<ul>
+<li><a href="/estadisticas/manufactura">Manufactura</a></li>
+<li><a href="/estadisticas/comercio">Comercio</a></li>
+<li><a href="/estadisticas/indicadores-sectoriales-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Mercado Laboral »</a>
+<ul>
+<li><a href="/estadisticas/indice-de-remuneraciones">Índice de Remuneraciones</a></li>
+<li><a href="/estadisticas/mercado-laboral-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="#">Indicadores de la Región Zuliana »</a>
+<ul>
+<li><a href="/estadisticas/indicadores-de-la-region-zuliana-precios">Precios</a></li>
+<li><a href="/estadisticas/indicadores-de-la-region-zuliana-sectoriales">Sectoriales</a></li>
+<li><a href="/estadisticas/region-zuliana-metodologia">Metodologías</a></li>
+</ul>
+</li>
+<li><a href="/estadisticas/billetes-y-monedas">Billetes y monedas</a></li>
+<li><a href="#">Minerales estratégicos »</a>
+<ul>
+<li><a href="/minerales-estrategicos/diamante/estadisticas">Diamante</a></li>
+<li><a href="/minerales-estrategicos/oro/compras-de-oro-en-el-mercado-interno">Oro</a></li>
+</ul>
+</li>
+<li><a href="/estadisticas/simbologia-utilizada">Simbología utilizada</a></li>
+</ul>
+</li>
+<li><a href="#">Minerales estratégicos »</a>
+<ul>
+<li><a href="#">Oro »</a>
+<ul>
+<li><a href="#">Plan de Ahorro »</a>
+<ul>
+<li><a href="http://www.bcv.org.ve/minerales-estrategicos/plan-de-ahorro">Información</a></li>
+<li><a href="http://www.bcv.org.ve/minerales_estrategicos/oro/convocatoria_plan_de_ahorro">Convocatorias</a></li>
+<li><a href="http://www.bcv.org.ve/minerales_estrategicos/oro/plan_de_ahorro/actos_administrativos_plan_de_ahorro">Actos administrativos</a></li>
+<li><a href="http://www.bcv.org.ve/comunicados-de-prensa/notas-de-prensa?field_tags_tid=667">Notas de Prensa</a></li>
+<li><a href="http://www.bcv.org.ve/bcv/galeria-de-imagenes?title=Ahorro">Galería de imágenes</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/resena-del-oro">Reseña del Oro</a></li>
+<li><a href="/minerales-estrategicos/oro/compras-de-oro-en-el-mercado-interno">Estadísticas</a></li>
+<li><a href="/minerales-estrategicos/oro/metales">Metales</a></li>
+<li><a href="/minerales-estrategicos/precio-del-oro">Precio del Oro</a></li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa?field_tags_tid=529">Notas de Prensa</a></li>
+<li><a href="/minerales-estrategicos/oro/actos-administrativos">Actos Administrativos</a></li>
+</ul>
+</li>
+<li><a href="#">Diamante »</a>
+<ul>
+<li><a href="/minerales-estrategicos/resena">Reseña</a></li>
+<li><a href="/minerales-estrategicos/diamante/normativa-internacional">Normativa internacional</a></li>
+<li><a href="#">Sistema de Certificación del Proceso Kimberley »</a>
+<ul>
+<li><a href="/minerales-estrategicos/antecedentes">Antecedentes</a></li>
+<li><a href="#">Adopción del SCPK »</a>
+<ul>
+<li><a href="/minerales-estrategicos/oficina-de-seguimiento-y-control-de-la-implementacion-del-scpk">Oficina de Seguimiento y Control de la Implementación del SCPK</a></li>
+<li><a href="/minerales-estrategicos/entes-y-organos-participantes">Entes y Órganos Participantes</a></li>
+<li><a href="/minerales-estrategicos/diamante/estadisticas">Estadísticas</a></li>
+<li><a href="/minerales-estrategicos/diamante/certificado-del-proceso-kimberley">Certificado del Proceso Kimberley</a></li>
+<li><a href="#">Eventos internacionales »</a>
+<ul>
+<li><a href="/minerales-estrategicos/diamante/reunion-intersesional">Reunión Intersesional</a></li>
+<li><a href="/minerales-estrategicos/diamante/reunion-plenaria">Reunión Plenaria</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/diamante/reporte-anual-de-actuacion">Reporte Anual de Actuación</a></li>
+</ul>
+</li>
+<li><a href="/minerales-estrategicos/diamante/documentos-scpk">Documentos SCPK</a></li>
+</ul>
+</li>
+<li><a href="/comunicados-de-prensa/notas-de-prensa?field_tags_tid=530">Notas de Prensa</a></li>
+<li><a href="/minerales-estrategicos/diamante/actos-administrativos">Actos Administrativos</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<div class="views-row views-row-1 views-col-">
+      <div class="views-field views-field-field-imagen">
+    <span class="field-content"><a href="/notas-de-prensa/conoce-los-ganadores-del-concurso-30-anos-del-bcvoz-economico"><img src="https://www.bcv.org.ve/sites/default/files/styles/slide_home/public/field/image/gal-np-20261030.jpeg?itok=DoGj287p" width="300" height="200" alt=""></a></span>
+    </div>
+  <div class="views-field views-field-title">
+    <span class="field-content"><a href="/notas-de-prensa/conoce-los-ganadores-del-concurso-30-anos-del-bcvoz-economico">Conoce a los ganadores del concurso 30 años del BCVoz Económico</a></span>
+    </div>
+</div>
+
+<div class="views-row views-row-2 views-col-">
+      <div class="views-field views-field-field-imagen">
+    <span class="field-content"><a href="/notas-de-prensa/inflacion-de-octubre-desciende-62-y-registra-la-cifra-mas-baja-de-2026"><img src="https://www.bcv.org.ve/sites/default/files/styles/slide_home/public/field/image/gal-np20261104.jpeg?itok=EQ1jwDL3" width="300" height="200" alt=""></a></span>
+    </div>
+  <div class="views-field views-field-title">
+    <span class="field-content"><a href="/notas-de-prensa/inflacion-de-octubre-desciende-62-y-registra-la-cifra-mas-baja-de-2026">Inflación de octubre desciende a 6,2% y registra la cifra más baja de 2026</a></span>
+    </div>
+</div>
+
+<div class="views-row views-row-3 views-col-">
+      <div class="views-field views-field-field-imagen">
+    <span class="field-content"><a href="/notas-de-prensa/conoce-los-ganadores-del-concurso-30-anos-del-bcvoz-economico"><img src="https://www.bcv.org.ve/sites/default/files/styles/slide_home/public/field/image/gal-np-20261030.jpeg?itok=DoGj287p" width="300" height="200" alt=""></a></span>
+    </div>
+  <div class="views-field views-field-title">
+    <span class="field-content"><a href="/notas-de-prensa/conoce-los-ganadores-del-concurso-30-anos-del-bcvoz-economico">Conoce a los ganadores del concurso 30 años del BCVoz Económico</a></span>
+    </div>
+</div>
+
+<div class="views-row views-row-4 views-col-">
+      <div class="views-field views-field-field-imagen">
+    <span class="field-content"><a href="/notas-de-prensa/inflacion-de-octubre-desciende-62-y-registra-la-cifra-mas-baja-de-2026"><img src="https://www.bcv.org.ve/sites/default/files/styles/slide_home/public/field/image/gal-np20261104.jpeg?itok=EQ1jwDL3" width="300" height="200" alt=""></a></span>
+    </div>
+  <div class="views-field views-field-title">
+    <span class="field-content"><a href="/notas-de-prensa/inflacion-de-octubre-desciende-62-y-registra-la-cifra-mas-baja-de-2026">Inflación de octubre desciende a 6,2% y registra la cifra más baja de 2026</a></span>
+    </div>
+</div>
+
+<div class="pager">
+<ul class="pagination">
+<li><a href="#">Anterior</a></li>
+<li><a href="#">Siguiente</a></li>
+</ul>
+</div>
+
+
+<h2>Título de Cobertura</h2>
+
+<p><img src="/sites/default/files/default_images/boton_tc.jpg" alt="boton_tc.jpg"></p>
+
+<p><img src="/sites/default/files/default_images/icono_tc.jpg" alt="icono_tc.jpg"> <strong>Personas Naturales y Jurídicas</strong></p>
+
+<ul>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas">Convocatorias</a></li>
+
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-personas-naturales-y-juridicas-actos-adm">Actos Administrativos</a></li>
+</ul>
+
+<p><img src="/sites/default/files/default_images/separador_vertical2.png" alt="separador_vertical2.png"></p>
+
+<p><img src="/sites/default/files/default_images/icono_tc.jpg" alt="icono_tc.jpg"> <strong>Instituciones Bancarias</strong></p>
+
+<ul>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias">Convocatorias</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-resultados">Resultados</a></li>
+<li><a href="http://www.bcv.org.ve/politica-monetaria/titulos-de-cobertura-instituciones-bancarias-actos-adm">Actos Administrativos</a></li>
+</ul>
+
+
+<h2>Contenido reciente</h2>
+
+<ul>
+<li><a href="/estadisticas/billetes-en-circulacion-al-cierre-de-cada-mes-2">Billetes en Circulación al cierre de cada mes</a></li>
+<li><a href="/estadisticas/monedas-en-circulacion-al-cierre-de-cada-mes-1">Monedas en Circulación al cierre de cada mes</a></li>
+<li><a href="/estadisticas/billetes-nuevos-puestos-en-circulacion-2">Billetes Nuevos puestos en circulación</a></li>
+<li><a href="/estadisticas/egreso-total-de-billetes-2">Egreso Total de Billetes</a></li>
+</ul>
+
+
+<h2>Publicaciones periódicas</h2>
+
+<p><img src="/sites/default/files/default_images/publicaciones2.png"> <a href="/publicaciones/bcvoz-economico-ndeg6-2025">BCVoz Económico N°6 2025</a></p>
+
+<p><img src="/sites/default/files/default_images/linea_oscuro_claro2x260.jpg"></p>
+
+<p><img src="/sites/default/files/default_images/publicaciones2.png"> <a href="/publicaciones/bcvoz-economico-ndeg5-2025">BCVoz Económico N°5 2025</a></p>
+
+<p><img src="/sites/default/files/default_images/linea_oscuro_claro2x260.jpg"></p>
+
+<p><img src="/sites/default/files/default_images/publicaciones2.png"> <a href="/publicaciones/bcvoz-economico-ndeg4-2025">BCVoz Económico N°4 2025</a></p>
+
+<p><img src="/sites/default/files/default_images/linea_oscuro_claro2x260.jpg"></p>
+
+
+<h2>Notas de Prensa</h2>
+
+<table>
+<thead>
+<tr><th></th></tr>
+</thead>
+<tbody>
+<tr><td>noticias.png  Miércoles, 04 Noviembre 2026 - 03:50 pm  <a href="/notas-de-prensa/inflacion-de-octubre-desciende-62-y-registra-la-cifra-mas-baja-de-2026">Inflación de octubre desciende a 6,2% y registra la cifra más baja de 2026</a> </td></tr>
+<tr><td>noticias.png  Martes, 03 Noviembre 2026 - 05:50 pm  <a href="/notas-de-prensa/bcv-realizara-mantenimiento-su-pagina-web-este-martes">BCV realizará mantenimiento a su página web este martes</a> </td></tr>
+<tr><td>noticias.png  Viernes, 30 Octubre 2026 - 02:33 pm  <a href="/notas-de-prensa/bcv-inaugura-exposicion-por-los-60-anos-de-su-sala-numi-y-reivindica-la-defensa-del">BCV inaugura exposición por los 60 años de su Sala Numi y reivindica la defensa del signo monetario</a> </td></tr>
+</tbody></table>
+
+<p><a href="/estadisticas/tipo-cambio-de-referencia-smc">
+Tipo de Cambio de Referencia 
+
+<img src="/sites/default/files/default_images/logo_bcv-04_2.png" alt="logo_bcv-04.png"></a></p>
+
+<p>El tipo de cambio publicado por el BCV es el promedio ponderado resultante de las operaciones diarias de las mesas de cambio activas de las instituciones bancarias participantes.</p>
+
+<p><img src="/sites/default/files/euro-04_2.png">
+ EUR</p>
+
+<p><strong>1.001,18602288</strong></p>
+
+<p><img src="/sites/default/files/yuan-04_2.png">
+ CNY</p>
+
+<p><strong>134,45259531</strong></p>
+
+<p><img src="/sites/default/files/default_images/lirat-04_0.png">
+ TRY</p>
+
+<p><strong>17,89463411</strong></p>
+
+<p><img src="/sites/default/files/rublo-04_2.png">
+ RUB</p>
+
+<p><strong>10,95601059</strong></p>
+
+<p><img src="/sites/default/files/dollar-04_2.png">
+ USD</p>
+
+<p><strong>897,53830000</strong></p>
+
+<p>Fecha Valor: Lunes, 09 Noviembre 2026</p>
+
+
+<hr>
+
+<h2>Tasas Informativas del Sistema Bancario (Bs/USD)</h2>
+
+<table>
+<thead>
+<tr><th>Banco</th><th>Compra</th><th>Venta</th></tr>
+</thead>
+<tbody>
+<tr><td>BBVA Provincial</td><td>896,7994</td><td>963,4907</td></tr>
+<tr><td>Banco Mercantil</td><td>902,1952</td><td>897,1180</td></tr>
+<tr><td>N58 Banco Digital</td><td>895,5832</td><td>895,6697</td></tr>
+<tr><td>Banco Exterior</td><td>941,9253</td><td>966,8552</td></tr>
+</tbody></table>
+
+<p><a href="/tasas-informativas-sistema-bancario">Ver más...</a></p>
+
+<p><a href="/politica-cambiaria/intervencion-cambiaria"><img src="https://www.bcv.org.ve/sites/default/files/banners_servicios/boton-04_2.png" alt=""></a></p>
+
+<p><a href="https://biblioteca.extra.bcv.org.ve/"><img src="https://www.bcv.org.ve/sites/default/files/banners_servicios/bibliotecabcv.png" alt=""></a></p>
+
+<p><a href="https://publicaciones.extra.bcv.org.ve"><img src="https://www.bcv.org.ve/sites/default/files/banners_servicios/fondoed.png" alt=""></a></p>
+
+<p><a href="/sistemas-de-pago/tarifario-bancario"><img src="https://www.bcv.org.ve/sites/default/files/banners_servicios/tarfcom.png" alt=""></a></p>
+
+<p><a href="/glosario"><img src="https://www.bcv.org.ve/sites/default/files/banners_servicios/glosario11_2.png" alt=""></a></p>
+
+<p><a href="estadisticas/reservas-internacionales">Reservas Internacionales</a></p>
+
+<p><a href="estadisticas/tasas-de-interes">Tasas Activas y Pasiva</a></p>
+
+<p><a href="estadisticas/tasas-de-interes">Prestaciones Sociales</a></p>
+
+<p><a href="estadisticas/consumidor">INPC</a></p>
+
+<p><a href="estadisticas/producto-interno-bruto">PIB</a></p>
+
+<p><a href="/estadisticas/consumidor">Índice Nacional de Precios al Consumidor</a></p>
+<hr>
+
+<p>Octubre - 2026</p>
+
+<p> Var %:  6,2 </p>
+
+<p>Indice: </p>
+
+<p>733.714.624.268.083,0</p>
+
+<p> Var Acumulada %:  245,5</p>
+
+
+<p><a href="/estadisticas/producto-interno-bruto">Producto Interno Bruto</a></p>
+<hr>
+
+<p>Año 2025 / Año 2024: 9,01%</p>
+
+<p>II Trim (2026) / II Trim (2025): 7,14%</p>
+
+<p><a href="/estadisticas/reservas-internacionales">Reservas Internacionales</a></p>
+<hr>
+
+<p>05/11/2026 </p>
+
+<p>(Millones de US $)</p>
+
+<p>BCV + FEM = TOTALES</p>
+
+<p> 13.197 
+  +   
+ 3 
+  =   
+ 13.200</p>
+
+
+
+
+<p><a href="/estadisticas/tasas-de-interes">Tasas Activas y Pasivas</a></p>
+<hr>
+
+<p>Septiembre - 2026</p>
+
+<p> Activa:  58,86    
+ Pasiva (DPF 90 Dias):  46,00</p>
+
+
+
+<p><a href="/estadisticas/tipo-de-cambio">Tipos de Cambio</a></p>
+<hr>
+
+<p>Tipo de Cambio de Referencia (Bs. /US$)</p>
+
+<p> Compra:  5.355,5058    
+ Venta:  5.368,9281 </p>
+
+<p>Fecha de Publicación:  15/05/2019</p>
+
+
+
+
+<p><a href="/estadisticas/tasas-de-interes">Prestaciones Sociales</a></p>
+<hr>
+
+<p>Agosto - 2026</p>
+
+<p> Tasa:  47,46</p>
+
+
+</li>
+</ul>
+  </div>
+  </article>
+  </div>
+
+</div>
+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer id="footer" role="contentinfo"><div class="section">
+      <div class="region region-footer">
+  <div id="block-block-15" class="block block-block">
+
+    
+  
+  <div class="content">
+    <ul>
+<li>© 2018. Banco Central de Venezuela. RIF: G-20000110-0. Todos los derechos reservados.</li>
+<li><a href="/terminos-condiciones">Términos y Condiciones</a></li>
+</ul>
+
+<ul>
+<li><a href="https://www.facebook.com/Banco-Central-de-Venezuela-937741406327397/" title="Facebook">Facebook</a></li>
+<li><a href="https://www.bcv.org.ve/bcv/contactos" title="Contacto">Contacto</a></li>
+<li><a href="http://www.twitter.com/BCV_ORG_VE" title="Twitter">Twitter</a></li>
+<li><a href="http://www.instagram.com/bcv.org.ve/" title="Instagram">Instagram</a></li>
+<li><a href="http://www.youtube.com/user/BancoCentralBCV" title="YouTube">YouTube</a></li>
+</ul>
+
+  </div>
+
+</div>
+<div id="block-views-slideshow-grid-1" class="block block-views">
+
+    
+  
+  <div class="content">
+    <div class="view view-slideshow-grid view-id-slideshow_grid view-display-id-default " role="group" aria-roledescription="carousel">
+  <div class="views-slideshow-container danger ">
+
+
+  <div id="views-slideshow-grid-1" class="views-slideshow-container">
+    <div class="views-slideshow-cycle-main views-element-container">
+    <div class="cycle-slideshow">
+      
+      <img typeof="foaf:Image" src="https://www.bcv.org.ve/sites/default/files/banners/1140x141.png" alt="banner" title="" />
+    </div>
+  </div>
+</div>
+</div>
+</div>
+  </div>
+
+</div>
+<div id="block-views-slideshow-grid-2" class="block block-views">
+
+    
+  
+  <div class="content">
+    <div class="view view-slideshow-grid view-id-slideshow_grid view-display-id-default " role="group" aria-roledescription="carousel">
+  <div class="views-slideshow-container danger ">
+
+
+  <div id="views-slideshow-grid-2" class="views-slideshow-container">
+    <div class="views-slideshow-cycle-main views-element-container">
+    <div class="cycle-slideshow">
+      
+      <img typeof="foaf:Image" src="https://www.bcv.org.ve/sites/default/files/banners/1140x141.png" alt="banner" title="" />
+    </div>
+  </div>
+</div>
+</div>
+</div>
+  </div>
+
+</div>
+</div>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<img src="blob:[REDACTED]" alt=""/>
+</body>
+</html>

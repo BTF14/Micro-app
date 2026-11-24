@@ -1,0 +1,294 @@
+column|app_users|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|app_users|display_name|text|notnull=true|default=|generated=|identity=
+column|app_users|email_verified_at|timestamp with time zone|notnull=false|default=|generated=|identity=
+column|app_users|email|text|notnull=true|default=|generated=|identity=
+column|app_users|google_sub|text|notnull=false|default=|generated=|identity=
+column|app_users|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|app_users|is_active|boolean|notnull=true|default=true|generated=|identity=
+column|app_users|password_hash|text|notnull=false|default=|generated=|identity=
+column|app_users|updated_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|audit_logs|action|text|notnull=true|default=|generated=|identity=
+column|audit_logs|actor_user_id|uuid|notnull=false|default=|generated=|identity=
+column|audit_logs|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|audit_logs|entity_id|text|notnull=false|default=|generated=|identity=
+column|audit_logs|entity_type|text|notnull=true|default=|generated=|identity=
+column|audit_logs|id|bigint|notnull=true|default=|generated=|identity=a
+column|audit_logs|metadata|jsonb|notnull=true|default='{}'::jsonb|generated=|identity=
+column|audit_logs|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|auth_allowlist|added_by|text|notnull=true|default=|generated=|identity=
+column|auth_allowlist|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|auth_allowlist|email|text|notnull=true|default=|generated=|identity=
+column|auth_allowlist|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|auth_allowlist|is_active|boolean|notnull=true|default=true|generated=|identity=
+column|auth_allowlist|note|text|notnull=false|default=|generated=|identity=
+column|auth_allowlist|updated_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|auth_bootstrap|consumed_at|timestamp with time zone|notnull=false|default=|generated=|identity=
+column|auth_bootstrap|consumed_by_email|text|notnull=false|default=|generated=|identity=
+column|auth_bootstrap|created_organization_id|uuid|notnull=false|default=|generated=|identity=
+column|auth_bootstrap|id|boolean|notnull=true|default=true|generated=|identity=
+column|auth_rate_limits|attempts|integer|notnull=true|default=0|generated=|identity=
+column|auth_rate_limits|key_hash|character(64)|notnull=true|default=|generated=|identity=
+column|auth_rate_limits|updated_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|auth_rate_limits|window_started_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|auth_sessions|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|auth_sessions|expires_at|timestamp with time zone|notnull=true|default=|generated=|identity=
+column|auth_sessions|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|auth_sessions|last_seen_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|auth_sessions|revoked_at|timestamp with time zone|notnull=false|default=|generated=|identity=
+column|auth_sessions|token_hash|character(64)|notnull=true|default=|generated=|identity=
+column|auth_sessions|user_id|uuid|notnull=true|default=|generated=|identity=
+column|exchange_rates|base_currency|character(3)|notnull=true|default='USD'::bpchar|generated=|identity=
+column|exchange_rates|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|exchange_rates|effective_date|date|notnull=true|default=|generated=|identity=
+column|exchange_rates|fetched_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|exchange_rates|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|exchange_rates|quote_currency|character(3)|notnull=true|default='VES'::bpchar|generated=|identity=
+column|exchange_rates|rate|numeric(14,6)|notnull=true|default=|generated=|identity=
+column|exchange_rates|source|text|notnull=true|default=|generated=|identity=
+column|exchange_rates|validation_status|text|notnull=true|default='valid'::text|generated=|identity=
+column|inventory_movements|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|inventory_movements|created_by|uuid|notnull=true|default=|generated=|identity=
+column|inventory_movements|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|inventory_movements|movement_type|text|notnull=true|default=|generated=|identity=
+column|inventory_movements|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|inventory_movements|product_id|uuid|notnull=true|default=|generated=|identity=
+column|inventory_movements|quantity_delta|numeric(14,3)|notnull=true|default=|generated=|identity=
+column|inventory_movements|reason|text|notnull=true|default=|generated=|identity=
+column|inventory_movements|reference_id|uuid|notnull=false|default=|generated=|identity=
+column|inventory_movements|reference_type|text|notnull=false|default=|generated=|identity=
+column|inventory_movements|unit_cost_usd|numeric(14,4)|notnull=false|default=|generated=|identity=
+column|organization_members|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|organization_members|is_active|boolean|notnull=true|default=true|generated=|identity=
+column|organization_members|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|organization_members|role|text|notnull=true|default=|generated=|identity=
+column|organization_members|updated_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|organization_members|user_id|uuid|notnull=true|default=|generated=|identity=
+column|organizations|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|organizations|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|organizations|is_active|boolean|notnull=true|default=true|generated=|identity=
+column|organizations|name|text|notnull=true|default=|generated=|identity=
+column|organizations|slug|text|notnull=true|default=|generated=|identity=
+column|organizations|updated_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|payments|amount|numeric(14,4)|notnull=true|default=|generated=|identity=
+column|payments|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|payments|currency|character(3)|notnull=true|default=|generated=|identity=
+column|payments|exchange_rate_snapshot|numeric(14,6)|notnull=false|default=|generated=|identity=
+column|payments|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|payments|method|text|notnull=true|default=|generated=|identity=
+column|payments|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|payments|received_by|uuid|notnull=true|default=|generated=|identity=
+column|payments|reference|text|notnull=false|default=|generated=|identity=
+column|payments|sale_id|uuid|notnull=true|default=|generated=|identity=
+column|payments|usd_equivalent_snapshot|numeric(14,4)|notnull=true|default=|generated=|identity=
+column|products|barcode|text|notnull=false|default=|generated=|identity=
+column|products|cost_usd|numeric(14,4)|notnull=true|default=0|generated=|identity=
+column|products|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|products|description|text|notnull=false|default=|generated=|identity=
+column|products|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|products|is_active|boolean|notnull=true|default=true|generated=|identity=
+column|products|minimum_stock|numeric(14,3)|notnull=true|default=0|generated=|identity=
+column|products|name|text|notnull=true|default=|generated=|identity=
+column|products|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|products|price_usd|numeric(14,4)|notnull=true|default=|generated=|identity=
+column|products|sku|text|notnull=true|default=|generated=|identity=
+column|products|stock_quantity|numeric(14,3)|notnull=true|default=0|generated=|identity=
+column|products|supplier_id|uuid|notnull=false|default=|generated=|identity=
+column|products|unit|text|notnull=true|default='unidad'::text|generated=|identity=
+column|products|updated_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|sale_items|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|sale_items|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|sale_items|line_total_usd|numeric(14,4)|notnull=true|default=|generated=|identity=
+column|sale_items|line_total_ves|numeric(16,2)|notnull=true|default=|generated=|identity=
+column|sale_items|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|sale_items|product_id|uuid|notnull=false|default=|generated=|identity=
+column|sale_items|product_name_snapshot|text|notnull=true|default=|generated=|identity=
+column|sale_items|quantity|numeric(14,3)|notnull=true|default=|generated=|identity=
+column|sale_items|sale_id|uuid|notnull=true|default=|generated=|identity=
+column|sale_items|sku_snapshot|text|notnull=true|default=|generated=|identity=
+column|sale_items|unit_cost_usd|numeric(14,4)|notnull=true|default=|generated=|identity=
+column|sale_items|unit_price_usd|numeric(14,4)|notnull=true|default=|generated=|identity=
+column|sales|completed_at|timestamp with time zone|notnull=false|default=|generated=|identity=
+column|sales|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|sales|created_by|uuid|notnull=true|default=|generated=|identity=
+column|sales|discount_usd|numeric(14,4)|notnull=true|default=0|generated=|identity=
+column|sales|exchange_rate_id|uuid|notnull=false|default=|generated=|identity=
+column|sales|exchange_rate_snapshot|numeric(14,6)|notnull=false|default=|generated=|identity=
+column|sales|idempotency_key|text|notnull=true|default=|generated=|identity=
+column|sales|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|sales|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|sales|sale_number|bigint|notnull=true|default=|generated=|identity=a
+column|sales|status|text|notnull=true|default='draft'::text|generated=|identity=
+column|sales|subtotal_usd|numeric(14,4)|notnull=true|default=0|generated=|identity=
+column|sales|total_usd|numeric(14,4)|notnull=true|default=0|generated=|identity=
+column|sales|total_ves_snapshot|numeric(16,2)|notnull=false|default=|generated=|identity=
+column|suppliers|contact_name|text|notnull=false|default=|generated=|identity=
+column|suppliers|created_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+column|suppliers|email|text|notnull=false|default=|generated=|identity=
+column|suppliers|id|uuid|notnull=true|default=gen_random_uuid()|generated=|identity=
+column|suppliers|is_active|boolean|notnull=true|default=true|generated=|identity=
+column|suppliers|name|text|notnull=true|default=|generated=|identity=
+column|suppliers|notes|text|notnull=false|default=|generated=|identity=
+column|suppliers|organization_id|uuid|notnull=true|default=|generated=|identity=
+column|suppliers|phone|text|notnull=false|default=|generated=|identity=
+column|suppliers|updated_at|timestamp with time zone|notnull=true|default=now()|generated=|identity=
+constraint|app_users|app_users_display_name_check|c|CHECK ((length(TRIM(BOTH FROM display_name)) > 0))
+constraint|app_users|app_users_email_check|c|CHECK ((length(TRIM(BOTH FROM email)) > 0))
+constraint|app_users|app_users_google_sub_key|u|UNIQUE (google_sub)
+constraint|app_users|app_users_pkey|p|PRIMARY KEY (id)
+constraint|audit_logs|audit_logs_action_check|c|CHECK ((length(TRIM(BOTH FROM action)) > 0))
+constraint|audit_logs|audit_logs_entity_type_check|c|CHECK ((length(TRIM(BOTH FROM entity_type)) > 0))
+constraint|audit_logs|audit_logs_organization_id_actor_user_id_fkey|f|FOREIGN KEY (organization_id, actor_user_id) REFERENCES organization_members(organization_id, user_id) ON DELETE RESTRICT
+constraint|audit_logs|audit_logs_organization_id_fkey|f|FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+constraint|audit_logs|audit_logs_pkey|p|PRIMARY KEY (id)
+constraint|auth_allowlist|auth_allowlist_added_by_check|c|CHECK ((length(TRIM(BOTH FROM added_by)) > 0))
+constraint|auth_allowlist|auth_allowlist_email_check|c|CHECK ((length(TRIM(BOTH FROM email)) > 0))
+constraint|auth_allowlist|auth_allowlist_pkey|p|PRIMARY KEY (id)
+constraint|auth_bootstrap|auth_bootstrap_check|c|CHECK ((((consumed_at IS NULL) AND (consumed_by_email IS NULL) AND (created_organization_id IS NULL)) OR ((consumed_at IS NOT NULL) AND (consumed_by_email IS NOT NULL) AND (created_organization_id IS NOT NULL))))
+constraint|auth_bootstrap|auth_bootstrap_created_organization_id_fkey|f|FOREIGN KEY (created_organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+constraint|auth_bootstrap|auth_bootstrap_id_check|c|CHECK ((id = true))
+constraint|auth_bootstrap|auth_bootstrap_pkey|p|PRIMARY KEY (id)
+constraint|auth_rate_limits|auth_rate_limits_attempts_check|c|CHECK ((attempts >= 0))
+constraint|auth_rate_limits|auth_rate_limits_key_hash_check|c|CHECK ((key_hash ~ '^[a-f0-9]{64}$'::text))
+constraint|auth_rate_limits|auth_rate_limits_pkey|p|PRIMARY KEY (key_hash)
+constraint|auth_sessions|auth_sessions_check|c|CHECK ((expires_at > created_at))
+constraint|auth_sessions|auth_sessions_pkey|p|PRIMARY KEY (id)
+constraint|auth_sessions|auth_sessions_token_hash_check|c|CHECK ((token_hash ~ '^[a-f0-9]{64}$'::text))
+constraint|auth_sessions|auth_sessions_token_hash_key|u|UNIQUE (token_hash)
+constraint|auth_sessions|auth_sessions_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE RESTRICT
+constraint|exchange_rates|exchange_rates_base_currency_check|c|CHECK ((base_currency = 'USD'::bpchar))
+constraint|exchange_rates|exchange_rates_pkey|p|PRIMARY KEY (id)
+constraint|exchange_rates|exchange_rates_quote_currency_check|c|CHECK ((quote_currency = 'VES'::bpchar))
+constraint|exchange_rates|exchange_rates_rate_check|c|CHECK ((rate > (0)::numeric))
+constraint|exchange_rates|exchange_rates_source_check|c|CHECK ((length(TRIM(BOTH FROM source)) > 0))
+constraint|exchange_rates|exchange_rates_source_effective_date_key|u|UNIQUE (source, effective_date)
+constraint|exchange_rates|exchange_rates_validation_status_check|c|CHECK ((validation_status = ANY (ARRAY['valid'::text, 'stale'::text])))
+constraint|inventory_movements|inventory_movements_movement_type_check|c|CHECK ((movement_type = ANY (ARRAY['opening'::text, 'purchase'::text, 'sale'::text, 'return'::text, 'adjustment'::text, 'void_reversal'::text])))
+constraint|inventory_movements|inventory_movements_organization_id_created_by_fkey|f|FOREIGN KEY (organization_id, created_by) REFERENCES organization_members(organization_id, user_id) ON DELETE RESTRICT
+constraint|inventory_movements|inventory_movements_organization_id_product_id_fkey|f|FOREIGN KEY (organization_id, product_id) REFERENCES products(organization_id, id) ON DELETE RESTRICT
+constraint|inventory_movements|inventory_movements_pkey|p|PRIMARY KEY (id)
+constraint|inventory_movements|inventory_movements_quantity_delta_check|c|CHECK ((quantity_delta <> (0)::numeric))
+constraint|inventory_movements|inventory_movements_reason_check|c|CHECK ((length(TRIM(BOTH FROM reason)) > 0))
+constraint|inventory_movements|inventory_movements_unit_cost_usd_check|c|CHECK (((unit_cost_usd IS NULL) OR (unit_cost_usd >= (0)::numeric)))
+constraint|organization_members|organization_members_organization_id_fkey|f|FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+constraint|organization_members|organization_members_pkey|p|PRIMARY KEY (organization_id, user_id)
+constraint|organization_members|organization_members_role_check|c|CHECK ((role = ANY (ARRAY['owner'::text, 'admin'::text, 'cashier'::text, 'inventory'::text])))
+constraint|organization_members|organization_members_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE RESTRICT
+constraint|organizations|organizations_name_check|c|CHECK ((length(TRIM(BOTH FROM name)) > 0))
+constraint|organizations|organizations_pkey|p|PRIMARY KEY (id)
+constraint|organizations|organizations_slug_check|c|CHECK ((slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'::text))
+constraint|organizations|organizations_slug_key|u|UNIQUE (slug)
+constraint|payments|payments_amount_check|c|CHECK ((amount > (0)::numeric))
+constraint|payments|payments_currency_check|c|CHECK ((currency = ANY (ARRAY['USD'::bpchar, 'VES'::bpchar])))
+constraint|payments|payments_exchange_rate_snapshot_check|c|CHECK (((exchange_rate_snapshot IS NULL) OR (exchange_rate_snapshot > (0)::numeric)))
+constraint|payments|payments_method_check|c|CHECK ((method = ANY (ARRAY['cash'::text, 'card'::text, 'transfer'::text, 'mobile_payment'::text, 'other'::text])))
+constraint|payments|payments_organization_id_received_by_fkey|f|FOREIGN KEY (organization_id, received_by) REFERENCES organization_members(organization_id, user_id) ON DELETE RESTRICT
+constraint|payments|payments_organization_id_sale_id_fkey|f|FOREIGN KEY (organization_id, sale_id) REFERENCES sales(organization_id, id) ON DELETE RESTRICT
+constraint|payments|payments_pkey|p|PRIMARY KEY (id)
+constraint|payments|payments_usd_equivalent_snapshot_check|c|CHECK ((usd_equivalent_snapshot >= (0)::numeric))
+constraint|products|products_barcode_check|c|CHECK (((barcode IS NULL) OR (length(TRIM(BOTH FROM barcode)) > 0)))
+constraint|products|products_cost_usd_check|c|CHECK ((cost_usd >= (0)::numeric))
+constraint|products|products_minimum_stock_check|c|CHECK ((minimum_stock >= (0)::numeric))
+constraint|products|products_name_check|c|CHECK ((length(TRIM(BOTH FROM name)) > 0))
+constraint|products|products_organization_id_barcode_key|u|UNIQUE (organization_id, barcode)
+constraint|products|products_organization_id_fkey|f|FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+constraint|products|products_organization_id_id_key|u|UNIQUE (organization_id, id)
+constraint|products|products_organization_id_sku_key|u|UNIQUE (organization_id, sku)
+constraint|products|products_organization_id_supplier_id_fkey|f|FOREIGN KEY (organization_id, supplier_id) REFERENCES suppliers(organization_id, id) ON DELETE RESTRICT
+constraint|products|products_pkey|p|PRIMARY KEY (id)
+constraint|products|products_price_usd_check|c|CHECK ((price_usd >= (0)::numeric))
+constraint|products|products_sku_check|c|CHECK ((length(TRIM(BOTH FROM sku)) > 0))
+constraint|products|products_stock_quantity_check|c|CHECK ((stock_quantity >= (0)::numeric))
+constraint|products|products_unit_check|c|CHECK ((length(TRIM(BOTH FROM unit)) > 0))
+constraint|sale_items|sale_items_line_total_usd_check|c|CHECK ((line_total_usd >= (0)::numeric))
+constraint|sale_items|sale_items_line_total_ves_check|c|CHECK ((line_total_ves >= (0)::numeric))
+constraint|sale_items|sale_items_organization_id_product_id_fkey|f|FOREIGN KEY (organization_id, product_id) REFERENCES products(organization_id, id) ON DELETE RESTRICT
+constraint|sale_items|sale_items_organization_id_sale_id_fkey|f|FOREIGN KEY (organization_id, sale_id) REFERENCES sales(organization_id, id) ON DELETE RESTRICT
+constraint|sale_items|sale_items_pkey|p|PRIMARY KEY (id)
+constraint|sale_items|sale_items_product_name_snapshot_check|c|CHECK ((length(TRIM(BOTH FROM product_name_snapshot)) > 0))
+constraint|sale_items|sale_items_quantity_check|c|CHECK ((quantity > (0)::numeric))
+constraint|sale_items|sale_items_unit_cost_usd_check|c|CHECK ((unit_cost_usd >= (0)::numeric))
+constraint|sale_items|sale_items_unit_price_usd_check|c|CHECK ((unit_price_usd >= (0)::numeric))
+constraint|sales|sales_check1|c|CHECK ((total_usd = (subtotal_usd - discount_usd)))
+constraint|sales|sales_check2|c|CHECK (((status <> 'completed'::text) OR ((completed_at IS NOT NULL) AND (exchange_rate_id IS NOT NULL) AND (exchange_rate_snapshot IS NOT NULL) AND (total_ves_snapshot IS NOT NULL))))
+constraint|sales|sales_check|c|CHECK ((discount_usd <= subtotal_usd))
+constraint|sales|sales_discount_usd_check|c|CHECK ((discount_usd >= (0)::numeric))
+constraint|sales|sales_exchange_rate_id_fkey|f|FOREIGN KEY (exchange_rate_id) REFERENCES exchange_rates(id) ON DELETE RESTRICT
+constraint|sales|sales_exchange_rate_snapshot_check|c|CHECK (((exchange_rate_snapshot IS NULL) OR (exchange_rate_snapshot > (0)::numeric)))
+constraint|sales|sales_idempotency_key_check|c|CHECK ((length(TRIM(BOTH FROM idempotency_key)) > 0))
+constraint|sales|sales_organization_id_created_by_fkey|f|FOREIGN KEY (organization_id, created_by) REFERENCES organization_members(organization_id, user_id) ON DELETE RESTRICT
+constraint|sales|sales_organization_id_fkey|f|FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+constraint|sales|sales_organization_id_id_key|u|UNIQUE (organization_id, id)
+constraint|sales|sales_organization_id_idempotency_key_key|u|UNIQUE (organization_id, idempotency_key)
+constraint|sales|sales_organization_id_sale_number_key|u|UNIQUE (organization_id, sale_number)
+constraint|sales|sales_pkey|p|PRIMARY KEY (id)
+constraint|sales|sales_status_check|c|CHECK ((status = ANY (ARRAY['draft'::text, 'completed'::text, 'void'::text, 'refunded'::text])))
+constraint|sales|sales_subtotal_usd_check|c|CHECK ((subtotal_usd >= (0)::numeric))
+constraint|sales|sales_total_usd_check|c|CHECK ((total_usd >= (0)::numeric))
+constraint|sales|sales_total_ves_snapshot_check|c|CHECK (((total_ves_snapshot IS NULL) OR (total_ves_snapshot >= (0)::numeric)))
+constraint|suppliers|suppliers_name_check|c|CHECK ((length(TRIM(BOTH FROM name)) > 0))
+constraint|suppliers|suppliers_organization_id_fkey|f|FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+constraint|suppliers|suppliers_organization_id_id_key|u|UNIQUE (organization_id, id)
+constraint|suppliers|suppliers_pkey|p|PRIMARY KEY (id)
+index|app_users|app_users_email_lower_uq|CREATE UNIQUE INDEX app_users_email_lower_uq ON app_users USING btree (lower(email))
+index|app_users|app_users_google_sub_key|CREATE UNIQUE INDEX app_users_google_sub_key ON app_users USING btree (google_sub)
+index|app_users|app_users_pkey|CREATE UNIQUE INDEX app_users_pkey ON app_users USING btree (id)
+index|audit_logs|audit_logs_org_created_at_idx|CREATE INDEX audit_logs_org_created_at_idx ON audit_logs USING btree (organization_id, created_at DESC)
+index|audit_logs|audit_logs_org_entity_idx|CREATE INDEX audit_logs_org_entity_idx ON audit_logs USING btree (organization_id, entity_type, entity_id)
+index|audit_logs|audit_logs_pkey|CREATE UNIQUE INDEX audit_logs_pkey ON audit_logs USING btree (id)
+index|auth_allowlist|auth_allowlist_active_lower_idx|CREATE INDEX auth_allowlist_active_lower_idx ON auth_allowlist USING btree (lower(email)) WHERE (is_active = true)
+index|auth_allowlist|auth_allowlist_email_lower_uq|CREATE UNIQUE INDEX auth_allowlist_email_lower_uq ON auth_allowlist USING btree (lower(email))
+index|auth_allowlist|auth_allowlist_pkey|CREATE UNIQUE INDEX auth_allowlist_pkey ON auth_allowlist USING btree (id)
+index|auth_bootstrap|auth_bootstrap_pkey|CREATE UNIQUE INDEX auth_bootstrap_pkey ON auth_bootstrap USING btree (id)
+index|auth_rate_limits|auth_rate_limits_pkey|CREATE UNIQUE INDEX auth_rate_limits_pkey ON auth_rate_limits USING btree (key_hash)
+index|auth_rate_limits|auth_rate_limits_updated_idx|CREATE INDEX auth_rate_limits_updated_idx ON auth_rate_limits USING btree (updated_at)
+index|auth_sessions|auth_sessions_expiry_idx|CREATE INDEX auth_sessions_expiry_idx ON auth_sessions USING btree (expires_at)
+index|auth_sessions|auth_sessions_pkey|CREATE UNIQUE INDEX auth_sessions_pkey ON auth_sessions USING btree (id)
+index|auth_sessions|auth_sessions_token_hash_key|CREATE UNIQUE INDEX auth_sessions_token_hash_key ON auth_sessions USING btree (token_hash)
+index|auth_sessions|auth_sessions_user_active_idx|CREATE INDEX auth_sessions_user_active_idx ON auth_sessions USING btree (user_id, expires_at DESC) WHERE (revoked_at IS NULL)
+index|exchange_rates|exchange_rates_effective_date_idx|CREATE INDEX exchange_rates_effective_date_idx ON exchange_rates USING btree (effective_date DESC, fetched_at DESC)
+index|exchange_rates|exchange_rates_pkey|CREATE UNIQUE INDEX exchange_rates_pkey ON exchange_rates USING btree (id)
+index|exchange_rates|exchange_rates_source_effective_date_key|CREATE UNIQUE INDEX exchange_rates_source_effective_date_key ON exchange_rates USING btree (source, effective_date)
+index|inventory_movements|inventory_movements_org_product_date_idx|CREATE INDEX inventory_movements_org_product_date_idx ON inventory_movements USING btree (organization_id, product_id, created_at DESC)
+index|inventory_movements|inventory_movements_org_reference_idx|CREATE INDEX inventory_movements_org_reference_idx ON inventory_movements USING btree (organization_id, reference_type, reference_id)
+index|inventory_movements|inventory_movements_pkey|CREATE UNIQUE INDEX inventory_movements_pkey ON inventory_movements USING btree (id)
+index|organization_members|organization_members_pkey|CREATE UNIQUE INDEX organization_members_pkey ON organization_members USING btree (organization_id, user_id)
+index|organization_members|organization_members_user_idx|CREATE INDEX organization_members_user_idx ON organization_members USING btree (user_id, is_active)
+index|organizations|organizations_pkey|CREATE UNIQUE INDEX organizations_pkey ON organizations USING btree (id)
+index|organizations|organizations_slug_key|CREATE UNIQUE INDEX organizations_slug_key ON organizations USING btree (slug)
+index|payments|payments_org_sale_idx|CREATE INDEX payments_org_sale_idx ON payments USING btree (organization_id, sale_id)
+index|payments|payments_pkey|CREATE UNIQUE INDEX payments_pkey ON payments USING btree (id)
+index|products|products_org_name_lower_idx|CREATE INDEX products_org_name_lower_idx ON products USING btree (organization_id, lower(name))
+index|products|products_org_stock_alert_idx|CREATE INDEX products_org_stock_alert_idx ON products USING btree (organization_id, stock_quantity, minimum_stock) WHERE is_active
+index|products|products_organization_id_barcode_key|CREATE UNIQUE INDEX products_organization_id_barcode_key ON products USING btree (organization_id, barcode)
+index|products|products_organization_id_id_key|CREATE UNIQUE INDEX products_organization_id_id_key ON products USING btree (organization_id, id)
+index|products|products_organization_id_sku_key|CREATE UNIQUE INDEX products_organization_id_sku_key ON products USING btree (organization_id, sku)
+index|products|products_pkey|CREATE UNIQUE INDEX products_pkey ON products USING btree (id)
+index|sale_items|sale_items_org_product_idx|CREATE INDEX sale_items_org_product_idx ON sale_items USING btree (organization_id, product_id)
+index|sale_items|sale_items_org_sale_idx|CREATE INDEX sale_items_org_sale_idx ON sale_items USING btree (organization_id, sale_id)
+index|sale_items|sale_items_pkey|CREATE UNIQUE INDEX sale_items_pkey ON sale_items USING btree (id)
+index|sales|sales_org_created_at_idx|CREATE INDEX sales_org_created_at_idx ON sales USING btree (organization_id, created_at DESC)
+index|sales|sales_org_status_idx|CREATE INDEX sales_org_status_idx ON sales USING btree (organization_id, status, created_at DESC)
+index|sales|sales_organization_id_id_key|CREATE UNIQUE INDEX sales_organization_id_id_key ON sales USING btree (organization_id, id)
+index|sales|sales_organization_id_idempotency_key_key|CREATE UNIQUE INDEX sales_organization_id_idempotency_key_key ON sales USING btree (organization_id, idempotency_key)
+index|sales|sales_organization_id_sale_number_key|CREATE UNIQUE INDEX sales_organization_id_sale_number_key ON sales USING btree (organization_id, sale_number)
+index|sales|sales_pkey|CREATE UNIQUE INDEX sales_pkey ON sales USING btree (id)
+index|suppliers|suppliers_org_name_lower_idx|CREATE INDEX suppliers_org_name_lower_idx ON suppliers USING btree (organization_id, lower(name))
+index|suppliers|suppliers_organization_id_id_key|CREATE UNIQUE INDEX suppliers_organization_id_id_key ON suppliers USING btree (organization_id, id)
+index|suppliers|suppliers_pkey|CREATE UNIQUE INDEX suppliers_pkey ON suppliers USING btree (id)
+relation|app_users|kind=r|rls=false|forcerls=false
+relation|audit_logs_id_seq|kind=S|rls=false|forcerls=false
+relation|audit_logs|kind=r|rls=false|forcerls=false
+relation|auth_allowlist|kind=r|rls=false|forcerls=false
+relation|auth_bootstrap|kind=r|rls=false|forcerls=false
+relation|auth_rate_limits|kind=r|rls=false|forcerls=false
+relation|auth_sessions|kind=r|rls=false|forcerls=false
+relation|exchange_rates|kind=r|rls=false|forcerls=false
+relation|inventory_movements|kind=r|rls=false|forcerls=false
+relation|organization_members|kind=r|rls=false|forcerls=false
+relation|organizations|kind=r|rls=false|forcerls=false
+relation|payments|kind=r|rls=false|forcerls=false
+relation|products|kind=r|rls=false|forcerls=false
+relation|sale_items|kind=r|rls=false|forcerls=false
+relation|sales_sale_number_seq|kind=S|rls=false|forcerls=false
+relation|sales|kind=r|rls=false|forcerls=false
+relation|suppliers|kind=r|rls=false|forcerls=false

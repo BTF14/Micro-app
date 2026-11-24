@@ -1,0 +1,309 @@
+name: Respaldo cifrado de la base de datos
+
+# Nivel 1, punto 2 de docs/SECURITY_ROADMAP.md. Diseño completo y motivos en
+# ese documento y en docs/BACKUP_AND_RECOVERY.md — leer ambos antes de tocar
+# este workflow.
+#
+# Qué hace, en orden:
+# 1. Vuelca (pg_dump) el esquema y los datos de la base usando el principal
+#    configurado en DATABASE_URL_BACKUP_RO. El principal aprobado es
+#    microapp_backup; el contrato se audita en scripts/audit_database_roles.sql.
+#    Issue #53 sigue abierto por los pasos de staging y cierre formal. Excluye solo las
+#    filas de auth_sessions, auth_rate_limits y auth_bootstrap_attempts:
+#    conserva sus tablas, constraints, índices y triggers para restauración.
+# 2. Cifra el volcado con la llave pública age del proyecto (no es secreta,
+#    por eso vive directo en este archivo) antes de que salga del runner.
+#    El volcado SIN cifrar nunca se sube a ningún lado ni queda en el runner
+#    más tiempo del necesario para cifrarlo.
+# 3. Sube el archivo ya cifrado a BTF14/micro-app-backups (repositorio
+#    privado dedicado solo a esto, nunca al repo de código).
+# 4. Aplica retención: borra del repositorio de respaldos lo que tenga más
+#    de 15 días.
+#
+# Sin la llave privada age (que el propietario guarda fuera de este
+# repositorio) nadie, ni este workflow, puede leer el contenido de un
+# respaldo — ver docs/SECURITY_ROADMAP.md para el procedimiento de
+# restauración.
+
+on:
+  schedule:
+    # 07:00 UTC = 03:00 hora de Venezuela (UTC-4), todos los días.
+    - cron: "0 7 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      AGE_PUBLIC_KEY: age1t04pgcguy87u99r4stlm0gcjsk9dj2s34jsmymw55vlarfteuakse8jmfk
+      BACKUP_REPO: BTF14/micro-app-backups
+      RETENTION_DAYS: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Probar helper de reintentos APT sin red
+        run: bash .github/scripts/test-apt-retry.sh
+
+      - name: Instalar pg_dump (versión reciente) y age con reintentos acotados
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 90 \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client-18
+
+      - name: Verificar que la llave de la base de datos está configurada
+        run: |
+          if [ -z "${DATABASE_URL_BACKUP_RO:-}" ]; then
+            echo "::error::Falta el secreto DATABASE_URL_BACKUP_RO en este repositorio. Ver docs/SECURITY_ROADMAP.md punto 2."
+            exit 1
+          fi
+        env:
+          DATABASE_URL_BACKUP_RO: ${{ secrets.DATABASE_URL_BACKUP_RO }}
+
+      - name: Diagnóstico no sensible de identidad y privilegios efectivos del backup
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_BACKUP_RO }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          diagnostic=""
+          if [[ -z "${DATABASE_URL:-}" ]]; then
+            echo "::warning::No se pudo verificar el principal efectivo del backup: DATABASE_URL no está disponible; el gate P0 sigue abierto."
+            exit 0
+          fi
+          if diagnostic="$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atq -F '|' 2>/dev/null <<'SQL'
+          SELECT
+            (current_user = 'microapp_backup' AND session_user = current_user),
+            EXISTS (
+              SELECT 1 FROM pg_catalog.pg_roles r
+              WHERE r.rolname = current_user AND r.rolcanlogin
+                AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole
+                AND NOT r.rolreplication AND NOT r.rolbypassrls
+                AND NOT r.rolinherit
+            ),
+            EXISTS (
+              SELECT 1
+              FROM pg_catalog.pg_auth_members m
+              WHERE m.member = (
+                SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user
+              )
+            ) OR EXISTS (
+              SELECT 1
+              FROM pg_catalog.pg_auth_members m
+              JOIN pg_catalog.pg_database d
+                ON d.datname = current_database()
+              WHERE m.roleid = (
+                SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user
+              )
+                AND (
+                  m.member <> d.datdba
+                  OR NOT m.admin_option
+                  OR m.inherit_option
+                  OR m.set_option
+                )
+            ) OR EXISTS (
+              SELECT 1
+              FROM pg_catalog.pg_database d
+              JOIN pg_catalog.pg_roles database_owner
+                ON database_owner.oid = d.datdba
+              WHERE d.datname = current_database()
+                AND NOT database_owner.rolsuper
+                AND (
+                  pg_catalog.pg_has_role(
+                    d.datdba,
+                    (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user),
+                    'USAGE'
+                  )
+                  OR pg_catalog.pg_has_role(
+                    d.datdba,
+                    (SELECT oid FROM pg_catalog.pg_roles WHERE rolname = current_user),
+                    'SET'
+                  )
+                )
+            ),
+            EXISTS (
+              SELECT 1 FROM pg_catalog.pg_class c
+              JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+              CROSS JOIN (VALUES ('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE')) p(privilege)
+              WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
+                AND pg_catalog.has_table_privilege(current_user, c.oid, p.privilege)
+            ) OR EXISTS (
+              SELECT 1 FROM pg_catalog.pg_class c
+              JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+              CROSS JOIN (VALUES ('INSERT'),('UPDATE'),('REFERENCES')) p(privilege)
+              WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
+                AND pg_catalog.has_any_column_privilege(current_user, c.oid, p.privilege)
+            ),
+            EXISTS (
+              SELECT 1 FROM pg_catalog.pg_class c
+              JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public' AND c.relkind = 'S'
+                AND (pg_catalog.has_sequence_privilege(current_user, c.oid, 'USAGE')
+                  OR pg_catalog.has_sequence_privilege(current_user, c.oid, 'UPDATE'))
+            ),
+            pg_catalog.has_schema_privilege(current_user, 'public', 'CREATE')
+            OR pg_catalog.has_database_privilege(current_user, current_database(), 'CREATE');
+          SQL
+          )"; then
+            :
+          else
+            echo "::warning::No se pudo verificar el principal efectivo del backup; el backup continuará, pero el gate P0 sigue abierto."
+            exit 0
+          fi
+          if [[ ! "$diagnostic" =~ ^[tf]\|[tf]\|[tf]\|[tf]\|[tf]\|[tf]$ ]]; then
+            echo "::warning::El diagnóstico del principal de backup devolvió un formato inesperado; el gate P0 sigue abierto."
+            exit 0
+          fi
+          IFS='|' read -r identity_ok role_safe has_membership table_writes sequence_writes create_privilege <<< "$diagnostic"
+          {
+            echo "### Diagnóstico no sensible del principal de backup"
+            echo
+            echo "- Identidad efectiva esperada (\`microapp_backup\`): \`${identity_ok}\`"
+            echo "- Atributos de rol no privilegiados: \`${role_safe}\`"
+            echo "- Membresías de roles: \`${has_membership}\` (esperado: \`f\`)"
+            echo "- Privilegios de escritura sobre tablas: \`${table_writes}\` (esperado: \`f\`)"
+            echo "- Privilegios de mutación de secuencias: \`${sequence_writes}\` (esperado: \`f\`)"
+            echo "- CREATE en schema/database: \`${create_privilege}\` (esperado: \`f\`)"
+            echo
+            echo "Este diagnóstico no imprime DSN, usuario real, credenciales ni datos. No bloquea la generación de la copia; cualquier resultado distinto al esperado mantiene abierto el gate P0."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$identity_ok" != "t" || "$role_safe" != "t" || "$has_membership" != "f" || "$table_writes" != "f" || "$sequence_writes" != "f" || "$create_privilege" != "f" ]]; then
+            echo "::warning::El contrato least-privilege del principal de backup no está demostrado; revisar issue #53 sin cambiar roles desde este workflow."
+          fi
+
+      - name: Generar el volcado
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_BACKUP_RO }}
+        run: |
+          set -euo pipefail
+          STAMP="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          PG_DUMP="/usr/lib/postgresql/18/bin/pg_dump"
+          "$PG_DUMP" --version
+          "$PG_DUMP" --version | grep -Eq "pg_dump \(PostgreSQL\) 18\."
+          "$PG_DUMP" "$DATABASE_URL" \
+            --no-owner --no-privileges --format=custom \
+            --exclude-table-data=public.auth_sessions \
+            --exclude-table-data=public.auth_rate_limits \
+            --exclude-table-data=public.auth_bootstrap_attempts \
+            --file="backup-${STAMP}.dump"
+          test -s "backup-${STAMP}.dump"
+
+      - name: Cifrar el volcado y borrar el original sin cifrar
+        run: |
+          set -euo pipefail
+          age -r "$AGE_PUBLIC_KEY" -o "backup-${STAMP}.dump.age" "backup-${STAMP}.dump"
+          sha256sum "backup-${STAMP}.dump.age" > "backup-${STAMP}.dump.age.sha256"
+          shred -u "backup-${STAMP}.dump" 2>/dev/null || rm -f "backup-${STAMP}.dump"
+          test -s "backup-${STAMP}.dump.age"
+
+      - name: Subir el respaldo cifrado y aplicar retención
+        env:
+          GH_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          backup_token="${GH_TOKEN:?Falta el secreto BACKUP_REPO_TOKEN}"
+          unset GH_TOKEN
+          askpass="$RUNNER_TEMP/git-askpass-backup.sh"
+          backup_repo_dir="$RUNNER_TEMP/backups-repo"
+          umask 077
+          install -m 700 "$GITHUB_WORKSPACE/scripts/backup_git_askpass.sh" "$askpass"
+          push_log="$RUNNER_TEMP/backup-push.log"
+          fetch_log="$RUNNER_TEMP/backup-fetch.log"
+          clone_log="$RUNNER_TEMP/backup-clone.log"
+          trap 'rm -f "$askpass" "${push_log:-}" "${fetch_log:-}" "${clone_log:-}"; rm -rf "$backup_repo_dir"' EXIT
+          export GIT_ASKPASS="$askpass"
+          export GIT_ASKPASS_REQUIRE=force
+          export GIT_TERMINAL_PROMPT=0
+          cloned=0
+          for attempt in 1 2 3; do
+            if GH_TOKEN="$backup_token" git -c credential.helper= -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 clone --depth 1 "https://github.com/${BACKUP_REPO}.git" "$backup_repo_dir" >"$clone_log" 2>&1; then
+              cloned=1
+              break
+            fi
+            rm -rf "$backup_repo_dir"
+            sleep "$((attempt * 3))"
+          done
+          if [[ "$cloned" != "1" ]]; then
+            echo "::error::Private backup repository could not be cloned after bounded retries; raw transport output was suppressed."
+            exit 1
+          fi
+          mkdir -p "$backup_repo_dir/daily"
+          mv "backup-${STAMP}.dump.age" "backup-${STAMP}.dump.age.sha256" "$backup_repo_dir/daily/"
+          (cd "$backup_repo_dir/daily" && sha256sum --check --strict "backup-${STAMP}.dump.age.sha256")
+          cd "$backup_repo_dir"
+          git config user.email "backups-bot@micro-app.invalid"
+          git config user.name "Micro app backups bot"
+          git add daily/
+          git commit -m "backup: ${STAMP}"
+          python3 "$GITHUB_WORKSPACE/scripts/prune_backups.py" daily --retention-days "$RETENTION_DAYS"
+          git add -A
+          git diff --cached --quiet || git commit -m "retention: prune backups older than ${RETENTION_DAYS} days"
+          pushed=0
+          for attempt in 1 2 3; do
+            if GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 push origin HEAD:main >"$push_log" 2>&1; then
+              pushed=1
+              break
+            fi
+            sleep "$((attempt * 3))"
+          done
+          if [[ "$pushed" != "1" ]]; then
+            echo "::error::Encrypted backup transfer failed after bounded retries; raw transport output was suppressed."
+            exit 1
+          fi
+          fetched=0
+          for attempt in 1 2 3; do
+            if GH_TOKEN="$backup_token" git -C "$backup_repo_dir" -c credential.helper= -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30 fetch --no-tags origin main >"$fetch_log" 2>&1; then
+              fetched=1
+              break
+            fi
+            sleep "$((attempt * 3))"
+          done
+          if [[ "$fetched" != "1" ]]; then
+            echo "::error::Remote backup readback failed after bounded retries; raw transport output was suppressed."
+            exit 1
+          fi
+          bash "$GITHUB_WORKSPACE/scripts/verify_backup_git_remote.sh" "$backup_repo_dir/daily/backup-${STAMP}.dump.age" "$backup_repo_dir" "daily/backup-${STAMP}.dump.age"
+          unset backup_token GH_TOKEN
+
+
+      - name: Crear o actualizar issue P0 si falla el respaldo
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_JOB_STATUS: ${{ job.status }}
+        run: bash scripts/backup_failure_alert.sh
+
+      - name: Publicar resumen visible si falla el respaldo
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## ⚠️ Falló el respaldo cifrado de Micro app"
+            echo
+            echo "- Ejecución: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "- Commit: ${GITHUB_SHA}"
+            echo "- No eliminar copias anteriores manualmente. Comprobar la última copia válida y su checksum antes de reintentar."
+            echo "- Esta anotación es visible en el resumen de GitHub Actions; no sustituye una notificación externa."
+          } >> "${GITHUB_STEP_SUMMARY}"

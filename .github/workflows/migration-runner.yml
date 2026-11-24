@@ -1,0 +1,294 @@
+name: PostgreSQL migration runner validation
+
+on:
+  push:
+    branches: [main, "security/**", "feat/branch-warehouse-register-admin-20261113"]
+  pull_request:
+    branches: [main, "security/**", "feat/**", "fix/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: micro-app-migration-runner-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migration-runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_test
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ADMIN_DATABASE_URL: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
+      MIGRATION_DATABASE_URL: postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_test
+      RUNTIME_DATABASE_URL: postgres://microapp_runtime:runtime-test-only@localhost:5432/microapp_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Test bounded apt retry helper
+        run: bash .github/scripts/test-apt-retry.sh
+      - name: Install PostgreSQL client
+        run: |
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client
+          psql --version
+      - name: Provision isolated migrator and runtime LOGIN roles
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE microapp_migrator LOGIN PASSWORD 'migrator-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE microapp_runtime LOGIN PASSWORD 'runtime-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; CREATE ROLE microapp_bcv_sync LOGIN PASSWORD 'bcv-test-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
+      - name: Validate migration runner shell syntax
+        run: bash -n scripts/db/migrate.sh
+      - name: Apply clean schema through the migration runner
+        run: bash scripts/db/migrate.sh
+      - name: Verify 0026 and 0027 BCV contracts after runner upgrade
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0027_bcv_nonbusiness_day_effective_date.assertions.sql
+      - name: Verify Carril B1 0028 quantity-mode and sale-snapshot contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0028_carril_b1_quantity_mode_and_sale_snapshots.assertions.sql
+      - name: Verify catalog import batches migration 0029 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0029_catalog_import_batches.assertions.sql
+      - name: Verify FX expiration transition migration 0030 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql
+      - name: Verify owner-only organization structure migration 0024 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0024_organization_structure_admin_operations.assertions.sql
+      - name: Verify inventory receipt migration 0025 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0025_inventory_receipts.assertions.sql
+      - name: Validate organization structure PostgreSQL integration harness syntax
+        run: bash -n scripts/tests/test_organization_structure_admin.sh
+      - name: Exercise organization structure operations through the direct runtime LOGIN
+        run: bash scripts/tests/test_organization_structure_admin.sh
+      - name: Verify ledger, owner and recorded checksums
+        run: |
+          expected="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
+          ledger="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT count(*) = ${expected} AND bool_and(state = 'applied') AND bool_and(length(checksum) = 64) FROM public.schema_migrations")"
+          test "$ledger" = "t"
+          owner="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_catalog.pg_get_userbyid(relowner) = 'microapp_migrator' FROM pg_catalog.pg_class WHERE oid = 'public.schema_migrations'::regclass")"
+          test "$owner" = "t"
+      - name: Verify rerun is idempotent
+        run: bash scripts/db/migrate.sh
+      - name: Verify checksum drift fails closed
+        run: |
+          temp_dir="$(mktemp -d)"
+          cp -R apps/api/migrations "$temp_dir/migrations"
+          printf '\n-- deliberate checksum drift test\n' >> "$temp_dir/migrations/0001_initial.sql"
+          echo "Modified migration checksum:"
+          sha256sum "$temp_dir/migrations/0001_initial.sql"
+          status=0
+          output="$(MIGRATIONS_DIR="$temp_dir/migrations" bash scripts/db/migrate.sh 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          rm -rf "$temp_dir"
+          if [ "$status" -eq 0 ]; then
+            echo "Expected checksum drift to fail, but the runner succeeded."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_CHECKSUM_MISMATCH: 0001"
+      - name: Verify migration ledger gaps fail closed
+        run: |
+          checksum="$(sha256sum apps/api/migrations/0007_register_shift_member_roles.sql | awk '{print $1}')"
+          restore() {
+            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "INSERT INTO public.schema_migrations (version, filename, checksum, state, applied_at) VALUES ('0007', '0007_register_shift_member_roles.sql', '$checksum', 'applied', pg_catalog.clock_timestamp()) ON CONFLICT (version) DO UPDATE SET filename=EXCLUDED.filename, checksum=EXCLUDED.checksum, state='applied', applied_at=pg_catalog.clock_timestamp();" >/dev/null
+          }
+          trap restore EXIT
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "DELETE FROM public.schema_migrations WHERE version='0007';"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected a missing earlier migration with later applied rows to fail."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_LEDGER_GAP: 0007"
+          restore
+          trap - EXIT
+      - name: Verify interrupted migration state fails closed
+        run: |
+          restore() {
+            psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "UPDATE public.schema_migrations SET state='applied', applied_at=COALESCE(applied_at, pg_catalog.clock_timestamp()) WHERE version='0012';" >/dev/null
+          }
+          trap restore EXIT
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "UPDATE public.schema_migrations SET state='applying', applied_at=NULL WHERE version='0012';"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected an interrupted applying row to require reconciliation."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_RECONCILIATION_REQUIRED"
+          restore
+          trap - EXIT
+      - name: Verify populated schema without ledger requires explicit adoption
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_legacy_test;"
+          legacy_admin="postgres://microapp:microapp-test-only@localhost:5432/microapp_legacy_test"
+          legacy_migrator="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_legacy_test"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_legacy_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync; CREATE TABLE public.preexisting_table(id integer);"
+          status=0
+          output="$(MIGRATION_DATABASE_URL="$legacy_migrator" bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected a populated schema without a ledger to require adoption."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_BASELINE_REQUIRED"
+          preserved="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$legacy_admin" -c "SELECT to_regclass('public.preexisting_table') IS NOT NULL AND to_regclass('public.schema_migrations') IS NULL")"
+          test "$preserved" = "t"
+      - name: Verify baseline adoption of a pre-ledger 0001-0002 schema
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_adopt_test;"
+          adopt_admin="postgres://microapp:microapp-test-only@localhost:5432/microapp_adopt_test"
+          adopt_migrator="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_adopt_test"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_adopt_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
+          for f in 0001_initial 0002_google_identity; do
+            psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -f "apps/api/migrations/$f.sql" >/dev/null
+          done
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "INSERT INTO organizations (name, slug) VALUES ('Sentinel', 'sentinel-adoption');"
+          export ADOPTION_DATABASE_URL="$adopt_admin"
+          bash -n scripts/db/adopt-baseline.sh
+
+          echo "== verify passes on the exact legacy schema"
+          bash scripts/db/adopt-baseline.sh verify | grep -F "BASELINE_VERIFIED"
+
+          echo "== drift is detected and nothing is written"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "ALTER TABLE products ADD COLUMN adoption_drift integer;"
+          status=0; output="$(bash scripts/db/adopt-baseline.sh verify 2>&1)" || status=$?
+          test "$status" -ne 0
+          printf '%s\n' "$output" | grep -F "BASELINE_SCHEMA_MISMATCH"
+          status=0; output="$(ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -ne 0
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT to_regclass('public.schema_migrations') IS NULL")" = "t"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$adopt_admin" -c "ALTER TABLE products DROP COLUMN adoption_drift;"
+
+          echo "== apply refuses without explicit confirmation"
+          status=0; output="$(bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -eq 3
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT to_regclass('public.schema_migrations') IS NULL")" = "t"
+
+          echo "== apply records 0001-0002 with repository checksums and transfers ownership"
+          ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep -F "BASELINE_ADOPTED"
+          for pair in "0001:0001_initial.sql" "0002:0002_google_identity.sql"; do
+            version="${pair%%:*}"; file="${pair#*:}"
+            expected="$(sha256sum "apps/api/migrations/$file" | awk '{print $1}')"
+            recorded="$(psql -X -At --dbname "$adopt_admin" -c "SELECT checksum FROM public.schema_migrations WHERE version='$version' AND state='applied'")"
+            test "$recorded" = "$expected"
+          done
+          foreign="$(psql -X -At --dbname "$adopt_admin" -c "SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind IN ('r','p','v','m','f') AND pg_get_userbyid(relowner) <> 'microapp_migrator'")"
+          test "$foreign" = "0"
+
+          echo "== runner now completes 0003+ as microapp_migrator and rows are preserved"
+          MIGRATION_DATABASE_URL="$adopt_migrator" bash scripts/db/migrate.sh
+          expected_total="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT count(*) = ${expected_total} AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+          test "$(psql -X -At --dbname "$adopt_admin" -c "SELECT count(*) FROM organizations WHERE slug='sentinel-adoption'")" = "1"
+
+          echo "== a second adoption is refused"
+          status=0; output="$(ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -ne 0
+          printf '%s\n' "$output" | grep -F "BASELINE_LEDGER_ALREADY_PRESENT"
+      - name: Verify baseline adoption by a non-superuser owner (managed PostgreSQL shape)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE ROLE legacy_owner LOGIN PASSWORD 'legacy-owner-test-only' NOSUPERUSER CREATEDB CREATEROLE;"
+          # Managed-PostgreSQL shape: the creator holds ADMIN OPTION on the application roles but cannot SET ROLE.
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "GRANT microapp_migrator TO legacy_owner WITH ADMIN OPTION, SET FALSE, INHERIT FALSE;"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "CREATE DATABASE microapp_adopt_owner_test OWNER legacy_owner;"
+          owner_url="postgres://legacy_owner:legacy-owner-test-only@localhost:5432/microapp_adopt_owner_test"
+          migrator_url="postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_adopt_owner_test"
+          for f in 0001_initial 0002_google_identity; do
+            psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -f "apps/api/migrations/$f.sql" >/dev/null
+          done
+          psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -c "INSERT INTO organizations (name, slug) VALUES ('Sentinel', 'sentinel-owner');"
+          export ADOPTION_DATABASE_URL="$owner_url"
+          bash scripts/db/adopt-baseline.sh verify | grep -F "BASELINE_VERIFIED"
+
+          echo "== refused when the migrator lacks CREATE on schema public; nothing written"
+          status=0; output="$(ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply 2>&1)" || status=$?
+          test "$status" -ne 0
+          printf '%s\n' "$output" | grep -F "POSTGRES_SCHEMA_BOOTSTRAP_PRIVILEGES_INVALID"
+          test "$(psql -X -At --dbname "$owner_url" -c "SELECT to_regclass('public.schema_migrations') IS NULL")" = "t"
+
+          echo "== adoption succeeds with only ADMIN OPTION and leaves no SET membership behind"
+          psql -X -v ON_ERROR_STOP=1 --dbname "$owner_url" -c "REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE, CREATE ON SCHEMA public TO microapp_migrator; GRANT USAGE ON SCHEMA public TO microapp_runtime, microapp_bcv_sync; GRANT CONNECT ON DATABASE microapp_adopt_owner_test TO microapp_migrator, microapp_runtime, microapp_bcv_sync;"
+          ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep -F "BASELINE_ADOPTED"
+          test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_has_role('legacy_owner','microapp_migrator','SET')")" = "f"
+          test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT count(*) FROM pg_auth_members WHERE member IN (SELECT oid FROM pg_roles WHERE rolname IN ('microapp_migrator','microapp_runtime'))")" = "0"
+          test "$(psql -X -At --dbname "$ADMIN_DATABASE_URL" -c "SELECT count(*) FROM pg_auth_members m JOIN pg_roles g ON g.oid=m.roleid WHERE g.rolname='microapp_migrator' AND m.member=(SELECT oid FROM pg_roles WHERE rolname='legacy_owner') AND m.admin_option")" = "1"
+
+          echo "== runner completes 0003+ and the sentinel row survives"
+          MIGRATION_DATABASE_URL="$migrator_url" bash scripts/db/migrate.sh
+          expected_total="$(find apps/api/migrations -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' ! -name '*.assertions.sql' ! -name '*.deferred_failure.sql' | wc -l | awk '{print $1}')"
+          test "$(psql -X -At --dbname "postgres://microapp:microapp-test-only@localhost:5432/microapp_adopt_owner_test" -c "SELECT count(*) = ${expected_total} AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+          test "$(psql -X -At --dbname "postgres://microapp:microapp-test-only@localhost:5432/microapp_adopt_owner_test" -c "SELECT count(*) FROM organizations WHERE slug='sentinel-owner'")" = "1"
+      - name: Verify concurrent runner is rejected by advisory lock
+        run: |
+          psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT pg_catalog.pg_advisory_lock(20261105, 120012); SELECT pg_catalog.pg_sleep(20);" >/tmp/migration-lock-holder.log 2>&1 &
+          lock_pid=$!
+          cleanup() { kill "$lock_pid" 2>/dev/null || true; wait "$lock_pid" 2>/dev/null || true; }
+          trap cleanup EXIT
+          acquired=false
+          for attempt in $(seq 1 20); do
+            locked="$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -c "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_locks WHERE locktype='advisory' AND granted AND classid=20261105::oid AND objid=120012::oid AND objsubid=2)")"
+            if [ "$locked" = "t" ]; then acquired=true; break; fi
+            sleep 1
+          done
+          test "$acquired" = "true"
+          status=0
+          output="$(bash scripts/db/migrate.sh 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Expected concurrent runner to fail fast on the advisory lock."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -F "MIGRATION_LOCK_NOT_ACQUIRED"
+      - name: Verify runtime cannot read the migration ledger
+        run: |
+          status=0
+          output="$(psql -X -v ON_ERROR_STOP=1 --dbname "$RUNTIME_DATABASE_URL" -c "SELECT * FROM public.schema_migrations" 2>&1)" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Runtime role unexpectedly read the migration ledger."
+            exit 1
+          fi
+          printf '%s\n' "$output" | grep -E "permission denied|insufficient privilege"
+
+
+  managed-owner-role-membership:
+    name: PostgreSQL 18 managed-owner role membership contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: microapp_test
+          POSTGRES_USER: microapp
+          POSTGRES_PASSWORD: microapp-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U microapp -d microapp_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ADMIN_DATABASE_URL: postgres://microapp:microapp-test-only@localhost:5432/microapp_test
+      MIGRATION_DATABASE_URL: postgres://microapp_migrator:migrator-test-only@localhost:5432/microapp_role_membership_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install PostgreSQL client
+        run: |
+          bash scripts/ci/apt-retry.sh update
+          bash scripts/ci/apt-retry.sh install -y postgresql-client
+          psql --version
+      - name: Exercise managed PostgreSQL 16+ owner membership contract
+        run: bash scripts/tests/test_managed_role_membership.sh

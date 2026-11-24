@@ -65,7 +65,8 @@ function quantityUnits(value: string): bigint {
   return parseNumeric(value, 14, 3);
 }
 function formatQuantityInput(value: string | bigint): string {
-  return formatDecimal(value, 3, 0);
+  const units = typeof value === "bigint" ? value : parseNumeric(value, 14, 3);
+  return formatDecimal(units, 3, 0);
 }
 function paymentScale(currency: Currency): { precision: number; scale: number } {
   return currency === "USD" ? { precision: 14, scale: 4 } : { precision: 14, scale: 2 };

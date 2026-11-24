@@ -19,6 +19,21 @@ type FxState = {
   bcv: { status?: string | null; effective_date?: string | null; rate?: string | null; validation_status?: string | null; last_success_at?: string | null; last_outcome?: string | null; last_effective_date?: string | null } | null;
 };
 
+function formatFxBcvOutcome(value: string | null | undefined): string {
+  if (!value) return "sin sincronización";
+  const labels: Record<string, string> = {
+    inserted: "insertada", unchanged: "sin cambios", skipped: "omitida",
+    failed: "fallida", running: "en ejecución", older: "anterior descartada", superseded: "reemplazada",
+  };
+  return labels[value.toLowerCase()] ?? value.replace(/[_-]+/g, " ").toLowerCase();
+}
+
+function formatFxExpiry(value: string): string {
+  return new Intl.DateTimeFormat("es-VE", {
+    dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas",
+  }).format(new Date(value));
+}
+
 function localExpiry(): string {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -92,7 +107,12 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
     return () => { active = false; };
   }, [base, role]);
 
-  useEffect(() => { if (branchId) void refresh(branchId); }, [branchId]);
+  useEffect(() => {
+    if (!branchId) return;
+    setError("");
+    setNotice("");
+    void refresh(branchId);
+  }, [branchId]);
 
   async function savePin() {
     setSaving(true); setError(""); setNotice("");
@@ -182,15 +202,15 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
   const assignedAdmins = members.filter((member) => member.branch_memberships?.[branchId] === true);
   return (
     <section className="fx-contingency-panel" aria-labelledby="fx-contingency-title">
-      <header><p className="eyebrow">CONFIGURACIÓN CAMBIARIA</p><h2 id="fx-contingency-title">Contingencia manual BCV</h2><p>Autorización temporal, individual y auditable. No representa una tasa oficial.</p></header>
+      <header className="fx-panel-header"><p className="eyebrow">CONFIGURACIÓN CAMBIARIA</p><h2 id="fx-contingency-title">Contingencia manual BCV</h2><p>Autorización temporal, individual y auditable. No representa una tasa oficial.</p></header>
       {error && <p role="alert" className="sales-alert error">{error}</p>}
       {notice && <p role="status" className="sales-alert notice">{notice}</p>}
-      <label>Sucursal<select value={branchId} onChange={(event) => setBranchId(event.target.value)}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
+      <label>Sucursal<select value={branchId} onChange={(event) => { setError(""); setNotice(""); setBranchId(event.target.value); }}>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>
       {loading ? <p>Consultando estado…</p> : state && <>
-        <p>Estado BCV: {{ current: "al día", scheduled: "programada", stale: "desactualizada" }[state.bcv?.status ?? ""] ?? state.bcv?.last_outcome ?? "sin sincronización"} · fecha efectiva: {state.bcv?.effective_date ?? state.bcv?.last_effective_date ?? "—"}{state.bcv?.rate ? ` · tasa: ${state.bcv.rate} Bs./USD` : ""}</p>
+        <p>Estado BCV: {{ current: "al día", scheduled: "programada", stale: "desactualizada" }[state.bcv?.status ?? ""] ?? formatFxBcvOutcome(state.bcv?.last_outcome)} · fecha efectiva: {state.bcv?.effective_date ?? state.bcv?.last_effective_date ?? "—"}{state.bcv?.rate ? ` · tasa: ${state.bcv.rate} Bs./USD` : ""}</p>
         {state.authorization ? <div className="fx-active-authorization">
           <strong>Autorización activa</strong>
-          <p>{state.authorization.rate} Bs./USD · vence {new Date(state.authorization.expires_at).toLocaleString()}</p>
+          <p>{state.authorization.rate} Bs./USD · vence {formatFxExpiry(state.authorization.expires_at)}</p>
           <p>Referencia BCV: {state.authorization.reference_rate_value} Bs./USD · fecha efectiva {state.authorization.reference_effective_date}</p>
           <p>Identificador de referencia: {state.authorization.reference_exchange_rate_id} · desviación: {state.authorization.deviation_bps} bps</p>
           <p>Motivo: {state.authorization.reason}</p>
@@ -199,17 +219,21 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
           <label className="fx-checkbox-label"><input type="checkbox" checked={elevatedConfirmed} onChange={(event) => setElevatedConfirmed(event.target.checked)} /> Confirmo expresamente la desviación superior al 5% (si aplica).</label>
           {elevatedConfirmed && <label>Motivo específico de confirmación reforzada<textarea value={elevatedReason} onChange={(event) => setElevatedReason(event.target.value)} maxLength={500} /></label>}
           <label>PIN de autorización<input type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={(event) => setPin(event.target.value)} /></label>
-          <button type="button" disabled={saving || pin.length < 8 || !expiresAt || !reason.trim()} onClick={() => void renew()}>Renovar contingencia</button>
-          <button type="button" disabled={saving || pin.length < 8} onClick={() => void revoke()}>Revocar contingencia</button>
+          <button type="button" className="fx-primary-button" disabled={saving || pin.length < 8 || !expiresAt || !reason.trim()} onClick={() => void renew()}>Renovar contingencia</button>
+          {pin.length < 8 && <p className="fx-field-hint">El PIN debe tener al menos 8 caracteres.</p>}
+          {(!expiresAt || !reason.trim()) && <p className="fx-field-hint">Indica el nuevo vencimiento y el motivo de la renovación.</p>}
+          <button type="button" className="fx-danger-button" disabled={saving || pin.length < 8} onClick={() => void revoke()}>Revocar contingencia</button>
         </div> : <div className="fx-create-authorization">
           <h3>Autorizar tasa manual</h3>
-          <label>Tasa VES por USD<input inputMode="decimal" value={rate} onChange={(event) => setRate(normalizeDecimalInput(event.target.value))} placeholder="Ej. 450,00000000" /></label>
+          <label>Tasa VES por USD<input inputMode="decimal" value={rate} onChange={(event) => setRate(normalizeDecimalInput(event.target.value))} placeholder="Ej. 450,00" /></label>
           <label>Motivo obligatorio<textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} /></label>
           <label>Vencimiento (hora local)<input type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} /></label>
           <label className="fx-checkbox-label"><input type="checkbox" checked={elevatedConfirmed} onChange={(event) => setElevatedConfirmed(event.target.checked)} /> Confirmo expresamente la desviación superior al 5% (si aplica).</label>
           {elevatedConfirmed && <label>Motivo específico de confirmación reforzada<textarea value={elevatedReason} onChange={(event) => setElevatedReason(event.target.value)} maxLength={500} /></label>}
           <label>PIN individual<input type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={(event) => setPin(event.target.value)} /></label>
-          <button type="button" disabled={saving || !rate || !reason.trim() || pin.length < 8} onClick={() => void authorize()}>Autorizar contingencia</button>
+          <button type="button" className="fx-primary-button" disabled={saving || !rate || !reason.trim() || pin.length < 8} onClick={() => void authorize()}>Autorizar contingencia</button>
+          {pin.length < 8 && <p className="fx-field-hint">El PIN debe tener al menos 8 caracteres.</p>}
+          {(!rate || !reason.trim()) && <p className="fx-field-hint">Completa la tasa y el motivo para autorizar la contingencia.</p>}
         </div>}
         <p className="fx-commercial-gate">{state.commercial_enabled ? "Uso en caja: habilitado para esta sucursal." : "Uso en caja: desactivado por defecto hasta contar con validación contable y legal."}</p>
       </>}
@@ -217,7 +241,8 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
         <h3>PIN individual</h3>
         <label>PIN nuevo (8–32 dígitos)<input type="password" inputMode="numeric" autoComplete="new-password" value={newPin} onChange={(event) => setNewPin(event.target.value)} /></label>
         <label>PIN actual (solo si ya estaba configurado)<input type="password" inputMode="numeric" autoComplete="current-password" value={currentPin} onChange={(event) => setCurrentPin(event.target.value)} /></label>
-        <button type="button" disabled={saving || newPin.length < 8} onClick={() => void savePin()}>Guardar PIN</button>
+        <button type="button" className="fx-primary-button" disabled={saving || newPin.length < 8} onClick={() => void savePin()}>Guardar PIN</button>
+        {newPin.length < 8 && <p className="fx-field-hint">El PIN debe tener entre 8 y 32 dígitos.</p>}
       </div>
       {role === "owner" && <div className="fx-delegations">
         <h3>Delegación de administradores</h3>
@@ -225,8 +250,8 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
           <option value="">Seleccionar administrador</option>
           {assignedAdmins.map((member) => <option key={member.user_id} value={member.user_id}>{member.display_name}</option>)}
         </select></label>
-        <button type="button" disabled={saving || !delegateUserId} onClick={() => void grantDelegation()}>Autorizar a este administrador</button>
-        <ul>{delegations.map((delegation) => <li key={delegation.id}>{delegation.display_name} <button type="button" disabled={saving} onClick={() => void revokeDelegation(delegation.user_id)}>Revocar</button></li>)}</ul>
+        <button type="button" className="fx-primary-button" disabled={saving || !delegateUserId} onClick={() => void grantDelegation()}>Autorizar a este administrador</button>
+        <ul className="fx-delegation-list">{delegations.map((delegation) => <li key={delegation.id}><span>{delegation.display_name}</span><button type="button" className="fx-danger-button" disabled={saving} onClick={() => void revokeDelegation(delegation.user_id)}>Revocar</button></li>)}</ul>
       </div>}
     </section>
   );

@@ -396,3 +396,138 @@ describe("Reports navigation", () => {
     expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");
   });
 });
+
+
+describe("Resumen shortcuts and greeting", () => {
+  async function renderDashboardAsRole(role: string) {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({
+      ...authResponse,
+      organizations: [{ ...organizations[0], role }],
+    }));
+    if (role === "owner" || role === "admin") {
+      vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse));
+    }
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+  }
+
+  it.each(["owner", "admin"])("shows management descriptions for %s", async (role) => {
+    await renderDashboardAsRole(role);
+    const inventory = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#inventario"]');
+    const catalog = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#productos"]');
+    expect(inventory?.textContent).toContain("Controla existencias, recepciones y conteos por sucursal.");
+    expect(catalog?.textContent).toContain("Administra el catálogo y consulta precios exactos en USD.");
+  });
+
+  it("shows read-only inventory and catalog descriptions for cashier", async () => {
+    await renderDashboardAsRole("cashier");
+    const inventory = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#inventario"]');
+    const catalog = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#productos"]');
+    expect(inventory?.textContent).toContain("Consulta existencias y disponibilidad por sucursal.");
+    expect(catalog?.textContent).toContain("Consulta el catálogo y precios exactos en USD.");
+  });
+
+  it("shows the read-only catalog description for inventory", async () => {
+    await renderDashboardAsRole("inventory");
+    const catalog = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#productos"]');
+    expect(catalog?.textContent).toContain("Consulta el catálogo y precios exactos en USD.");
+  });
+
+  it("keeps each visible shortcut title at the start of its accessible name", async () => {
+    await renderDashboardAsRole("owner");
+    const shortcuts = [...container.querySelectorAll<HTMLAnchorElement>(".module-card-button")];
+    expect(shortcuts.length).toBeGreaterThan(0);
+    for (const shortcut of shortcuts) {
+      const title = shortcut.querySelector("h3")?.textContent ?? "";
+      expect(shortcut.getAttribute("aria-label")?.startsWith(`${title}: `)).toBe(true);
+    }
+    const caja = shortcuts.find((shortcut) => shortcut.textContent?.includes("Caja y turnos"));
+    expect(caja?.getAttribute("aria-label")).toBe("Caja y turnos: abrir caja");
+  });
+
+  it("navigates to a module when a dashboard shortcut is selected", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await renderApp();
+    await settle();
+    const shortcut = container.querySelector<HTMLAnchorElement>(".module-card-button");
+    expect(shortcut).toBeTruthy();
+    await act(async () => { shortcut?.click(); });
+    await settle();
+    expect(window.location.hash).toBe("#ventas");
+  });
+
+  it("hides caja and ventas shortcuts for an inventory-only role", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ ...authResponse, organizations: [{ ...organizations[0], role: "inventory" }] }))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    const shortcuts = [...container.querySelectorAll<HTMLAnchorElement>(".module-card-button")].map((item) => item.textContent ?? "");
+    expect(shortcuts.some((label) => label.includes("Caja y turnos"))).toBe(false);
+    expect(shortcuts.some((label) => label.includes("Ventas"))).toBe(false);
+    expect(container.querySelector(".module-count")?.textContent).toContain("3 accesos disponibles");
+  });
+
+  it("shortens an email display name and translates the BCV inserted outcome", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ ...authResponse, user: { ...user, display_name: "correo@dominio.com" } }))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    expect(container.querySelector(".welcome h1")?.textContent).toBe("Hola, correo.");
+    expect(container.querySelector(".bcv-admin-outcome")?.textContent).toBe("Resultado: insertada");
+  });
+
+  it("preserves native modified-click behavior for dashboard shortcuts", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await renderApp();
+    await settle();
+    const shortcut = container.querySelector<HTMLAnchorElement>(".module-card-button");
+    expect(shortcut?.getAttribute("href")).toBe("#ventas");
+    expect(shortcut).toBeTruthy();
+    const initialHash = window.location.hash;
+
+    for (const modifiers of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { altKey: true },
+      { button: 1 },
+    ]) {
+      const event = new MouseEvent("click", { bubbles: true, cancelable: true, ...modifiers });
+      const notCanceled = shortcut!.dispatchEvent(event);
+      expect(notCanceled).toBe(true);
+      expect(event.defaultPrevented).toBe(false);
+      expect(window.location.hash).toBe(initialHash);
+    }
+
+    const prePreventedEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    shortcut!.addEventListener("click", (event) => event.preventDefault(), { once: true, capture: true });
+    shortcut!.dispatchEvent(prePreventedEvent);
+    expect(prePreventedEvent.defaultPrevented).toBe(true);
+    expect(window.location.hash).toBe(initialHash);
+  });
+
+  it.each(["older", "superseded"])("translates the BCV %s outcome in the summary", async (outcome) => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse({ ...bcvSyncStateResponse, lastOutcome: outcome }))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    const label = outcome === "older" ? "anterior descartada" : "reemplazada";
+    expect(container.querySelector(".bcv-admin-outcome")?.textContent).toBe(`Resultado: ${label}`);
+    expect(container.querySelector(".bcv-admin-outcome")?.textContent).not.toContain(outcome);
+  });
+
+});

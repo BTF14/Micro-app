@@ -365,7 +365,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
   const [activeView, setActiveView] = useState<WorkspaceView>(() => viewFromHash(window.location.hash));
-  function selectView(view: WorkspaceView) { setActiveView(view); writeStoredView(view); const hash = `#${VIEW_HASHES[view]}`; if (window.location.hash !== hash) window.history.pushState({}, "", `${window.location.pathname}${window.location.search}${hash}`); }
+  function selectView(view: WorkspaceView) { const role = session?.organizations[0]?.role; const safeView = roleCanAccessView(role, view) ? view : "overview"; setActiveView(safeView); writeStoredView(safeView); const hash = `#${VIEW_HASHES[safeView]}`; if (window.location.hash !== hash) window.history.pushState({}, "", `${window.location.pathname}${window.location.search}${hash}`); }
   const [selectedReportShift, setSelectedReportShift] = useState<{ branchId: string; shiftId: string } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);

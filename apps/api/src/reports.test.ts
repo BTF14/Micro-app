@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCaracasReportRange, buildSalesCsvTotalRow, formatCaracasReportDate, formatCaracasTimestamp, formatCsvNumericCell, formatPaymentsCsvSummary, formatSafeCsvCell, subtractNumeric } from "./reports";
+import { buildCaracasReportRange, buildSalesCsvTotalRow, formatCaracasReportDate, formatCaracasTimestamp, formatCsvNumericCell, formatCsvQuantityCell, formatPaymentsCsvSummary, formatSafeCsvCell, subtractNumeric } from "./reports";
 
 describe("Caracas report ranges", () => {
   it("builds daily half-open ranges at Caracas midnight", () => {
@@ -42,6 +42,14 @@ describe("CSV output safety", () => {
     expect(formatCsvNumericCell("0.0100")).toBe("0.0100");
     expect(() => formatCsvNumericCell("1e3")).toThrow();
     expect(() => formatCsvNumericCell("+5")).toThrow();
+  });
+  it("trims insignificant decimal zeros from inventory quantity cells as raw numbers", () => {
+    expect(formatCsvQuantityCell("16.000")).toBe("16");
+    expect(formatCsvQuantityCell("2.500")).toBe("2.5");
+    expect(formatCsvQuantityCell("10.050")).toBe("10.05");
+    expect(formatCsvQuantityCell("0.000")).toBe("0");
+    expect(formatCsvQuantityCell("-0.500")).toBe("-0.5");
+    expect(() => formatCsvQuantityCell("1e3")).toThrow();
   });
 });
 

@@ -83,7 +83,7 @@ describe("SalesPanel", () => {
     await act(async () => { click("Agregar producto A"); click("Agregar producto A"); click("Agregar producto A"); });
     expect(container.textContent).toContain("Producto A");
     expect(container.textContent).toContain("No puedes superar la existencia disponible de Producto A.");
-    expect(container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto A"]')?.value).toBe("2.000");
+    expect(container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto A"]')?.value).toBe("2");
   });
 
   it("sums rounded VES per line with @micro-app/money arithmetic", async () => {
@@ -97,12 +97,12 @@ describe("SalesPanel", () => {
   it("posts the exact checkout contract with Idempotency-Key and renders a safe receipt", async () => {
     const receipt = {
       sale_number: "V-000042", created_at: "2026-11-14T15:00:00Z", currency: "USD",
-      subtotal_usd: "0.0004", total_usd: "0.0004", total_ves: "0.02", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null,
+      subtotal_usd: "0.0006", total_usd: "0.0006", total_ves: "0.02", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null,
       lines: [
-        { product_name_snapshot: "Producto A", sku_snapshot: "A-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
+        { product_name_snapshot: "Producto A", sku_snapshot: "A-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "2.000", unit_price_usd: "0.0002", line_total_usd: "0.0004", line_total_ves: "0.01" },
         { product_name_snapshot: "Producto B", sku_snapshot: "B-1", unit_snapshot: "unidad", quantity_mode_snapshot: "integer", quantity: "1.000", unit_price_usd: "0.0002", line_total_usd: "0.0002", line_total_ves: "0.01" },
       ],
-      payments: [{ method: "cash", currency: "USD", amount: "0.0004", reference: null }],
+      payments: [{ method: "cash", currency: "USD", amount: "0.0006", reference: null }],
     };
     vi.mocked(apiRequest)
       .mockResolvedValueOnce({ shift } as never)
@@ -110,6 +110,8 @@ describe("SalesPanel", () => {
       .mockResolvedValueOnce(receipt as never);
     await render();
     await act(async () => { click("Agregar producto A"); click("Agregar producto B"); });
+    const firstQuantity = container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto A"]')!;
+    await act(async () => { setInputValue(firstQuantity, "2"); });
     await act(async () => { click("Monto exacto"); });
     await act(async () => { click("Cobrar venta"); await new Promise((resolve) => setTimeout(resolve, 0)); });
     expect(apiRequest).toHaveBeenCalledTimes(3);
@@ -120,15 +122,17 @@ describe("SalesPanel", () => {
     expect(JSON.parse(String(init.body))).toEqual({
       warehouse_id: WAREHOUSE,
       lines: [
-        { product_id: "00000000-0000-4000-8000-000000000001", quantity: "1.000" },
+        { product_id: "00000000-0000-4000-8000-000000000001", quantity: "2.000" },
         { product_id: "00000000-0000-4000-8000-000000000002", quantity: "1.000" },
       ],
-      payments: [{ method: "cash", currency: "USD", amount: "0.0004", reference: null }],
+      payments: [{ method: "cash", currency: "USD", amount: "0.0006", reference: null }],
       manual_fx_acknowledged: false,
       manual_fx_acknowledged_rate: null,
     });
     expect(container.textContent).toContain("V-000042");
     expect(container.textContent).toContain("Comprobante de venta");
+    expect(container.textContent).toContain("2 × US$ 0,0002");
+    expect(container.textContent).not.toContain("2.000 ×");
     expect(container.querySelector(".sales-receipt-disclaimer")?.textContent).toBe("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
     expect(container.textContent).not.toContain("cost_usd");
     expect(container.textContent).not.toContain("unit_cost");
@@ -200,12 +204,12 @@ describe("SalesPanel", () => {
     expect(qtyInput.value).toBe("0.5");
     expect(container.textContent).toContain("US$ 500,00");
     await act(async () => { qtyInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-    expect(qtyInput.value).toBe("0.500");
+    expect(qtyInput.value).toBe("0.5");
     expect(container.querySelector<HTMLButtonElement>('[aria-label="Restar Producto C"]')?.disabled).toBe(true);
     await act(async () => { setInputValue(qtyInput, "1."); });
     expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
     await act(async () => { qtyInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-    expect(qtyInput.value).toBe("1.000");
+    expect(qtyInput.value).toBe("1");
     expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(false);
   });
 
@@ -217,7 +221,7 @@ describe("SalesPanel", () => {
     await render();
     await act(async () => { click("Agregar producto D"); });
     const qtyD = container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto D"]')!;
-    expect(qtyD.value).toBe("0.500");
+    expect(qtyD.value).toBe("0.5");
     expect(container.querySelector<HTMLButtonElement>('[aria-label="Restar Producto D"]')?.disabled).toBe(true);
     await act(async () => { click("Monto exacto"); });
     const refInput = container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[1]!;

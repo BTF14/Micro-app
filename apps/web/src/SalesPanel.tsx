@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   calculateLineUsd,
   convertUsdToVes,
+  formatDecimal,
   formatNumeric,
   parseNumeric,
   sumNumeric,
@@ -62,6 +63,10 @@ function dateTime(value: string): string {
 }
 function quantityUnits(value: string): bigint {
   return parseNumeric(value, 14, 3);
+}
+function formatQuantityInput(value: string | bigint): string {
+  const units = typeof value === "bigint" ? value : parseNumeric(value, 14, 3);
+  return formatDecimal(units, 3, 0);
 }
 function paymentScale(currency: Currency): { precision: number; scale: number } {
   return currency === "USD" ? { precision: 14, scale: 4 } : { precision: 14, scale: 2 };
@@ -257,8 +262,9 @@ export default function SalesPanel({
     const currentCart = cartRef.current;
     const existing = currentCart.find((line) => line.product.product_id === product.product_id);
     if (!existing) {
-      const initialQty = formatNumeric(available < 1000n ? available : 1000n, 14, 3);
-      commitCart([...currentCart, { product, quantity: initialQty, quantityInput: initialQty, quantityValid: true }]);
+      const initialUnits = available < 1000n ? available : 1000n;
+      const initialQty = formatNumeric(initialUnits, 14, 3);
+      commitCart([...currentCart, { product, quantity: initialQty, quantityInput: formatQuantityInput(initialUnits), quantityValid: true }]);
       resetIdempotency();
       setNotice(product.name + " agregado al carrito.");
     } else if (quantityUnits(existing.quantity) + step > available) {
@@ -266,7 +272,7 @@ export default function SalesPanel({
     } else {
       const nextQty = formatNumeric(quantityUnits(existing.quantity) + step, 14, 3);
       commitCart(currentCart.map((line) => line.product.product_id === product.product_id
-        ? { ...line, product, quantity: nextQty, quantityInput: nextQty, quantityValid: true }
+        ? { ...line, product, quantity: nextQty, quantityInput: formatQuantityInput(quantityUnits(nextQty)), quantityValid: true }
         : line));
       resetIdempotency();
       setNotice("Se actualizó la cantidad de " + product.name + ".");
@@ -315,7 +321,7 @@ export default function SalesPanel({
           return;
         }
         commitCart(cartRef.current.map((item) => item.product.product_id === productId
-          ? { ...item, quantity: normalized, quantityInput: normalized, quantityValid: true }
+          ? { ...item, quantity: normalized, quantityInput: formatQuantityInput(normalized), quantityValid: true }
           : item));
         resetIdempotency();
         setError("");
@@ -323,9 +329,9 @@ export default function SalesPanel({
       } catch { /* Fall through to standard invalid message. */ }
     }
     if (line.quantityValid) {
-      if (line.quantityInput !== line.quantity) {
+      if (line.quantityInput !== formatQuantityInput(line.quantity)) {
         commitCart(cartRef.current.map((item) => item.product.product_id === productId
-          ? { ...item, quantityInput: line.quantity }
+          ? { ...item, quantityInput: formatQuantityInput(line.quantity) }
           : item));
       }
       return;
@@ -496,7 +502,7 @@ export default function SalesPanel({
                       <div className="sales-cart-product"><strong>{line.product.name}</strong><small>{line.product.sku} · {usd(line.product.price_usd)} c/u</small></div>
                       <label className="sales-quantity"><span>Cantidad</span><input aria-label={`Cantidad de ${line.product.name}`} inputMode={line.product.quantity_mode === "integer" ? "numeric" : "decimal"} step={line.product.quantity_mode === "integer" ? "1" : "0.001"} value={line.quantityInput} onChange={(event) => updateQuantity(line.product.product_id, event.target.value)} onBlur={() => commitQuantityBlur(line.product.product_id)} /></label>
                       <div className="sales-line-total"><strong>{usd(line.lineUsd)}</strong><small>{line.lineVes ? ves(line.lineVes) : "Conversión no disponible"}</small></div>
-                      <div className="sales-line-actions"><button type="button" disabled={quantityUnits(line.quantity) <= 1000n} onClick={() => updateQuantity(line.product.product_id, formatNumeric(quantityUnits(line.quantity) - 1000n, 14, 3))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
+                      <div className="sales-line-actions"><button type="button" disabled={quantityUnits(line.quantity) <= 1000n} onClick={() => updateQuantity(line.product.product_id, formatQuantityInput(quantityUnits(line.quantity) - 1000n))} aria-label={`Restar ${line.product.name}`}>−</button><button type="button" onClick={() => addProduct(line.product)} aria-label={`Sumar ${line.product.name}`}>+</button><button type="button" onClick={() => removeLine(line.product.product_id)}>Quitar</button></div>
                     </article>)}
                   </div>
                 )}
@@ -509,7 +515,7 @@ export default function SalesPanel({
                     <label><span>Método</span><select value={payment.method} onChange={(event) => updatePayment(payment.id, { method: event.target.value as PaymentMethod })}>{PAYMENT_METHODS.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}</select></label>
                     <label><span>Monto ({currency})</span><input inputMode="decimal" value={payment.amount} placeholder="0,00" onChange={(event) => updatePayment(payment.id, { amount: normalizeDecimalInput(event.target.value) })} /></label>
                     <label className="sales-payment-reference"><span>Referencia (opcional)</span><input maxLength={128} value={payment.reference} onChange={(event) => updatePayment(payment.id, { reference: event.target.value })} /></label>
-                    {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && <label className="sales-payment-reference"><span>Efectivo recibido (solo cálculo de vuelto)</span><input inputMode="decimal" value={payment.cashReceived ?? ""} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { cashReceived: normalizeDecimalInput(event.target.value) })} /></label>}
+                    {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && <label className="sales-payment-reference"><span>Efectivo recibido (solo cálculo de vuelto)</span><input inputMode="decimal" value={payment.cashReceived ?? ""} placeholder="0,00" onChange={(event) => updatePayment(payment.id, { cashReceived: normalizeDecimalInput(event.target.value) })} /></label>}
                     {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && payment.cashReceived?.trim() && <p className="sales-cash-change" role="status">{cashChangeMessage(payment)}</p>}
                     {payments.length > 1 && <button type="button" className="sales-remove-payment" onClick={() => removePayment(payment.id)} aria-label={`Quitar pago ${index + 1}`}>Quitar</button>}
                   </div>)}
@@ -536,7 +542,7 @@ export default function SalesPanel({
         {receipt.fx_source === 'manual_contingency' && receipt.fx_authorization_id && (
           <p className="sales-receipt-date">Referencia de autorización: {receipt.fx_authorization_id}</p>
         )}
-        <div className="sales-receipt-lines">{receipt.lines.map((line, index) => <div key={`${line.sku_snapshot}-${index}`}><div><strong>{line.product_name_snapshot}</strong><small>{line.sku_snapshot} · {line.unit_snapshot} · {line.quantity} × {usd(line.unit_price_usd)}</small></div><span>{usd(line.line_total_usd)}<small>{ves(line.line_total_ves)}</small></span></div>)}</div>
+        <div className="sales-receipt-lines">{receipt.lines.map((line, index) => <div key={`${line.sku_snapshot}-${index}`}><div><strong>{line.product_name_snapshot}</strong><small>{line.sku_snapshot} · {line.unit_snapshot} · {formatLocalizedDecimal(line.quantity, 14, 3, 0)} × {usd(line.unit_price_usd)}</small></div><span>{usd(line.line_total_usd)}<small>{ves(line.line_total_ves)}</small></span></div>)}</div>
         <div className="sales-receipt-payments"><h3>Pagos recibidos</h3>{receipt.payments.map((payment, index) => <div key={index}><span>{PAYMENT_METHODS.find((method) => method.value === payment.method)?.label ?? payment.method}{payment.reference ? ` · Ref. ${payment.reference}` : ""}</span><strong>{payment.currency === "USD" ? usd(payment.amount) : ves(payment.amount)}</strong></div>)}</div>
         <div className="sales-receipt-totals"><div><span>Total USD</span><strong>{usd(receipt.total_usd)}</strong></div><div><span>Total VES</span><strong>{ves(receipt.total_ves)}</strong></div></div>
         <button type="button" className="sales-primary-button" onClick={newSale}>Nueva venta</button>

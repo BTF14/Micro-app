@@ -100,6 +100,22 @@ describe("inventory panel", () => {
     expect(container.textContent).toContain("Conteo físico / ajuste");
   });
 
+  it("starts receipt and count quantities empty with their placeholders", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
+      .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+    await renderPanel(true);
+    const forms=[...container.querySelectorAll<HTMLFormElement>(".inventory-operation-form")];
+    expect(forms).toHaveLength(2);
+    const receiptInputs=forms[0]!.querySelectorAll<HTMLInputElement>("input");
+    const countInput=forms[1]!.querySelector<HTMLInputElement>('input[placeholder="0"]');
+    expect(receiptInputs[0]!.value).toBe(""); expect(receiptInputs[0]!.placeholder).toBe("1"); expect(receiptInputs[0]!.required).toBe(true);
+    expect(receiptInputs[1]!.value).toBe(""); expect(receiptInputs[1]!.placeholder).toBe("0.00"); expect(receiptInputs[1]!.required).toBe(true);
+    expect(countInput?.value).toBe(""); expect(countInput?.placeholder).toBe("0"); expect(countInput?.required).toBe(true);
+  });
+
   it("searches inventory by barcode and shows a no-results message", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({branches:[{id:BRANCH_A,name:"Central",slug:"central"}]}))

@@ -62,7 +62,7 @@ export default function ReportsPanel({organizationId,role,initialShift}:{organiz
  async function exportCsv(kind:"sales"|"inventory"){if(kind==="sales"&&period==="custom"&&(!from||!to)){setError("Indica las fechas y horas Desde y Hasta.");return}setExporting(true);setError("");try{const path=kind==="sales"?root+"/reports/sales.csv?"+salesQuery:root+"/reports/inventory.csv"+(stockBranch?"?branch_id="+encodeURIComponent(stockBranch):"");await download(path,kind==="sales"?salesCsvFilename(period,date,from,to):"reporte-inventario-"+localDate()+".csv")}catch(e){setError(e instanceof Error?e.message:"No se pudo descargar el CSV.")}finally{setExporting(false)}}
  function printClosure(){
   const originalTitle=document.title;
-  const branch=summary?.shift.branch_name.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  const branch=summary?.shift.branch_name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
   document.title=branch?`cierre-caja-${branch}-${localDate()}`:"cierre-caja-reporte";
   const restore=()=>{document.title=originalTitle;window.removeEventListener("afterprint",restore);restorePrintTitleRef.current=null};
   restorePrintTitleRef.current=restore;window.addEventListener("afterprint",restore);window.print();

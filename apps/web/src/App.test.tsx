@@ -51,6 +51,7 @@ beforeEach(() => {
   root = createRoot(container);
   vi.stubGlobal("fetch", vi.fn());
   window.history.replaceState({}, "", "/");
+  window.sessionStorage.clear();
 });
 
 afterEach(async () => {
@@ -79,12 +80,14 @@ describe("Micro app authentication flow", () => {
     await renderApp();
     await settle();
     expect(container.textContent).toContain("Hola, Ana.");
+    window.sessionStorage.setItem("micro-app:active-view", "reports");
     await act(async () => {
       window.dispatchEvent(new CustomEvent("micro-app:unauthorized"));
     });
     expect(container.textContent).toContain("Inicia sesión");
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("Tu sesión expiró. Inicia sesión nuevamente.");
     expect(container.textContent).not.toContain("Hola, Ana.");
+    expect(window.sessionStorage.getItem("micro-app:active-view")).toBeNull();
   });
 
   it("links the Google sign-in button straight to the OAuth start endpoint", async () => {
@@ -288,6 +291,7 @@ describe("Micro app authentication flow", () => {
     await settle();
     expect(container.textContent).toContain("Hola, Ana.");
 
+    window.sessionStorage.setItem("micro-app:active-view", "reports");
     const logoutButton = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Cerrar sesión"));
     if (!logoutButton) throw new Error("Logout button not found");
     await act(async () => { logoutButton.click(); });
@@ -296,6 +300,7 @@ describe("Micro app authentication flow", () => {
     expect(vi.mocked(fetch).mock.calls[3][0]).toBe("/auth/logout");
     expect(container.textContent).toContain("Inicia sesión");
     expect(container.textContent).toContain("Has cerrado la sesión de forma segura.");
+    expect(window.sessionStorage.getItem("micro-app:active-view")).toBeNull();
   });
 
   it("labels a future BCV publication as scheduled and keeps operation date separate from BCV value date", async () => {
@@ -353,6 +358,24 @@ describe("Hash navigation", () => {
  it("restores #reportes after authentication",async()=>{window.history.replaceState({},"","/#reportes");await renderWithRole("owner");expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");expect(window.location.hash).toBe("#reportes")});
  it("restores #ventas after authentication",async()=>{window.history.replaceState({},"","/#ventas");await renderWithRole("owner");const b=[...container.querySelectorAll("button")].find(x=>x.textContent?.includes("Ventas"));expect(b?.getAttribute("aria-current")).toBe("page");expect(window.location.hash).toBe("#ventas")});
  it("handles browser hashchange navigation",async()=>{await renderWithRole("owner");window.history.pushState({},"","/#reportes");await act(async()=>window.dispatchEvent(new HashChangeEvent("hashchange")));expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");window.history.pushState({},"","/#ventas");await act(async()=>window.dispatchEvent(new HashChangeEvent("hashchange")));expect([...container.querySelectorAll("button")].find(x=>x.textContent?.includes("Ventas"))?.getAttribute("aria-current")).toBe("page")});
+ it("restores a stored module after reload when the URL hash is generic",async()=>{
+  await renderWithRole("owner");
+  const reports=[...container.querySelectorAll("button")].find(x=>x.textContent?.includes("Reportes"));
+  await act(async()=>reports?.click());
+  expect(window.sessionStorage.getItem("micro-app:active-view")).toBe("reports");
+  await act(async()=>root.unmount());
+  window.history.replaceState({}, "", "/");
+  await renderWithRole("owner");
+  expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");
+ });
+ it("keeps an explicit overview selection across reload",async()=>{
+  await renderWithRole("owner");
+  const overview=[...container.querySelectorAll("a")].find(x=>x.textContent?.includes("Resumen"));
+  await act(async()=>overview?.click());
+  expect(window.sessionStorage.getItem("micro-app:active-view")).toBe("overview");
+  await act(async()=>root.unmount()); window.history.replaceState({}, "", "/"); await renderWithRole("owner");
+  expect(container.querySelector("#reports-title")).toBeNull(); expect(window.sessionStorage.getItem("micro-app:active-view")).toBe("overview");
+ });
  it("falls back to overview when the role cannot access #ventas",async()=>{window.history.replaceState({},"","/#ventas");await renderWithRole("inventory");expect(container.textContent).toContain("Hola, Ana.");expect(container.querySelector("#reports-title")).toBeNull();expect(window.location.hash).toBe("#resumen");expect(vi.mocked(fetch).mock.calls.some(call=>String(call[0]).includes("/register-shifts"))).toBe(false)});
 });
 

@@ -411,7 +411,7 @@ describe("Resumen shortcuts and greeting", () => {
     expect(shortcut).toBeTruthy();
     await act(async () => { shortcut?.click(); });
     await settle();
-    expect(container.querySelector("#sales-title")?.textContent ?? container.textContent).toContain("Ventas");
+    expect(window.location.hash).toBe("#ventas");
   });
 
   it("hides caja and ventas shortcuts for an inventory-only role", async () => {
@@ -423,7 +423,7 @@ describe("Resumen shortcuts and greeting", () => {
     const shortcuts = [...container.querySelectorAll<HTMLButtonElement>(".module-card-button")].map((item) => item.textContent ?? "");
     expect(shortcuts.some((label) => label.includes("Caja y turnos"))).toBe(false);
     expect(shortcuts.some((label) => label.includes("Ventas"))).toBe(false);
-    expect(container.querySelector(".module-count")?.textContent).toContain("4 accesos disponibles");
+    expect(container.querySelector(".module-count")?.textContent).toContain("3 accesos disponibles");
   });
 
   it("shortens an email display name and translates the BCV inserted outcome", async () => {

@@ -18,6 +18,16 @@ describe("ReportsPanel",()=>{
  it("limits Inventory to inventory reports",async()=>{await render("inventory");expect(container.textContent).not.toContain("Cierres de caja");expect(container.textContent).not.toContain("Ventas")});
  it("limits Cashier to own shifts and sales",async()=>{await render("cashier");expect(container.textContent).toContain("Mis ventas");expect(container.textContent).not.toContain("Inventario")});
  it("formats negative differences and FISC-01 notice",async()=>{await render("owner");expect(container.textContent).toContain("−2,00");expect(container.textContent).toContain("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL")});
+ it("does not warn or render an empty sales table before custom dates are submitted",async()=>{
+  await render("owner");
+  await act(async()=>button("Ventas").click());
+  const period=container.querySelector<HTMLSelectElement>(".reports-filters select");
+  await act(async()=>{Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value")!.set!.call(period,"custom");period!.dispatchEvent(new Event("change",{bubbles:true}))});
+  expect(container.querySelector('[role="alert"]')).toBeNull();
+  expect(container.querySelector(".reports-table-wrap")).toBeNull();
+  await act(async()=>button("Consultar período").click());
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain("Indica las fechas y horas Desde y Hasta.");
+ });
  it("supports custom Caracas period and authenticated CSV download",async()=>{
   await render("owner");
   await act(async()=>button("Ventas").click());

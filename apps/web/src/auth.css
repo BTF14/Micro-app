@@ -99,3 +99,74 @@
   font-size: 0.9rem;
   font-weight: 600;
 }
+
+
+/* FX contingency: clean administrative surfaces and consistent form controls. */
+.fx-contingency-panel > .fx-panel-header {
+  display: grid;
+  gap: .45rem;
+  padding: 0 0 .35rem;
+  border: 0;
+  border-radius: 0;
+}
+.fx-panel-header .eyebrow { margin: 0; color: #7a8a80; }
+.fx-panel-header h2 { margin: 0; color: var(--petrol-dark); font-size: clamp(1.35rem, 2.5vw, 1.8rem); }
+.fx-panel-header > p:last-child { margin: 0; color: #78837c; line-height: 1.6; }
+.fx-contingency-panel > .fx-active-authorization,
+.fx-contingency-panel > .fx-create-authorization,
+.fx-contingency-panel > .fx-pin-settings,
+.fx-contingency-panel > .fx-delegations {
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(28, 55, 44, .035);
+}
+.fx-contingency-panel h3 { margin: 0; color: var(--petrol-dark); font-size: 1rem; }
+.fx-contingency-panel label { color: #35443c; font-size: .82rem; font-weight: 600; }
+.fx-contingency-panel input:not([type="checkbox"]),
+.fx-contingency-panel select,
+.fx-contingency-panel textarea {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: .55rem .7rem;
+  border: 1px solid #d8e1da;
+  border-radius: .6rem;
+  color: #263a32;
+  background: #fff;
+  font: inherit;
+  font-size: 1rem;
+}
+.fx-contingency-panel textarea { min-height: 5.5rem; resize: vertical; }
+.fx-contingency-panel input:focus,
+.fx-contingency-panel select:focus,
+.fx-contingency-panel textarea:focus { border-color: #6b9581; outline: 3px solid rgba(80,125,106,.13); }
+.fx-contingency-panel button {
+  min-height: 2.65rem;
+  padding: .6rem .95rem;
+  border: 1px solid transparent;
+  border-radius: .65rem;
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.fx-contingency-panel .fx-primary-button { color: #fff; background: var(--petrol); }
+.fx-contingency-panel .fx-primary-button:hover:not(:disabled) { background: #24534a; transform: translateY(-1px); }
+.fx-contingency-panel .fx-secondary-button { border-color: var(--line); color: #365b4c; background: #fff; }
+.fx-contingency-panel .fx-danger-button { border-color: #edd4d0; color: #8b342d; background: #fff7f6; }
+.fx-contingency-panel .fx-danger-button:hover:not(:disabled) { background: #fcecea; }
+.fx-contingency-panel button:disabled { color: #8c9690; border-color: #e5e9e5; background: #f0f2ef; cursor: not-allowed; opacity: 1; }
+.fx-field-hint { margin: -.35rem 0 .15rem; color: #78837c; font-size: .75rem; line-height: 1.5; }
+.fx-delegation-list { display: grid; gap: .6rem; margin: .6rem 0 0; padding: 0; list-style: none; }
+.fx-delegation-list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem .85rem; border: 1px solid #e7ece7; border-radius: .7rem; background: #fbfcfa; }
+.fx-delegation-list li > span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .fx-contingency-panel > .fx-active-authorization,
+  .fx-contingency-panel > .fx-create-authorization,
+  .fx-contingency-panel > .fx-pin-settings,
+  .fx-contingency-panel > .fx-delegations { padding: .9rem; }
+  .fx-delegation-list li { align-items: stretch; flex-direction: column; }
+  .fx-delegation-list button { width: 100%; }
+}

@@ -495,6 +495,7 @@ describe("Resumen shortcuts and greeting", () => {
     const shortcut = container.querySelector<HTMLAnchorElement>(".module-card-button");
     expect(shortcut?.getAttribute("href")).toBe("#ventas");
     expect(shortcut).toBeTruthy();
+    const initialHash = window.location.hash;
 
     for (const modifiers of [
       { ctrlKey: true },
@@ -507,14 +508,14 @@ describe("Resumen shortcuts and greeting", () => {
       const notCanceled = shortcut!.dispatchEvent(event);
       expect(notCanceled).toBe(true);
       expect(event.defaultPrevented).toBe(false);
-      expect(window.location.hash).toBe("");
+      expect(window.location.hash).toBe(initialHash);
     }
 
     const prePreventedEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
     shortcut!.addEventListener("click", (event) => event.preventDefault(), { once: true, capture: true });
     shortcut!.dispatchEvent(prePreventedEvent);
     expect(prePreventedEvent.defaultPrevented).toBe(true);
-    expect(window.location.hash).toBe("");
+    expect(window.location.hash).toBe(initialHash);
   });
 
   it.each(["older", "superseded"])("translates the BCV %s outcome in the summary", async (outcome) => {

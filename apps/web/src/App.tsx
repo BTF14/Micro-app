@@ -15,6 +15,10 @@ import ReportsPanel from "./ReportsPanel";
 function whatsappUrl(message: string): string {
   return `https://wa.me/584243104520?text=${encodeURIComponent(message)}`;
 }
+const ACTIVE_VIEW_STORAGE_KEY = "micro-app:active-view";
+function readStoredView(): WorkspaceView | null { try { const value = window.sessionStorage.getItem(ACTIVE_VIEW_STORAGE_KEY); return value && Object.prototype.hasOwnProperty.call(VIEW_HASHES, value) ? value as WorkspaceView : null; } catch { return null; } }
+function writeStoredView(view: WorkspaceView) { try { window.sessionStorage.setItem(ACTIVE_VIEW_STORAGE_KEY, view); } catch { /* Storage may be unavailable. */ } }
+function clearStoredView() { try { window.sessionStorage.removeItem(ACTIVE_VIEW_STORAGE_KEY); } catch { /* Storage may be unavailable. */ } }
 const ADMIN_WHATSAPP_URL = whatsappUrl("Hola, necesito acceso a Micro app.");
 const SUPPORT_WHATSAPP_URL = whatsappUrl("Hola, tuve un problema usando Micro app.");
 
@@ -361,6 +365,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
   const [activeView, setActiveView] = useState<WorkspaceView>(() => viewFromHash(window.location.hash));
+  function selectView(view: WorkspaceView) { setActiveView(view); writeStoredView(view); const hash = `#${VIEW_HASHES[view]}`; if (window.location.hash !== hash) window.history.pushState({}, "", `${window.location.pathname}${window.location.search}${hash}`); }
   const [selectedReportShift, setSelectedReportShift] = useState<{ branchId: string; shiftId: string } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
@@ -370,29 +375,25 @@ export default function App() {
   useEffect(() => {
     if (!session) return;
     const role = session.organizations[0]?.role;
-    const restore = (hash:string) => {
-      const requested=viewFromHash(hash);
-      const next=roleCanAccessView(role,requested)?requested:"overview";
-      if(next!==requested||!hash||hash==="#inicio") window.history.replaceState({},"",`${window.location.pathname}${window.location.search}#${VIEW_HASHES[next]}`);
+    const restore = (hash: string, initial = false) => {
+      const genericHash = hash === "" || hash === "#inicio" || hash === "#resumen";
+      const requested = initial && genericHash ? (readStoredView() ?? "overview") : viewFromHash(hash);
+      const next = roleCanAccessView(role, requested) ? requested : "overview";
       setActiveView(next);
+      writeStoredView(next);
+      if ((next !== requested || genericHash) && hash !== `#${VIEW_HASHES[next]}`) {
+        window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}#${VIEW_HASHES[next]}`);
+      }
     };
-    restore(window.location.hash);
-    const onHashChange=()=>restore(window.location.hash);
-    window.addEventListener("hashchange",onHashChange);
-    return()=>window.removeEventListener("hashchange",onHashChange);
-  },[session]);
-
-  useEffect(()=>{
-    if(!session)return;
-    const role=session.organizations[0]?.role;
-    const safe=roleCanAccessView(role,activeView)?activeView:"overview";
-    if(safe!==activeView){setActiveView("overview");return;}
-    const hash=`#${VIEW_HASHES[safe]}`;
-    if(window.location.hash!==hash)window.history.replaceState({},"", `${window.location.pathname}${window.location.search}${hash}`);
-  },[activeView,session]);
+    restore(window.location.hash, true);
+    const onHashChange = () => restore(window.location.hash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [session]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
+      clearStoredView();
       setSession(null);
       setBcvRate(null);
       setBcvError("");
@@ -484,6 +485,7 @@ export default function App() {
     setError("");
     try {
       await apiRequest<void>("/auth/logout", { method: "POST" });
+      clearStoredView();
       setSession(null);
       setBcvRate(null);
       setBcvError("");
@@ -569,15 +571,15 @@ export default function App() {
         </div>
         <button className="mobile-nav-toggle" type="button" aria-expanded={mobileNavOpen} aria-controls="primary-navigation" onClick={() => setMobileNavOpen((open) => !open)}><span aria-hidden="true">{mobileNavOpen ? "×" : "☰"}</span>{mobileNavOpen ? "Cerrar menú" : "Menú"}</button>
         <nav id="primary-navigation" className={`side-nav ${mobileNavOpen ? "open" : ""}`} onClick={() => setMobileNavOpen(false)}>
-          <a className={`nav-item ${renderedView === "overview" ? "active" : ""}`} href="#resumen" onClick={() => setActiveView("overview")} aria-current={renderedView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
-          <button className={`nav-item nav-item-button ${renderedView === "catalog" ? "active" : ""}`} type="button" onClick={() => setActiveView("catalog")} aria-current={renderedView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
-          <button className={`nav-item nav-item-button ${renderedView === "inventory" ? "active" : ""}`} type="button" onClick={() => setActiveView("inventory")} aria-current={renderedView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
-          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${renderedView === "quick-lookup" ? "active" : ""}`} type="button" onClick={() => setActiveView("quick-lookup")} aria-current={renderedView === "quick-lookup" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌕</span>Consultar precio</button>}
-          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (<button className={`nav-item nav-item-button ${renderedView === "register-shifts" ? "active" : ""}`} type="button" onClick={() => setActiveView("register-shifts")} aria-current={renderedView === "register-shifts" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos</button>) : (<span className="nav-item disabled" aria-disabled="true"><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos<span className="nav-lock">Sin acceso</span></span>)}
-          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${renderedView === "sales" ? "active" : ""}`} type="button" onClick={() => setActiveView("sales")} aria-current={renderedView === "sales" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">$</span>Ventas</button>}
-          {organization?.role === "owner" && <button className={`nav-item nav-item-button ${renderedView === "organization-structure" ? "active" : ""}`} type="button" onClick={() => setActiveView("organization-structure")} aria-current={renderedView === "organization-structure" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⚙</span> Estructura</button>}
-          {(organization?.role === "owner" || organization?.role === "admin") && <button className={`nav-item nav-item-button ${renderedView === "fx-contingency" ? "active" : ""}`} type="button" onClick={() => setActiveView("fx-contingency")} aria-current={renderedView === "fx-contingency" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">₿</span> Gestión cambiaria</button>}
-          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${renderedView === "reports" ? "active" : ""}`} type="button" onClick={() => setActiveView("reports")} aria-current={renderedView === "reports" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Reportes</button>}
+          <a className={`nav-item ${renderedView === "overview" ? "active" : ""}`} href="#resumen" onClick={() => selectView("overview")} aria-current={renderedView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
+          <button className={`nav-item nav-item-button ${renderedView === "catalog" ? "active" : ""}`} type="button" onClick={() => selectView("catalog")} aria-current={renderedView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
+          <button className={`nav-item nav-item-button ${renderedView === "inventory" ? "active" : ""}`} type="button" onClick={() => selectView("inventory")} aria-current={renderedView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
+          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${renderedView === "quick-lookup" ? "active" : ""}`} type="button" onClick={() => selectView("quick-lookup")} aria-current={renderedView === "quick-lookup" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌕</span>Consultar precio</button>}
+          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (<button className={`nav-item nav-item-button ${renderedView === "register-shifts" ? "active" : ""}`} type="button" onClick={() => selectView("register-shifts")} aria-current={renderedView === "register-shifts" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos</button>) : (<span className="nav-item disabled" aria-disabled="true"><span className="nav-symbol" aria-hidden="true">▣</span>Caja y turnos<span className="nav-lock">Sin acceso</span></span>)}
+          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${renderedView === "sales" ? "active" : ""}`} type="button" onClick={() => selectView("sales")} aria-current={renderedView === "sales" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">$</span>Ventas</button>}
+          {organization?.role === "owner" && <button className={`nav-item nav-item-button ${renderedView === "organization-structure" ? "active" : ""}`} type="button" onClick={() => selectView("organization-structure")} aria-current={renderedView === "organization-structure" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⚙</span> Estructura</button>}
+          {(organization?.role === "owner" || organization?.role === "admin") && <button className={`nav-item nav-item-button ${renderedView === "fx-contingency" ? "active" : ""}`} type="button" onClick={() => selectView("fx-contingency")} aria-current={renderedView === "fx-contingency" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">₿</span> Gestión cambiaria</button>}
+          {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${renderedView === "reports" ? "active" : ""}`} type="button" onClick={() => selectView("reports")} aria-current={renderedView === "reports" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Reportes</button>}
         </nav>
         <div className="sidebar-bottom">
           <div className="connection-indicator"><span className="connection-dot" aria-hidden="true" /><span><strong>Sesión activa</strong><small>{user.email}</small></span></div>
@@ -642,7 +644,7 @@ export default function App() {
             <SalesPanel organizationId={organization.id} exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
               exchangeRateEffectiveDate={bcvRate?.effectiveDate ?? null}
-              onGoToRegister={() => setActiveView("register-shifts")}
+              onGoToRegister={() => selectView("register-shifts")}
               onRefreshRate={async () => {
                 try { const result = await apiRequest<BcvRateResponse>("/api/exchange-rates/latest"); setBcvRate(result); setBcvError(""); }
                 catch (reason) { setBcvError(reason instanceof Error ? reason.message : "No se pudo actualizar la tasa BCV."); }
@@ -662,7 +664,7 @@ export default function App() {
           ) : renderedView === "organization-structure" && organization?.role === "owner" ? (
             <OrganizationStructurePanel organizationId={organization.id} />
           ) : renderedView === "register-shifts" && (organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (
-            <RegisterShiftsPanel organizationId={organization.id} userName={user.display_name} onOpenShiftClosure={(branchId, shiftId) => { setSelectedReportShift({ branchId, shiftId }); setActiveView("reports"); }} />
+            <RegisterShiftsPanel organizationId={organization.id} userName={user.display_name} onOpenShiftClosure={(branchId, shiftId) => { setSelectedReportShift({ branchId, shiftId }); selectView("reports"); }} />
           ) : (
             <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo.</p></div></section>
           )}

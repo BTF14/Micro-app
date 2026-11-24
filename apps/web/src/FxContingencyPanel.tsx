@@ -233,7 +233,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
           <label>PIN individual<input type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={(event) => setPin(event.target.value)} /></label>
           <button type="button" className="fx-primary-button" disabled={saving || !rate || !reason.trim() || pin.length < 8} onClick={() => void authorize()}>Autorizar contingencia</button>
           {pin.length < 8 && <p className="fx-field-hint">El PIN debe tener al menos 8 caracteres.</p>}
-          {(!rate || !reason.trim()) && <p className="fx-field-hint">Completa la tasa y el motivo para autorizar la contingencia.</p>}
+          {(!rate || !reason.trim()) && <p className="fx-field-hint">Completa la tasa y el motivo para autorizar la contingencia.</p>}}
         </div>}
         <p className="fx-commercial-gate">{state.commercial_enabled ? "Uso en caja: habilitado para esta sucursal." : "Uso en caja: desactivado por defecto hasta contar con validación contable y legal."}</p>
       </>}
@@ -242,7 +242,7 @@ export default function FxContingencyPanel({ organizationId, role }: { organizat
         <label>PIN nuevo (8–32 dígitos)<input type="password" inputMode="numeric" autoComplete="new-password" value={newPin} onChange={(event) => setNewPin(event.target.value)} /></label>
         <label>PIN actual (solo si ya estaba configurado)<input type="password" inputMode="numeric" autoComplete="current-password" value={currentPin} onChange={(event) => setCurrentPin(event.target.value)} /></label>
         <button type="button" className="fx-primary-button" disabled={saving || newPin.length < 8} onClick={() => void savePin()}>Guardar PIN</button>
-        {newPin.length < 8 && <p className="fx-field-hint">El PIN debe tener entre 8 y 32 dígitos.</p>
+        {newPin.length < 8 && <p className="fx-field-hint">El PIN debe tener entre 8 y 32 dígitos.</p>}
       </div>
       {role === "owner" && <div className="fx-delegations">
         <h3>Delegación de administradores</h3>

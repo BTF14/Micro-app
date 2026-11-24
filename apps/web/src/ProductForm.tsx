@@ -45,9 +45,9 @@ function initialDraft(product?: CatalogProduct): ProductDraft {
     description: product?.description ?? "",
     unit: product?.unit ?? "unidad",
     quantity_mode: product?.quantity_mode ?? "integer",
-    cost_usd: product?.cost_usd ? formatMoneyForDisplay(product.cost_usd) : "0.00",
+    cost_usd: product ? (product.cost_usd ? formatMoneyForDisplay(product.cost_usd) : "0.00") : "",
     price_usd: product?.price_usd ? formatMoneyForDisplay(product.price_usd) : "",
-    minimum_stock: product ? "" : "0",
+    minimum_stock: "",
     is_active: product?.is_active ?? true,
   };
 }
@@ -109,7 +109,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
             is_active: draft.is_active,
             ...(minimumStockInput ? { minimum_stock: minimumStockInput } : {}),
           }
-        : { minimum_stock: minimumStockInput }),
+        : { minimum_stock: minimumStockInput || "0" }),
     };
 
     setSaving(true);

@@ -399,6 +399,53 @@ describe("Reports navigation", () => {
 
 
 describe("Resumen shortcuts and greeting", () => {
+  async function renderDashboardAsRole(role: string) {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({
+      ...authResponse,
+      organizations: [{ ...organizations[0], role }],
+    }));
+    if (role === "owner" || role === "admin") {
+      vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse));
+    }
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+  }
+
+  it.each(["owner", "admin"])("shows management descriptions for %s", async (role) => {
+    await renderDashboardAsRole(role);
+    const inventory = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#inventario"]');
+    const catalog = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#productos"]');
+    expect(inventory?.textContent).toContain("Controla existencias, recepciones y conteos por sucursal.");
+    expect(catalog?.textContent).toContain("Administra el catálogo y consulta precios exactos en USD.");
+  });
+
+  it("shows read-only inventory and catalog descriptions for cashier", async () => {
+    await renderDashboardAsRole("cashier");
+    const inventory = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#inventario"]');
+    const catalog = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#productos"]');
+    expect(inventory?.textContent).toContain("Consulta existencias y disponibilidad por sucursal.");
+    expect(catalog?.textContent).toContain("Consulta el catálogo y precios exactos en USD.");
+  });
+
+  it("shows the read-only catalog description for inventory", async () => {
+    await renderDashboardAsRole("inventory");
+    const catalog = container.querySelector<HTMLAnchorElement>('.module-card-button[href="#productos"]');
+    expect(catalog?.textContent).toContain("Consulta el catálogo y precios exactos en USD.");
+  });
+
+  it("keeps each visible shortcut title at the start of its accessible name", async () => {
+    await renderDashboardAsRole("owner");
+    const shortcuts = [...container.querySelectorAll<HTMLAnchorElement>(".module-card-button")];
+    expect(shortcuts.length).toBeGreaterThan(0);
+    for (const shortcut of shortcuts) {
+      const title = shortcut.querySelector("h3")?.textContent ?? "";
+      expect(shortcut.getAttribute("aria-label")?.startsWith(`${title}: `)).toBe(true);
+    }
+    const caja = shortcuts.find((shortcut) => shortcut.textContent?.includes("Caja y turnos"));
+    expect(caja?.getAttribute("aria-label")).toBe("Caja y turnos: abrir caja");
+  });
+
   it("navigates to a module when a dashboard shortcut is selected", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse(authResponse))
@@ -407,7 +454,7 @@ describe("Resumen shortcuts and greeting", () => {
       .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
     await renderApp();
     await settle();
-    const shortcut = container.querySelector<HTMLButtonElement>(".module-card-button");
+    const shortcut = container.querySelector<HTMLAnchorElement>(".module-card-button");
     expect(shortcut).toBeTruthy();
     await act(async () => { shortcut?.click(); });
     await settle();
@@ -420,7 +467,7 @@ describe("Resumen shortcuts and greeting", () => {
       .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
     await renderApp();
     await settle();
-    const shortcuts = [...container.querySelectorAll<HTMLButtonElement>(".module-card-button")].map((item) => item.textContent ?? "");
+    const shortcuts = [...container.querySelectorAll<HTMLAnchorElement>(".module-card-button")].map((item) => item.textContent ?? "");
     expect(shortcuts.some((label) => label.includes("Caja y turnos"))).toBe(false);
     expect(shortcuts.some((label) => label.includes("Ventas"))).toBe(false);
     expect(container.querySelector(".module-count")?.textContent).toContain("3 accesos disponibles");

@@ -73,12 +73,12 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
 ];
 
 const modules: { number: string; title: string; description: string; view: WorkspaceView; ariaLabel: string }[] = [
-  { number: "01", title: "Ventas", description: "Registra ventas con la tasa BCV vigente y consulta cada operación.", view: "sales", ariaLabel: "Abrir punto de venta" },
-  { number: "02", title: "Caja y turnos", description: "Abre turnos, gestiona cobros y revisa los cierres de caja.", view: "register-shifts", ariaLabel: "Abrir caja" },
-  { number: "03", title: "Inventario", description: "Controla existencias, recepciones y conteos por sucursal.", view: "inventory", ariaLabel: "Abrir existencias" },
-  { number: "04", title: "Productos", description: "Administra el catálogo y consulta precios exactos en USD.", view: "catalog", ariaLabel: "Abrir catálogo" },
-  { number: "05", title: "Reportes", description: "Consulta ventas, movimientos y resultados de la operación.", view: "reports", ariaLabel: "Abrir informes" },
-  { number: "06", title: "Gestión cambiaria", description: "Administra autorizaciones temporales de contingencia BCV.", view: "fx-contingency", ariaLabel: "Abrir configuración cambiaria" },
+  { number: "01", title: "Ventas", description: "Registra ventas con la tasa BCV vigente y consulta cada operación.", view: "sales", ariaLabel: "Ventas: abrir punto de venta" },
+  { number: "02", title: "Caja y turnos", description: "Abre turnos, gestiona cobros y revisa los cierres de caja.", view: "register-shifts", ariaLabel: "Caja y turnos: abrir caja" },
+  { number: "03", title: "Inventario", description: "Controla existencias, recepciones y conteos por sucursal.", view: "inventory", ariaLabel: "Inventario: abrir existencias" },
+  { number: "04", title: "Productos", description: "Administra el catálogo y consulta precios exactos en USD.", view: "catalog", ariaLabel: "Productos: abrir catálogo" },
+  { number: "05", title: "Reportes", description: "Consulta ventas, movimientos y resultados de la operación.", view: "reports", ariaLabel: "Reportes: abrir informes" },
+  { number: "06", title: "Gestión cambiaria", description: "Administra autorizaciones temporales de contingencia BCV.", view: "fx-contingency", ariaLabel: "Gestión cambiaria: abrir configuración cambiaria" },
 ];
 
 // Shown after a failed GET /auth/google/callback redirect (see apps/api/src/google-auth.ts).
@@ -567,7 +567,20 @@ export default function App() {
   const organization = session.organizations[0];
   const firstName = user.display_name.trim().split(/\s+/)[0] ?? "";
   const greetingName = firstName.includes("@") ? firstName.split("@")[0] : firstName;
-  const visibleShortcuts = modules.filter((item) => roleCanAccessView(organization?.role, item.view));
+  const role = organization?.role;
+  const canManageCatalog = role === "owner" || role === "admin";
+  const canManageInventory = role === "owner" || role === "admin" || role === "inventory";
+  const visibleShortcuts = modules
+    .filter((item) => roleCanAccessView(role, item.view))
+    .map((item) => item.view === "inventory"
+      ? { ...item, description: canManageInventory
+        ? "Controla existencias, recepciones y conteos por sucursal."
+        : "Consulta existencias y disponibilidad por sucursal." }
+      : item.view === "catalog"
+        ? { ...item, description: canManageCatalog
+          ? "Administra el catálogo y consulta precios exactos en USD."
+          : "Consulta el catálogo y precios exactos en USD." }
+        : item);
   const renderedView: WorkspaceView = roleCanAccessView(organization?.role, activeView) ? activeView : "overview";
 
   return (
@@ -639,7 +652,7 @@ export default function App() {
           {(organization?.role === "owner" || organization?.role === "admin") && (
             <BcvSyncAdminPanel organizationId={organization.id} />
           )}
-          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <button type="button" className="module-card module-card-button" aria-label={item.ariaLabel} key={item.view} onClick={() => selectView(item.view)}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></button>)}</div></section>
+          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2 id="modules-title">Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <a className="module-card module-card-button" href={`#${VIEW_HASHES[item.view]}`} aria-label={item.ariaLabel} key={item.view} onClick={(event) => { event.preventDefault(); selectView(item.view); }}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></a>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">
               <span>Micro app · Punto de venta e inventario</span>
@@ -680,7 +693,7 @@ export default function App() {
           ) : renderedView === "register-shifts" && (organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (
             <RegisterShiftsPanel organizationId={organization.id} userName={user.display_name} onOpenShiftClosure={(branchId, shiftId) => { setSelectedReportShift({ branchId, shiftId }); selectView("reports"); }} />
           ) : (
-            <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo.</p></div></section>
+            <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {greetingName}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo.</p></div></section>
           )}
         </div>
       </section>

@@ -376,7 +376,7 @@ export default function App() {
     if (!session) return;
     const role = session.organizations[0]?.role;
     const restore = (hash: string, initial = false) => {
-      const genericHash = hash === "" || hash === "#inicio" || hash === "#resumen";
+      const genericHash = hash === "" || hash === "#inicio";
       const requested = initial && genericHash ? (readStoredView() ?? "overview") : viewFromHash(hash);
       const next = roleCanAccessView(role, requested) ? requested : "overview";
       setActiveView(next);

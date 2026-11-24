@@ -381,7 +381,8 @@ export default function SalesPanel({
     try {
       const alreadyPaid = sumNumeric(payments.slice(0, -1).filter((p) => p.amount.trim()).map((p) => p.amount), precision, scale);
       const remaining = parseNumeric(expectedPayment, currency === "USD" ? 14 : 16, scale) - parseNumeric(alreadyPaid, precision, scale);
-      const formatted = formatNumeric(remaining > 0n ? remaining : 0n, precision, scale);
+      const formattedRaw = formatNumeric(remaining > 0n ? remaining : 0n, precision, scale);
+      const formatted = currency === "USD" ? formattedRaw.replace(/(\.\d{2,4}?)0+$/, "$1").replace(/\.(\d)$/, ".$10") : formattedRaw;
       const last = payments[payments.length - 1]!;
       updatePayment(last.id, { amount: formatted });
     } catch {
@@ -506,7 +507,7 @@ export default function SalesPanel({
                   <div className="sales-payments-heading"><h3 id="sales-payments-title">Forma de pago</h3><label>Moneda<select value={currency} onChange={(event) => setPaymentCurrency(event.target.value as Currency)}><option value="USD">USD</option><option value="VES">VES</option></select></label></div>
                   {payments.map((payment, index) => <div className="sales-payment-row" key={payment.id}>
                     <label><span>Método</span><select value={payment.method} onChange={(event) => updatePayment(payment.id, { method: event.target.value as PaymentMethod })}>{PAYMENT_METHODS.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}</select></label>
-                    <label><span>Monto ({currency})</span><input inputMode="decimal" value={payment.amount} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { amount: normalizeDecimalInput(event.target.value) })} /></label>
+                    <label><span>Monto ({currency})</span><input inputMode="decimal" value={payment.amount} placeholder="0,00" onChange={(event) => updatePayment(payment.id, { amount: normalizeDecimalInput(event.target.value) })} /></label>
                     <label className="sales-payment-reference"><span>Referencia (opcional)</span><input maxLength={128} value={payment.reference} onChange={(event) => updatePayment(payment.id, { reference: event.target.value })} /></label>
                     {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && <label className="sales-payment-reference"><span>Efectivo recibido (solo cálculo de vuelto)</span><input inputMode="decimal" value={payment.cashReceived ?? ""} placeholder={currency === "USD" ? "0,0000" : "0,00"} onChange={(event) => updatePayment(payment.id, { cashReceived: normalizeDecimalInput(event.target.value) })} /></label>}
                     {payment.method === "cash" && cart.length > 0 && (currency === "USD" || computed.totalVes !== null) && payment.cashReceived?.trim() && <p className="sales-cash-change" role="status">{cashChangeMessage(payment)}</p>}

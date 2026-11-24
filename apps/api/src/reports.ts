@@ -106,6 +106,11 @@ export function formatCsvNumericCell(value: string): string {
   if (!/^-?(0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(value)) throw new TypeError("Invalid CSV numeric value.");
   return value;
 }
+export function formatCsvQuantityCell(value: string): string {
+  const numeric = formatCsvNumericCell(value);
+  const trimmed = numeric.includes(".") ? numeric.replace(/0+$/, "").replace(/\.$/, "") : numeric;
+  return formatCsvNumericCell(trimmed);
+}
 export function subtractNumeric(left: string, right: string, precision = 14, scale = 4): string {
   return formatNumeric(parseNumeric(left, precision, scale) - parseNumeric(right, precision, scale), precision, scale);
 }
@@ -377,7 +382,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         for(const r of result.items){
           const line=[formatSafeCsvCell(r.branch_name),formatSafeCsvCell(r.warehouse_name),formatSafeCsvCell(r.sku),
             formatSafeCsvCell(r.barcode??""),formatSafeCsvCell(r.product_name),formatSafeCsvCell(r.unit),
-            formatCsvNumericCell(r.on_hand),formatCsvNumericCell(r.reserved),formatCsvNumericCell(r.available),
+            formatCsvQuantityCell(r.on_hand),formatCsvQuantityCell(r.reserved),formatCsvQuantityCell(r.available),
             formatCsvNumericCell(r.price_usd),formatCsvNumericCell(r.retail_valuation_usd)];
           if(result.includeValuation)line.push(formatCsvNumericCell(r.cost_usd),formatCsvNumericCell(r.cost_valuation_usd));
           data.push(line);

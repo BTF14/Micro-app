@@ -140,7 +140,7 @@ function formatBcvOutcome(value: string | null): string {
   if (!value) return "sin intentos";
   const labels: Record<string, string> = {
     inserted: "insertada", unchanged: "sin cambios", skipped: "omitida",
-    failed: "fallida", running: "en ejecución",
+    failed: "fallida", running: "en ejecución", older: "anterior descartada", superseded: "reemplazada",
   };
   return labels[value.toLowerCase()] ?? value.replace(/[_-]+/g, " ").toLowerCase();
 }
@@ -652,7 +652,7 @@ export default function App() {
           {(organization?.role === "owner" || organization?.role === "admin") && (
             <BcvSyncAdminPanel organizationId={organization.id} />
           )}
-          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2 id="modules-title">Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <a className="module-card module-card-button" href={`#${VIEW_HASHES[item.view]}`} aria-label={item.ariaLabel} key={item.view} onClick={(event) => { event.preventDefault(); selectView(item.view); }}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></a>)}</div></section>
+          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2 id="modules-title">Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <a className="module-card module-card-button" href={`#${VIEW_HASHES[item.view]}`} aria-label={item.ariaLabel} key={item.view} onClick={(event) => { if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); selectView(item.view); }}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></a>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">
               <span>Micro app · Punto de venta e inventario</span>

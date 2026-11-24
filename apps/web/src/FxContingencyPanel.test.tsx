@@ -182,4 +182,21 @@ describe("FX contingency presentation and branch feedback", () => {
     expect(container.textContent).toContain("Completa la tasa y el motivo para autorizar la contingencia.");
     expect(container.querySelector<HTMLButtonElement>("button.fx-primary-button")?.disabled).toBe(true);
   });
+
+  it.each([
+    ["older", "anterior descartada"],
+    ["superseded", "reemplazada"],
+  ])("translates the BCV %s outcome", async (outcome, expectedLabel) => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(branchList as never)
+      .mockResolvedValueOnce({
+        ...fxState,
+        bcv: { ...fxState.bcv, last_outcome: outcome },
+      } as never);
+    await act(async () => { root.render(<FxContingencyPanel organizationId={ORG} role="admin" />); });
+    await settle(); await settle();
+    expect(container.textContent).toContain(expectedLabel);
+    expect(container.textContent).not.toContain(outcome);
+  });
+
 });

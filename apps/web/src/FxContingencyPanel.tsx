@@ -23,7 +23,7 @@ function formatFxBcvOutcome(value: string | null | undefined): string {
   if (!value) return "sin sincronización";
   const labels: Record<string, string> = {
     inserted: "insertada", unchanged: "sin cambios", skipped: "omitida",
-    failed: "fallida", running: "en ejecución",
+    failed: "fallida", running: "en ejecución", older: "anterior descartada", superseded: "reemplazada",
   };
   return labels[value.toLowerCase()] ?? value.replace(/[_-]+/g, " ").toLowerCase();
 }

@@ -483,4 +483,50 @@ describe("Resumen shortcuts and greeting", () => {
     expect(container.querySelector(".welcome h1")?.textContent).toBe("Hola, correo.");
     expect(container.querySelector(".bcv-admin-outcome")?.textContent).toBe("Resultado: insertada");
   });
+
+  it("preserves native modified-click behavior for dashboard shortcuts", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await renderApp();
+    await settle();
+    const shortcut = container.querySelector<HTMLAnchorElement>(".module-card-button");
+    expect(shortcut?.getAttribute("href")).toBe("#ventas");
+    expect(shortcut).toBeTruthy();
+
+    for (const modifiers of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { altKey: true },
+      { button: 1 },
+    ]) {
+      const event = new MouseEvent("click", { bubbles: true, cancelable: true, ...modifiers });
+      const notCanceled = shortcut!.dispatchEvent(event);
+      expect(notCanceled).toBe(true);
+      expect(event.defaultPrevented).toBe(false);
+      expect(window.location.hash).toBe("");
+    }
+
+    const prePreventedEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    shortcut!.addEventListener("click", (event) => event.preventDefault(), { once: true, capture: true });
+    shortcut!.dispatchEvent(prePreventedEvent);
+    expect(prePreventedEvent.defaultPrevented).toBe(true);
+    expect(window.location.hash).toBe("");
+  });
+
+  it.each(["older", "superseded"])("translates the BCV %s outcome in the summary", async (outcome) => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse({ ...bcvSyncStateResponse, lastOutcome: outcome }))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    const label = outcome === "older" ? "anterior descartada" : "reemplazada";
+    expect(container.querySelector(".bcv-admin-outcome")?.textContent).toBe(`Resultado: ${label}`);
+    expect(container.querySelector(".bcv-admin-outcome")?.textContent).not.toContain(outcome);
+  });
+
 });

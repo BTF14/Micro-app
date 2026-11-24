@@ -382,7 +382,7 @@ export default function SalesPanel({
       const alreadyPaid = sumNumeric(payments.slice(0, -1).filter((p) => p.amount.trim()).map((p) => p.amount), precision, scale);
       const remaining = parseNumeric(expectedPayment, currency === "USD" ? 14 : 16, scale) - parseNumeric(alreadyPaid, precision, scale);
       const formattedRaw = formatNumeric(remaining > 0n ? remaining : 0n, precision, scale);
-      const formatted = currency === "USD" ? formattedRaw.replace(/(\.\d{2,4}?)0+$/, "$1").replace(/\.(\d)$/, ".$10") : formattedRaw;
+      const formatted = currency === "USD" ? formattedRaw.replace(/(\.\d{2,4}?)0+$/, "$1") : formattedRaw;
       const last = payments[payments.length - 1]!;
       updatePayment(last.id, { amount: formatted });
     } catch {

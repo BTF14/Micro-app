@@ -72,13 +72,13 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   },
 ];
 
-const modules: { number: string; title: string; description: string; view: WorkspaceView }[] = [
-  { number: "01", title: "Ventas", description: "Registra ventas con la tasa BCV vigente y consulta cada operación.", view: "sales" },
-  { number: "02", title: "Caja y turnos", description: "Abre turnos, gestiona cobros y revisa los cierres de caja.", view: "register-shifts" },
-  { number: "03", title: "Inventario", description: "Controla existencias, recepciones y conteos por sucursal.", view: "inventory" },
-  { number: "04", title: "Productos", description: "Administra el catálogo y consulta precios exactos en USD.", view: "catalog" },
-  { number: "05", title: "Reportes", description: "Consulta ventas, movimientos y resultados de la operación.", view: "reports" },
-  { number: "06", title: "Gestión cambiaria", description: "Administra autorizaciones temporales de contingencia BCV.", view: "fx-contingency" },
+const modules: { number: string; title: string; description: string; view: WorkspaceView; ariaLabel: string }[] = [
+  { number: "01", title: "Ventas", description: "Registra ventas con la tasa BCV vigente y consulta cada operación.", view: "sales", ariaLabel: "Abrir punto de venta" },
+  { number: "02", title: "Caja y turnos", description: "Abre turnos, gestiona cobros y revisa los cierres de caja.", view: "register-shifts", ariaLabel: "Abrir caja" },
+  { number: "03", title: "Inventario", description: "Controla existencias, recepciones y conteos por sucursal.", view: "inventory", ariaLabel: "Abrir existencias" },
+  { number: "04", title: "Productos", description: "Administra el catálogo y consulta precios exactos en USD.", view: "catalog", ariaLabel: "Abrir catálogo" },
+  { number: "05", title: "Reportes", description: "Consulta ventas, movimientos y resultados de la operación.", view: "reports", ariaLabel: "Abrir informes" },
+  { number: "06", title: "Gestión cambiaria", description: "Administra autorizaciones temporales de contingencia BCV.", view: "fx-contingency", ariaLabel: "Abrir configuración cambiaria" },
 ];
 
 // Shown after a failed GET /auth/google/callback redirect (see apps/api/src/google-auth.ts).
@@ -639,7 +639,7 @@ export default function App() {
           {(organization?.role === "owner" || organization?.role === "admin") && (
             <BcvSyncAdminPanel organizationId={organization.id} />
           )}
-          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <button type="button" className="module-card module-card-button" key={item.view} onClick={() => selectView(item.view)}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></button>)}</div></section>
+          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <button type="button" className="module-card module-card-button" aria-label={item.ariaLabel} key={item.view} onClick={() => selectView(item.view)}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></button>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">
               <span>Micro app · Punto de venta e inventario</span>

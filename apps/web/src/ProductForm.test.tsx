@@ -162,6 +162,13 @@ describe("product form", () => {
     expect(container.textContent).toContain("no pueden ser negativos");
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("starts new product cost and minimum stock fields empty with placeholders", async () => {
+    await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
+    expect(field("Costo USD").value).toBe(""); expect(field("Costo USD").getAttribute("placeholder")).toBe("0.00");
+    expect(field("Stock mínimo").value).toBe(""); expect(field("Stock mínimo").getAttribute("placeholder")).toBe("0");
+    expect(field("Costo USD").hasAttribute("required")).toBe(true); expect(field("Stock mínimo").hasAttribute("required")).toBe(false);
+  });
+
   it("fills the barcode from the shared scanner without submitting the form", async () => {
     await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
     await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Escanear")?.click(); });

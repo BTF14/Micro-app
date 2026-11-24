@@ -193,7 +193,7 @@ export default function ProductForm({ organizationId, product, onCancel, onSaved
         </label>
         <label>
           Stock mínimo
-          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode={draft.quantity_mode === "integer" ? "numeric" : "decimal"} step={draft.quantity_mode === "integer" ? "1" : "0.001"} autoComplete="off" placeholder="0" required={!product} />
+          <input value={draft.minimum_stock} onChange={(event) => update("minimum_stock", normalizeDecimalInput(event.target.value))} inputMode={draft.quantity_mode === "integer" ? "numeric" : "decimal"} step={draft.quantity_mode === "integer" ? "1" : "0.001"} autoComplete="off" placeholder="0" />
           <span className="product-field-hint">{draft.quantity_mode === "integer" ? "Debe ser un número entero." : "Cantidad con hasta 3 decimales."} {product ? "Déjalo vacío para conservar el mínimo actual." : ""}</span>
         </label>
         {product && (

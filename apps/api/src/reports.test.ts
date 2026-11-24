@@ -64,7 +64,8 @@ describe("CSV report presentation",()=>{
    {method:"other",currency:"USD",amount:"2.0000",reference:"+SUM(2,2)",usd_equivalent_snapshot:"2.0000"},
   ]);
   expect(formatSafeCsvCell(summary)).toContain("Efectivo: VES 500.00 (Ref: 12354; eq. USD 0.5435)");
-  expect(formatSafeCsvCell(summary)).toContain("'+SUM(2,2)");
+  expect(summary).toContain("Ref: +SUM(2,2)");
+  expect(formatSafeCsvCell("+SUM(2,2)")).toBe("\"\'+SUM(2,2)\"");
   expect(summary).toContain("Otro: USD 2.0000");
  });
  it("builds the sales TOTAL row with unquoted numeric values and disclaimer",()=>{

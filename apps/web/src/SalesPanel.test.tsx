@@ -221,7 +221,7 @@ describe("SalesPanel", () => {
     await render();
     await act(async () => { click("Agregar producto D"); });
     const qtyD = container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto D"]')!;
-    expect(qtyD.value).toBe("0.500");
+    expect(qtyD.value).toBe("0.5");
     expect(container.querySelector<HTMLButtonElement>('[aria-label="Restar Producto D"]')?.disabled).toBe(true);
     await act(async () => { click("Monto exacto"); });
     const refInput = container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[1]!;

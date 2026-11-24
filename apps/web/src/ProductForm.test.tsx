@@ -142,7 +142,7 @@ describe("product form", () => {
 
   it("rejects fractional minimum stock in integer mode before sending a request", async () => {
     await act(async () => { root.render(<ProductForm organizationId="org-1" onCancel={vi.fn()} onSaved={vi.fn()} />); });
-    await act(async () => { setValue(field("SKU"), "SKU-1"); setValue(field("Nombre"), "Producto"); setValue(field("Precio USD"), "1.00"); setValue(field("Stock mínimo"), "0.500"); });
+    await act(async () => { setValue(field("SKU"), "SKU-1"); setValue(field("Nombre"), "Producto"); setValue(field("Precio USD"), "1.00"); setValue(field("Costo USD"), "1.00"); setValue(field("Stock mínimo"), "0.500"); });
     await submitForm();
     expect(fetch).not.toHaveBeenCalled();
     expect(container.textContent).toContain("El stock mínimo debe ser entero");
@@ -156,6 +156,7 @@ describe("product form", () => {
       setValue(field("SKU"), "BAD-001");
       setValue(field("Nombre"), "Producto inválido");
       setValue(field("Precio USD"), "-1.0000");
+      setValue(field("Costo USD"), "1.0000");
     });
     await submitForm();
 

@@ -364,6 +364,7 @@ describe("Hash navigation", () => {
   await act(async()=>reports?.click());
   expect(window.sessionStorage.getItem("micro-app:active-view")).toBe("reports");
   await act(async()=>root.unmount());
+  root=createRoot(container);
   window.history.replaceState({}, "", "/");
   await renderWithRole("owner");
   expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");
@@ -373,7 +374,7 @@ describe("Hash navigation", () => {
   const overview=[...container.querySelectorAll("a")].find(x=>x.textContent?.includes("Resumen"));
   await act(async()=>overview?.click());
   expect(window.sessionStorage.getItem("micro-app:active-view")).toBe("overview");
-  await act(async()=>root.unmount()); window.history.replaceState({}, "", "/"); await renderWithRole("owner");
+  await act(async()=>root.unmount()); root=createRoot(container); window.history.replaceState({}, "", "/"); await renderWithRole("owner");
   expect(container.querySelector("#reports-title")).toBeNull(); expect(window.sessionStorage.getItem("micro-app:active-view")).toBe("overview");
  });
  it("falls back to overview when the role cannot access #ventas",async()=>{window.history.replaceState({},"","/#ventas");await renderWithRole("inventory");expect(container.textContent).toContain("Hola, Ana.");expect(container.querySelector("#reports-title")).toBeNull();expect(window.location.hash).toBe("#resumen");expect(vi.mocked(fetch).mock.calls.some(call=>String(call[0]).includes("/register-shifts"))).toBe(false)});

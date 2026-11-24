@@ -124,6 +124,5 @@
 .sales-cash-change{grid-column:1/-1;margin:0;color:#315f43;font-size:.7rem;font-weight:700;line-height:1.5}
 
 /* Keep authenticated form controls above the mobile auto-zoom threshold. */
-.catalog-panel input,.catalog-panel select,.catalog-panel textarea,.sales-panel input,.sales-panel select,.sales-panel textarea,.register-shifts-panel input,.register-shifts-panel select,.register-shifts-panel textarea,.reports-panel input,.reports-panel select,.reports-panel textarea{font-size:max(1rem,16px)}
 
 .sales-panel input,.sales-panel select,.sales-panel textarea{font-size:max(1rem,16px)}

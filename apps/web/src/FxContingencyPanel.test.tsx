@@ -122,3 +122,64 @@ describe("FxContingencyPanel", () => {
     expect(container.textContent).not.toContain("Delegación de administradores");
   });
 });
+
+
+describe("FX contingency presentation and branch feedback", () => {
+  it("formats authorization expiry in Caracas and translates the BCV fallback outcome", async () => {
+    const expiresAt = "2026-11-21T19:30:00.000Z";
+    const expectedExpiry = new Intl.DateTimeFormat("es-VE", {
+      dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas",
+    }).format(new Date(expiresAt));
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(branchList as never)
+      .mockResolvedValueOnce({
+        ...fxState,
+        authorization: {
+          id: "auth-1", rate: "920.00000000", reference_rate_value: "918.76620000",
+          reference_exchange_rate_id: "rate-1", reference_effective_date: "2026-11-20",
+          deviation_bps: 13, reason: "Prueba", starts_at: "2026-11-21T15:00:00.000Z",
+          expires_at: expiresAt, status: "active", authorized_by_user_id: "owner-1",
+          elevated_confirmation_at: null,
+        },
+        bcv: { last_outcome: "inserted", last_effective_date: "2026-11-20" },
+      } as never);
+    await act(async () => { root.render(<FxContingencyPanel organizationId={ORG} role="admin" />); });
+    await settle(); await settle();
+    expect(container.textContent).toContain("insertada");
+    expect(container.textContent).toContain(expectedExpiry);
+    expect(container.textContent).not.toContain(expiresAt);
+  });
+
+  it("clears an old branch error as soon as another branch is selected", async () => {
+    const twoBranches = { branches: [
+      { id: BRANCH, name: "Central", slug: "central" },
+      { id: "33333333-4444-4555-8666-777777777777", name: "Norte", slug: "norte" },
+    ] };
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(twoBranches as never)
+      .mockRejectedValueOnce(new Error("Fallo de Central"))
+      .mockResolvedValueOnce(fxState as never);
+    await act(async () => { root.render(<FxContingencyPanel organizationId={ORG} role="admin" />); });
+    await settle(); await settle();
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Fallo de Central");
+    const select = container.querySelector<HTMLSelectElement>("select")!;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
+      setter?.call(select, "33333333-4444-4555-8666-777777777777");
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    await settle();
+  });
+
+  it("shows concise validation help while authorization requirements are missing", async () => {
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce(branchList as never)
+      .mockResolvedValueOnce(fxState as never);
+    await act(async () => { root.render(<FxContingencyPanel organizationId={ORG} role="admin" />); });
+    await settle(); await settle();
+    expect(container.textContent).toContain("El PIN debe tener al menos 8 caracteres.");
+    expect(container.textContent).toContain("Completa la tasa y el motivo para autorizar la contingencia.");
+    expect(container.querySelector<HTMLButtonElement>("button.fx-primary-button")?.disabled).toBe(true);
+  });
+});

@@ -72,11 +72,13 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   },
 ];
 
-const modules = [
-  { number: "01", title: "Caja y ventas", description: "Abre tu turno, registra ventas y cobra con la tasa BCV vigente.", status: "Disponible · caja y punto de venta" },
-  { number: "02", title: "Inventario", description: "Consulta, recepción de mercancía y conteos físicos por sucursal y almacén.", status: "Disponible · operaciones según permisos" },
-  { number: "03", title: "Productos", description: "Catálogo y precios exactos en USD.", status: "Disponible · catálogo en USD" },
-  { number: "04", title: "Tasa BCV", description: "Conversión a VES con fuente y fecha verificables.", status: "Disponible · fuente oficial" },
+const modules: { number: string; title: string; description: string; view: WorkspaceView }[] = [
+  { number: "01", title: "Ventas", description: "Registra ventas con la tasa BCV vigente y consulta cada operación.", view: "sales" },
+  { number: "02", title: "Caja y turnos", description: "Abre turnos, gestiona cobros y revisa los cierres de caja.", view: "register-shifts" },
+  { number: "03", title: "Inventario", description: "Controla existencias, recepciones y conteos por sucursal.", view: "inventory" },
+  { number: "04", title: "Productos", description: "Administra el catálogo y consulta precios exactos en USD.", view: "catalog" },
+  { number: "05", title: "Reportes", description: "Consulta ventas, movimientos y resultados de la operación.", view: "reports" },
+  { number: "06", title: "Gestión cambiaria", description: "Administra autorizaciones temporales de contingencia BCV.", view: "fx-contingency" },
 ];
 
 // Shown after a failed GET /auth/google/callback redirect (see apps/api/src/google-auth.ts).
@@ -133,6 +135,15 @@ type BcvSyncStateResponse = {
   isStaleRunning: boolean;
   staleRunningThresholdSeconds: number;
 };
+
+function formatBcvOutcome(value: string | null): string {
+  if (!value) return "sin intentos";
+  const labels: Record<string, string> = {
+    inserted: "insertada", unchanged: "sin cambios", skipped: "omitida",
+    failed: "fallida", running: "en ejecución",
+  };
+  return labels[value.toLowerCase()] ?? value.replace(/[_-]+/g, " ").toLowerCase();
+}
 
 function formatBcvSyncTimestamp(value: string | null): string {
   if (!value) return "Sin registro";
@@ -241,17 +252,17 @@ function BcvSyncAdminPanel({ organizationId }: { organizationId: string }) {
         <>
           <div className="bcv-admin-status-row">
             <span className={`bcv-admin-status ${state.health}`}>{healthLabel}</span>
-            <span className="bcv-admin-outcome">Resultado: {state.lastOutcome ?? "sin intentos"}</span>
+            <span className="bcv-admin-outcome">Resultado: {formatBcvOutcome(state.lastOutcome)}</span>
           </div>
           {state.isStaleRunning && (
             <p className="bcv-admin-error" role="alert">
-              La sincronización lleva al menos {Math.ceil(state.staleRunningThresholdSeconds / 60)} minutos atascada en running. El checkout sigue bloqueado por seguridad hasta que se complete una sincronización válida.
+              La sincronización lleva al menos {Math.ceil(state.staleRunningThresholdSeconds / 60)} minutos atascada en ejecución. El checkout sigue bloqueado por seguridad hasta que se complete una sincronización válida.
             </p>
           )}
           <dl className="bcv-admin-grid">
             <div><dt>Último intento</dt><dd>{formatBcvSyncTimestamp(state.lastAttemptAt)}</dd></div>
             <div><dt>Último éxito</dt><dd>{formatBcvSyncTimestamp(state.lastSuccessAt)}</dd></div>
-            <div><dt>Fecha efectiva reportada</dt><dd>{state.lastEffectiveDate ?? "Sin registro"}</dd></div>
+            <div><dt>Fecha efectiva reportada</dt><dd>{state.lastEffectiveDate ? formatBcvEffectiveDate(state.lastEffectiveDate) : "Sin registro"}</dd></div>
             <div><dt>Tiempo desde el intento</dt><dd>{formatBcvAttemptAge(state.attemptAgeSeconds)}</dd></div>
           </dl>
           {state.lastErrorCode && <p className="bcv-admin-error-code">Código del último error: <code>{state.lastErrorCode}</code></p>}
@@ -554,6 +565,9 @@ export default function App() {
 
   const user = session.user;
   const organization = session.organizations[0];
+  const firstName = user.display_name.trim().split(/\s+/)[0] ?? "";
+  const greetingName = firstName.includes("@") ? firstName.split("@")[0] : firstName;
+  const visibleShortcuts = modules.filter((item) => roleCanAccessView(organization?.role, item.view));
   const renderedView: WorkspaceView = roleCanAccessView(organization?.role, activeView) ? activeView : "overview";
 
   return (
@@ -606,8 +620,8 @@ export default function App() {
           )}
           {renderedView === "overview" ? (
           <>
-          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {user.display_name.split(" ")[0]}.</h1><p className="welcome-copy">Tu espacio de trabajo ya está listo. El catálogo y la consulta de existencias por sucursal están disponibles; ya puedes registrar ventas desde tu turno de caja y consultar los movimientos de inventario disponibles.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
-          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Ya puedes consultar existencias por sucursal y almacén; las ventas se registran desde el módulo Ventas cuando tu turno está abierto y existe una tasa BCV vigente.</p></div><span className="setup-status">Acceso seguro</span></section>
+          <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {greetingName}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo para operar: administra el catálogo, controla el inventario por sucursal, gestiona la caja, registra ventas y consulta los reportes disponibles.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
+          <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Desde aquí puedes gestionar el catálogo, inventario, caja y ventas, y dar seguimiento a la operación mediante los reportes disponibles.</p></div><span className="setup-status">Acceso seguro</span></section>
           <section className="exchange-rate-panel" aria-live="polite" aria-label="Tasa oficial del Banco Central de Venezuela">
             <div className="exchange-rate-main">
               <p className="eyebrow">TIPO DE CAMBIO OFICIAL</p>
@@ -625,7 +639,7 @@ export default function App() {
           {(organization?.role === "owner" || organization?.role === "admin") && (
             <BcvSyncAdminPanel organizationId={organization.id} />
           )}
-          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">04 módulos previstos</span></div><div className="module-grid">{modules.map((module) => <article className="module-card" key={module.number}><div className="module-card-top"><span className="module-number">{module.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{module.title}</h3><p>{module.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>{module.status}</span></div></article>)}</div></section>
+          <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2>Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <button type="button" className="module-card module-card-button" key={item.view} onClick={() => selectView(item.view)}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></button>)}</div></section>
           <footer className="main-footer">
             <div className="main-footer-row">
               <span>Micro app · Punto de venta e inventario</span>

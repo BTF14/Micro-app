@@ -396,3 +396,44 @@ describe("Reports navigation", () => {
     expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");
   });
 });
+
+
+describe("Resumen shortcuts and greeting", () => {
+  it("navigates to a module when a dashboard shortcut is selected", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse(authResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+    await renderApp();
+    await settle();
+    const shortcut = container.querySelector<HTMLButtonElement>(".module-card-button");
+    expect(shortcut).toBeTruthy();
+    await act(async () => { shortcut?.click(); });
+    await settle();
+    expect(container.querySelector("#sales-title")?.textContent ?? container.textContent).toContain("Ventas");
+  });
+
+  it("hides caja and ventas shortcuts for an inventory-only role", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ ...authResponse, organizations: [{ ...organizations[0], role: "inventory" }] }))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    const shortcuts = [...container.querySelectorAll<HTMLButtonElement>(".module-card-button")].map((item) => item.textContent ?? "");
+    expect(shortcuts.some((label) => label.includes("Caja y turnos"))).toBe(false);
+    expect(shortcuts.some((label) => label.includes("Ventas"))).toBe(false);
+    expect(container.querySelector(".module-count")?.textContent).toContain("4 accesos disponibles");
+  });
+
+  it("shortens an email display name and translates the BCV inserted outcome", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ ...authResponse, user: { ...user, display_name: "correo@dominio.com" } }))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    expect(container.querySelector(".welcome h1")?.textContent).toBe("Hola, correo.");
+    expect(container.querySelector(".bcv-admin-outcome")?.textContent).toBe("Resultado: insertada");
+  });
+});

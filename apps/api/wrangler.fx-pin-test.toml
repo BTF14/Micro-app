@@ -1,4 +1,0 @@
-name = "micro-app-fx-pin-runtime-test"
-main = "src/fx-pin-worker-test.ts"
-compatibility_date = "2026-11-11"
-workers_dev = false

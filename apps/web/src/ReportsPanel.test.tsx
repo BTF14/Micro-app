@@ -44,7 +44,7 @@ describe("ReportsPanel",()=>{
   const click=vi.spyOn(HTMLAnchorElement.prototype,"click").mockImplementation(()=>{});
   await act(async()=>button("Exportar CSV").click());
   expect(apiDownload).toHaveBeenCalledWith(expect.stringContaining("/reports/sales.csv"));
-  expect(apiDownload).toHaveBeenCalledWith(expect.stringContaining("/reports/sales.csv"),expect.stringMatching(/^reporte-ventas-diario-\\d{4}-\\d{2}-\\d{2}\\.csv$/));
+  expect(apiDownload).toHaveBeenCalledWith(expect.stringContaining("/reports/sales.csv"),expect.stringMatching(/^reporte-ventas-diario-\d{4}-\d{2}-\d{2}\.csv$/));
   expect(click).toHaveBeenCalled();
   expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test");
  });
@@ -57,7 +57,7 @@ describe("ReportsPanel",()=>{
  });
  it("temporarily changes the PDF title and restores it after afterprint",async()=>{
   await render("owner");const originalTitle=document.title;const print=vi.spyOn(window,"print").mockImplementation(()=>{});
-  await act(async()=>button("Imprimir / PDF").click());expect(print).toHaveBeenCalledOnce();expect(document.title).toMatch(/^cierre-caja-principal-\\d{4}-\\d{2}-\\d{2}$/);
+  await act(async()=>button("Imprimir / PDF").click());expect(print).toHaveBeenCalledOnce();expect(document.title).toMatch(/^cierre-caja-principal-\d{4}-\d{2}-\d{2}$/);
   window.dispatchEvent(new Event("afterprint"));expect(document.title).toBe(originalTitle);
  });
  it("groups identical snapshots and formats their effective date in es-VE",async()=>{await render("owner");expect(container.textContent).toContain("3 ventas · VES · 20/11/2026 · Tasa histórica: 918,7662 Bs./USD")});

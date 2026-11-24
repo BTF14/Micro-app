@@ -192,3 +192,7 @@
   .inventory-table td { display: grid; grid-template-columns: minmax(7rem,42%) minmax(0,1fr); gap: .5rem; padding: .45rem 0; text-align: right; overflow-wrap: anywhere; }
   .inventory-table td[data-label="Producto"] { display: block; text-align: left; border-bottom: 1px solid var(--line); padding-bottom: .65rem; margin-bottom: .25rem; }
 }
+
+/* Keep authenticated form controls above the mobile auto-zoom threshold. */
+
+.catalog-panel input,.catalog-panel select,.catalog-panel textarea{font-size:max(1rem,16px)}

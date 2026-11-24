@@ -348,6 +348,14 @@ describe("Micro app authentication flow", () => {
 });
 
 
+describe("Hash navigation", () => {
+ async function renderWithRole(role:string){vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({...authResponse,organizations:[{...organizations[0],role}]}));if(role==="owner"||role==="admin")vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse));vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(bcvRateResponse));await renderApp();await settle();}
+ it("restores #reportes after authentication",async()=>{window.history.replaceState({},"","/#reportes");await renderWithRole("owner");expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");expect(window.location.hash).toBe("#reportes")});
+ it("restores #ventas after authentication",async()=>{window.history.replaceState({},"","/#ventas");await renderWithRole("owner");const b=[...container.querySelectorAll("button")].find(x=>x.textContent?.includes("Ventas"));expect(b?.getAttribute("aria-current")).toBe("page");expect(window.location.hash).toBe("#ventas")});
+ it("handles browser hashchange navigation",async()=>{await renderWithRole("owner");window.history.pushState({},"","/#reportes");await act(async()=>window.dispatchEvent(new HashChangeEvent("hashchange")));expect(container.querySelector("#reports-title")?.textContent).toBe("Reportes");window.history.pushState({},"","/#ventas");await act(async()=>window.dispatchEvent(new HashChangeEvent("hashchange")));expect([...container.querySelectorAll("button")].find(x=>x.textContent?.includes("Ventas"))?.getAttribute("aria-current")).toBe("page")});
+ it("falls back to overview when the role cannot access #ventas",async()=>{window.history.replaceState({},"","/#ventas");await renderWithRole("inventory");expect(container.textContent).toContain("Hola, Ana.");expect(container.querySelector("#reports-title")).toBeNull();expect(window.location.hash).toBe("#resumen");expect(vi.mocked(fetch).mock.calls.some(call=>String(call[0]).includes("/register-shifts"))).toBe(false)});
+});
+
 describe("Reports navigation", () => {
   it("enables Reportes and navigates to its view", async () => {
     vi.mocked(fetch)

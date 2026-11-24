@@ -386,7 +386,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
         if(result.includeValuation)totals.push("",formatCsvNumericCell(result.totalCost!));
         data.push(totals);
         const closing=Array.from({length:header.length},()=>"");
-        closing[closing.length-1]=formatSafeCsvCell(DISCLAIMER);
+        closing[0]=formatSafeCsvCell(DISCLAIMER);
         data.push(closing);
         return csvResponse(c,inventoryCsvFilename(),data);
       }

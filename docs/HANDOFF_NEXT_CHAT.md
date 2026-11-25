@@ -1,3 +1,14 @@
+# Handoff vigente — sincronización post-PR #417 — 2026-11-25
+
+Fuente única del estado operativo y del SHA vivo: **[docs/CURRENT_STATE.md](CURRENT_STATE.md)**. Consultarlo primero y verificar el HEAD actual de `main`, PRs y checks en GitHub antes de actuar. El README describe la visión pública/arquitectura; no duplicar aquí sus tablas ni el registro histórico de [STATE_JOURNAL.md](STATE_JOURNAL.md).
+
+- Base auditada: `main` = `e7186ae3d86873c577ce4fc8f922c364e3298919`; PR #417 MERGED; cero PRs funcionales abiertas en el corte.
+- Próximo y único frente: **Pre-prod Audit → `ve-fx-compliance-review` → AC-6 / AC-7 → Issue #53**.
+- No cambiar los gates: AC-6 OPEN; Issue #53 OPEN/P0; `BCV_SYNC_ENABLED=false`; `FX_CONTINGENCY_ENABLED=false`; `PRODUCTION: NOT READY`; presupuesto `$0`.
+- Toda tarea de producto nueva requiere autorización y rama/PR separada; no inferir autorización de producción, Neon, secretos, billing o deploy a partir de CI verde.
+
+---
+
 # Handoff vigente — Micro-PR 6 Paquete Final Visual y Manual — 2026-11-22
 
 ## Punto de partida y estado

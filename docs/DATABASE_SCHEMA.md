@@ -1,13 +1,12 @@
-# Estado vigente del esquema — 2026-11-20
+# Estado vigente del esquema — corte post-PR #417 — 2026-11-25
 
-- **GitHub main:** `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`, migraciones 0001–0027.
-- **PR #390 OPEN / Draft:** rama `feat/carril-b1-quantity-mode-snapshots-20261120`; propone migración aditiva 0028 con `products.quantity_mode`, snapshots de `sale_items` y guards de cantidades. Hasta merge, 0028 no forma parte del esquema de main.
-- **Neon main:** 0027 según el estado de partida aportado por el propietario; no hubo acceso ni escritura de Neon en esta tarea.
-- El esquema de main incluye ventas/pagos/snapshots financieros, turnos, sucursales, almacenes, balances, Kardex append-only, conteos/recepciones y roles separados `microapp_migrator`, `microapp_runtime`, `microapp_bcv_sync` y `microapp_backup`.
-- No usar `products.stock_quantity` como fuente de stock: desde 0006 la fuente de verdad es `inventory_balances` proyectada desde `warehouse_inventory_movements`.
-- Producción **NOT READY**. No inferir aplicación remota desde CI ni ejecutar 0028 en Neon main.
+- **GitHub main:** `e7186ae3d86873c577ce4fc8f922c364e3298919`; migraciones versionadas `0001–0030` en `apps/api/migrations/` (DDL y assertions). Incluyen `0028` para `products.quantity_mode` y snapshots de venta, `0029` para lotes de importación de catálogo y `0030` para la corrección de transición de expiración FX.
+- **Fuente de verdad remota:** este encabezado acredita el código/migraciones versionados en GitHub, no la aplicación en Neon `main`. Verificar el ledger remoto por procedimiento autorizado antes de afirmar su versión; esta tarea no consulta ni modifica Neon.
+- **Modelo vigente:** catálogo con modo de cantidad; ventas con snapshots; inventario por almacén mediante ledger append-only y balances proyectados; sucursales, cajas/turnos, recepciones, tasas BCV, contingencia FX y lotes de importación.
+- **API:** las rutas y contratos montados se describen en [API_INTEGRATION.md](API_INTEGRATION.md); estado de PRs y siguiente paso solo en [CURRENT_STATE.md](CURRENT_STATE.md).
+- **Gates:** AC-6 OPEN; Issue #53 OPEN/P0; `BCV_SYNC_ENABLED=false`; `FX_CONTINGENCY_ENABLED=false`; `PRODUCTION: NOT READY`; presupuesto `$0`.
 
-Los snapshots fechados inferiores son históricos; revalidar SHA, ledger y permisos en vivo antes de cualquier acción.
+Los snapshots fechados inferiores son históricos; no reutilizar SHA ni inferir aplicación remota sin revalidación.
 
 ---
 

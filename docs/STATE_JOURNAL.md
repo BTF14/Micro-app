@@ -1,3 +1,14 @@
+## Turno 62 — sincronización documental post-PR #417 (2026-11-25)
+
+- GitHub `main` verificado en `e7186ae3d86873c577ce4fc8f922c364e3298919`, merge commit de PR #417; búsqueda de PRs abiertas en `BTF14/Micro-app` devolvió cero.
+- Se consolida el cierre de v1.1/UI: nueve vistas, importador CSV, escáner móvil, cierres/Reportes/CSV, `quantity_mode`, paginación alfabética y borrador recuperable de Ventas están integrados en `main`; migraciones versionadas 0001–0030.
+- Se sincronizan visión pública (README), estado operativo (CURRENT_STATE), handoff, encabezados vigentes de esquema/API/plan y este diario. Los snapshots históricos inferiores se preservan.
+- Siguiente paso único: Pre-prod Audit → `ve-fx-compliance-review` → AC-6 / AC-7 → Issue #53.
+- Gates intactos: AC-6 OPEN; Issue #53 OPEN/P0; `BCV_SYNC_ENABLED=false`; `FX_CONTINGENCY_ENABLED=false`; `PRODUCTION: NOT READY`; presupuesto `$0`.
+- Solo documentación; no se tocaron apps, packages, functions, scripts, workflows, SQL/migraciones, readiness ni docs/progress.
+
+---
+
 ## Turno 61 — Paso 5 Carril B1 / PR #390 (2026-11-20)
 
 - Main verificado en GitHub: `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`; PR #388 y #389 confirmadas MERGED. PR #385/#386 siguen OPEN y fuera de alcance.

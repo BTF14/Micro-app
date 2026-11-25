@@ -1,12 +1,19 @@
-# Addendum API vivo — 2026-11-20
+# Addendum API vivo — corte post-PR #417 — 2026-11-25
 
-**GitHub main:** `5b9bbec69b7fcd006dcbfa9dd4a9a7bd1ac80061`, posterior a PR #388/#389 (ambas MERGED). El inventario de rutas montadas se verifica en `apps/api/src/index.ts`: auth/Google, sucursales, catálogo GET/POST/PATCH, conteos, lectura de inventario, recepciones, checkout, turnos de caja, estructura organizacional, contingencia FX y exchange rates, además de `/health`.
+**GitHub main:** `e7186ae3d86873c577ce4fc8f922c364e3298919`. El registro de rutas en `apps/api/src/index.ts` monta auth/Google; sucursales; catálogo y escritura; conteos, lectura y recepciones de inventario; importador CSV; checkout y detalle branch-scoped de ventas; turnos/cierres; reportes; estructura organizacional; contingencia FX; exchange rates/estado BCV; y `/health`.
 
-- Main incluye checkout transaccional, pagos, movimientos de inventario y reconciliación diferida en PostgreSQL; el addendum 2026-11-08 que afirma que no hay handler de checkout es histórico y está supersedido.
-- **PR #390 OPEN / Draft:** añade `quantity_mode`, snapshots de línea y GET branch-scoped de detalle/recibo de venta. Es trabajo de rama, todavía no forma parte de main.
-- El GET de detalle en PR #390 usa permiso `reports.sales.own_shift`; cashier queda limitado a ventas creadas por su usuario dentro de la sucursal, owner/admin a la sucursal autorizada. El payload no expone `cost_usd` ni `unit_cost_usd`.
-- **Neon main:** estado de partida aportado por el propietario = migración 0027. No se consultó ni modificó Neon en la ejecución de PR #390.
-- Producción continúa **NOT READY**; checks y previews se atribuyen siempre al HEAD exacto, nunca a un SHA anterior.
+Rutas verificadas en los módulos montados:
+- Catálogo: `GET /api/orgs/:organizationId/catalog` (incluye cursor `sort=name`); `POST` y `PATCH` para escritura.
+- Importador: `POST /api/orgs/:organizationId/catalog/imports/preview` y `POST /api/orgs/:organizationId/catalog/imports/apply` (migración 0029).
+- Inventario: lectura y movimientos por sucursal/almacén; conteos y recepciones.
+- Ventas: `POST /api/orgs/:organizationId/branches/:branchId/checkout`; `GET .../sales/:saleId`. Checkout aplica `quantity_mode` y snapshots.
+- Turnos/cierres: `GET /api/orgs/:organizationId/register-shifts`, vistas current y registers, creación y cierre de turno, además de `GET /api/orgs/:organizationId/branches/:branchId/register-shifts/:shiftId/closure-summary`.
+- Reportes: `GET /api/orgs/:organizationId/reports/sales`, `sales.csv`, `inventory` e `inventory.csv`.
+- FX/BCV: sync-state, historial/latest de exchange rates, delegaciones y endpoints de contingencia.
+
+Main versiona migraciones `0001–0030`. `quantity_mode`, importación CSV y la paginación alfabética están integrados en el código de main; la contingencia manual continúa implementada pero deshabilitada por `FX_CONTINGENCY_ENABLED=false`. Las rutas y sus permisos se mantienen sujetas a autorización server-side.
+
+El estado de PRs, gates y próximo paso se mantiene exclusivamente en [CURRENT_STATE.md](CURRENT_STATE.md). No inferir que Neon main está migrada a 0030 ni que producción está lista: `PRODUCTION: NOT READY`.
 
 Los addenda y snapshots inferiores se conservan como historia y no prevalecen sobre este corte.
 

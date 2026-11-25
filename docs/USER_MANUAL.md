@@ -46,7 +46,7 @@ Es la bienvenida y el punto de partida. Muestra el nombre de tu negocio, el esta
 
 Aquí se consulta el catálogo con nombre, código, unidad, precio en dólares y estado del producto.
 
-- Usa **Buscar** para localizar por nombre, SKU o código de barras.
+- Usa **Buscar** para localizar por nombre, SKU o código de barras. Los listados admiten paginación alfabética de 25 elementos; continúa con los controles de página para recorrer el catálogo.
 - Si tu rol lo permite, pulsa **Nuevo producto** para registrar uno o **Editar** para corregir sus datos.
 - **Importar CSV** permite cargar un archivo preparado para el catálogo; revisa el resumen y los avisos antes de confirmar.
 
@@ -70,7 +70,7 @@ Antes de registrar ventas, el cajero debe abrir un turno en la caja asignada. Se
 
 ### 6. Ventas
 
-Con un turno abierto, busca productos, agrégalos al carrito, revisa cantidades y el total. Elige la moneda de cobro (USD o VES), el método de pago y completa el importe exacto. La venta solo se habilita cuando existe una tasa BCV vigente o una contingencia autorizada y habilitada, según corresponda.
+Con un turno abierto, busca productos y agrégalos al carrito. En Ventas, el escáner se abre desde el buscador integrado **Consultar precio** (`QuickProductLookup`): pulsa su botón **Escanear**, selecciona el producto leído y luego agrégalo al carrito. Revisa cantidades y total. El modo de cantidad de cada producto determina si admite unidades enteras o fraccionarias. Si sales de la pantalla, el borrador de la venta se conserva para que puedas recuperarlo al volver. Elige la moneda de cobro (USD o VES), el método de pago y completa el importe exacto. La venta requiere una tasa BCV vigente y validada. La contingencia manual está deshabilitada actualmente (`FX_CONTINGENCY_ENABLED=false`); no cuentes con ella como alternativa de cobro.
 
 **Una moneda por ticket en v1.1:** cada venta se cobra en USD o en VES, no combinando ambas monedas dentro del mismo ticket. Si necesitas cambiar la moneda, revisa el total y los importes antes de cobrar.
 
@@ -93,7 +93,7 @@ Aquí puedes consultar **Cierres de caja**, **Ventas** e **Inventario**, según 
 
 ## 4. Escáner con la cámara del teléfono
 
-El botón **Escanear** está disponible en **Consultar precio**, **Ventas**, **Productos** y **Inventario**.
+El botón **Escanear** está disponible en **Consultar precio**, **Productos** e **Inventario**. En **Ventas** vive dentro del buscador integrado **Consultar precio** (`QuickProductLookup`), no como un control independiente de la pantalla POS.
 
 1. Abre la pantalla y pulsa **Escanear**.
 2. Si el teléfono lo pregunta, permite el uso de la cámara mientras utilizas la aplicación.

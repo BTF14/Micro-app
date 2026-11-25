@@ -25,7 +25,7 @@ const SUPPORT_WHATSAPP_URL = whatsappUrl("Hola, tuve un problema usando Micro ap
 const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "¿Qué es Micro app?",
-    answer: "Es el sistema interno de gestión comercial de tu negocio: inventario, ventas y precios en dólares con conversión a bolívares según la tasa del BCV. Varias partes todavía están en construcción.",
+    answer: "Es el sistema interno de gestión comercial de tu negocio: inventario, ventas y precios en dólares con conversión a bolívares según la tasa del BCV.",
   },
   {
     question: "¿Quién puede entrar?",

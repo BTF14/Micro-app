@@ -164,7 +164,12 @@ export default function SalesPanel({
       const result = await apiRequest<{ shift: Shift | null }>(`${base}/register-shifts/current`);
       if (requestId !== loadSequence.current) return;
       const nextBranchId = result.shift?.branch_id ?? null;
-      if (prevBranchRef.current !== null && prevBranchRef.current !== nextBranchId) {
+      const nextShiftId = result.shift?.id ?? result.shift?.shift_id ?? result.shift?.branch_id ?? null;
+      const shiftChanged = prevShiftIdRef.current !== null && prevShiftIdRef.current !== nextShiftId;
+      if (prevBranchRef.current !== null && (prevBranchRef.current !== nextBranchId || shiftChanged || !result.shift)) {
+        removeSalesDraft(activeDraftKeyRef.current);
+        activeDraftKeyRef.current = null;
+        hydratedDraftKeyRef.current = null;
         const hadCart = cartRef.current.length > 0;
         commitCart([]);
         setReceipt(null);
@@ -177,6 +182,7 @@ export default function SalesPanel({
         if (hadCart) setNotice("Cambió la sucursal o el turno activo. Se limpió el carrito.");
       }
       prevBranchRef.current = nextBranchId;
+      prevShiftIdRef.current = nextShiftId;
       setShift(result.shift);
       setShiftLoaded(true);
       setWarehouses([]);
@@ -224,6 +230,10 @@ export default function SalesPanel({
     if (prevOrgRef.current !== organizationId) {
       prevOrgRef.current = organizationId;
       prevBranchRef.current = null;
+      prevShiftIdRef.current = null;
+      removeSalesDraft(activeDraftKeyRef.current);
+      activeDraftKeyRef.current = null;
+      hydratedDraftKeyRef.current = null;
       commitCart([]);
       setReceipt(null);
       setCurrency("USD");
@@ -241,8 +251,35 @@ export default function SalesPanel({
     }
   }, [organizationId, shift?.branch_id, warehouseId, warehouses.length]);
 
+  useEffect(() => {
+    if (!shiftLoaded || !warehouseLoaded || !draftKey || hydratedDraftKeyRef.current === draftKey) return;
+    activeDraftKeyRef.current = draftKey;
+    let raw: string | null = null;
+    try { raw = window.sessionStorage.getItem(draftKey); } catch { /* Continue without restoring. */ }
+    const draft = raw === null ? null : parseSalesDraft(raw);
+    if (raw !== null && draft === null) removeSalesDraft(draftKey);
+    if (!receipt && cartRef.current.length === 0 && draft?.cart.length) {
+      commitCart(draft.cart); setCurrency(draft.currency); setPayments(draft.payments);
+      setNotice("Se recuperó la venta que tenías en curso."); skipDraftPersistRef.current = true;
+    } else if (!receipt && cartRef.current.length === 0 && draft && draft.cart.length === 0) {
+      setCurrency(draft.currency); setPayments(draft.payments);
+    }
+    hydratedDraftKeyRef.current = draftKey;
+  }, [shiftLoaded, warehouseLoaded, draftKey, receipt]);
+
+  useEffect(() => {
+    if (!draftKey || hydratedDraftKeyRef.current !== draftKey || receipt) return;
+    if (skipDraftPersistRef.current) { skipDraftPersistRef.current = false; return; }
+    if (cart.length === 0) { removeSalesDraft(draftKey); return; }
+    const payload = { cart: cart.map((line) => ({ product: line.product, quantity: line.quantity })), currency, payments: payments.map(({ method, amount, reference, cashReceived }) => ({ method, amount, reference, ...(cashReceived !== undefined ? { cashReceived } : {}) })) };
+    try { window.sessionStorage.setItem(draftKey, JSON.stringify(payload)); } catch { /* Storage may be blocked or full. */ }
+  }, [draftKey, cart, currency, payments, receipt]);
+
   function changeWarehouse(nextId: string) {
     if (nextId === warehouseId) return;
+    removeSalesDraft(activeDraftKeyRef.current);
+    activeDraftKeyRef.current = null;
+    hydratedDraftKeyRef.current = null;
     setWarehouseId(nextId);
     if (cart.length > 0) {
       commitCart([]);
@@ -433,6 +470,7 @@ export default function SalesPanel({
         { method: "POST", headers: { "Idempotency-Key": idempotencyKey.current }, body: JSON.stringify(body) },
       );
       setReceipt(result);
+      removeSalesDraft(draftKey);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No se pudo completar la venta. Puedes reintentar sin cambiar el cobro.");
     } finally {
@@ -441,6 +479,7 @@ export default function SalesPanel({
   }
 
   function newSale() {
+    removeSalesDraft(draftKey);
     setReceipt(null);
     commitCart([]);
     setLookupReset((value) => value + 1);

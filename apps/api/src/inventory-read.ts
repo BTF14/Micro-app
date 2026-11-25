@@ -105,7 +105,7 @@ export function buildInventoryReadQuery(input: {
         values.push(input.cursorName);
         const nameParameter = values.length;
         values.push(input.cursor);
-        filters.push(`(CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END, lower(p.name), p.id) > (${rankParameter}, ${nameParameter}, ${values.length})`);
+        filters.push("(CASE WHEN p.barcode = $" + exact + " THEN 0 WHEN lower(p.sku) = lower($" + exact + ") THEN 1 ELSE 2 END, lower(p.name), p.id) > ($" + rankParameter + ", $" + nameParameter + ", $" + values.length + ")");
       } else {
         values.push(input.cursorName);
         const nameParameter = values.length;

@@ -56,78 +56,7 @@ beforeEach(() => {
   root = createRoot(container);
   vi.mocked(apiRequest).mockReset();
   vi.stubGlobal("crypto", { ...crypto, randomUUID: vi.fn(() => "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee") });
-  it("restores cart, currency, partial payments and cash received for the same shift and warehouse", async () => {
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
-    await render();
-    await act(async () => { click("Agregar producto A"); });
-    const draftKey = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
-    await act(async () => { setSelectValue(container.querySelector<HTMLSelectElement>(".sales-payments-heading select")!, "VES"); });
-    const amount = container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[0]!;
-    await act(async () => { setInputValue(amount, "0.01"); });
-    const cashLabel = [...container.querySelectorAll("label")].find(label => label.textContent?.includes("Efectivo recibido (solo cálculo de vuelto)"));
-    const received = cashLabel?.querySelector("input");
-    if (!(received instanceof HTMLInputElement)) throw new Error("Cash received input missing");
-    await act(async () => { setInputValue(received, "0.02"); });
-    const saved = JSON.parse(window.sessionStorage.getItem(draftKey) ?? "null");
-    expect(saved).toMatchObject({ currency: "VES", cart: [{ quantity: "1.000" }], payments: [{ amount: "0.01", cashReceived: "0.02" }] });
-    expect(JSON.stringify(saved)).not.toMatch(/idempotencyKey|receipt|error|notice|quantityInput|quantityValid/);
-    await act(async () => root.unmount());
-    root = createRoot(container);
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
-    await render();
-    expect(container.textContent).toContain("Se recuperó la venta que tenías en curso.");
-    expect(container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto A"]')?.value).toBe("1");
-    expect(container.querySelector<HTMLSelectElement>(".sales-payments-heading select")?.value).toBe("VES");
-    expect(container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[0]?.value).toBe("0.01");
-    expect(container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[2]?.value).toBe("0.02");
-  });
 
-  it("discards corrupt or invalid drafts and tolerates blocked or full session storage", async () => {
-    const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
-    window.sessionStorage.setItem(key, "{not-json");
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
-    await render();
-    expect(container.textContent).toContain("Tu carrito está vacío");
-    expect(window.sessionStorage.getItem(key)).toBeNull();
-    const getSpy = vi.spyOn(window.sessionStorage, "getItem").mockImplementation(() => { throw new DOMException("blocked", "SecurityError"); });
-    const setSpy = vi.spyOn(window.sessionStorage, "setItem").mockImplementation(() => { throw new DOMException("full", "QuotaExceededError"); });
-    await act(async () => { click("Agregar producto A"); });
-    expect(container.textContent).toContain("Producto A");
-    getSpy.mockRestore(); setSpy.mockRestore();
-  });
-
-  it("removes the persisted draft after successful checkout and when starting a new sale", async () => {
-    const receipt = { sale_number: "V-DRAFT-01", created_at: "2026-11-14T15:00:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null, lines: [], payments: [] };
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never).mockResolvedValueOnce(receipt as never);
-    await render(); await act(async () => { click("Agregar producto A"); });
-    const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
-    expect(window.sessionStorage.getItem(key)).not.toBeNull();
-    await act(async () => { click("Monto exacto"); });
-    await act(async () => { click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });
-    expect(window.sessionStorage.getItem(key)).toBeNull();
-    await act(async () => { click("Nueva venta"); });
-    expect(window.sessionStorage.getItem(key)).toBeNull();
-  });
-  it("clears the in-memory cart and prior draft when shift_id changes in the same branch", async () => {
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
-    await render(); await act(async () => { click("Agregar producto A"); });
-    const previousKey = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
-    expect(window.sessionStorage.getItem(previousKey)).not.toBeNull();
-    const nextShift = { ...shift, shift_id: "shift-2" };
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift: nextShift } as never).mockResolvedValueOnce({ warehouses } as never);
-    await act(async () => { click("Actualizar"); }); await settle(); await settle();
-    expect(window.sessionStorage.getItem(previousKey)).toBeNull();
-    expect(container.textContent).toContain("Tu carrito está vacío");
-  });
-
-  it("removes a structurally invalid draft instead of restoring it", async () => {
-    const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
-    window.sessionStorage.setItem(key, JSON.stringify({ cart: [], currency: "EUR", payments: [{ method: "cash", amount: "", reference: "" }] }));
-    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
-    await render();
-    expect(container.textContent).toContain("Tu carrito está vacío");
-    expect(window.sessionStorage.getItem(key)).toBeNull();
-  });
 });
 afterEach(async () => {
   await act(async () => root.unmount());
@@ -463,4 +392,76 @@ describe("SalesPanel", () => {
     expect(JSON.stringify(payload)).not.toContain("cashReceived");
   });
 
+  it("restores cart, currency, partial payments and cash received for the same shift and warehouse", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render();
+    await act(async () => { click("Agregar producto A"); });
+    const draftKey = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
+    await act(async () => { setSelectValue(container.querySelector<HTMLSelectElement>(".sales-payments-heading select")!, "VES"); });
+    const amount = container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[0]!;
+    await act(async () => { setInputValue(amount, "0.01"); });
+    const cashLabel = [...container.querySelectorAll("label")].find(label => label.textContent?.includes("Efectivo recibido (solo cálculo de vuelto)"));
+    const received = cashLabel?.querySelector("input");
+    if (!(received instanceof HTMLInputElement)) throw new Error("Cash received input missing");
+    await act(async () => { setInputValue(received, "0.02"); });
+    const saved = JSON.parse(window.sessionStorage.getItem(draftKey) ?? "null");
+    expect(saved).toMatchObject({ currency: "VES", cart: [{ quantity: "1.000" }], payments: [{ amount: "0.01", cashReceived: "0.02" }] });
+    expect(JSON.stringify(saved)).not.toMatch(/idempotencyKey|receipt|error|notice|quantityInput|quantityValid/);
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render();
+    expect(container.textContent).toContain("Se recuperó la venta que tenías en curso.");
+    expect(container.querySelector<HTMLInputElement>('[aria-label="Cantidad de Producto A"]')?.value).toBe("1");
+    expect(container.querySelector<HTMLSelectElement>(".sales-payments-heading select")?.value).toBe("VES");
+    expect(container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[0]?.value).toBe("0.01");
+    expect(container.querySelectorAll<HTMLInputElement>(".sales-payment-row input")[2]?.value).toBe("0.02");
+  });
+
+  it("discards corrupt or invalid drafts and tolerates blocked or full session storage", async () => {
+    const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
+    window.sessionStorage.setItem(key, "{not-json");
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render();
+    expect(container.textContent).toContain("Tu carrito está vacío");
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    const getSpy = vi.spyOn(window.sessionStorage, "getItem").mockImplementation(() => { throw new DOMException("blocked", "SecurityError"); });
+    const setSpy = vi.spyOn(window.sessionStorage, "setItem").mockImplementation(() => { throw new DOMException("full", "QuotaExceededError"); });
+    await act(async () => { click("Agregar producto A"); });
+    expect(container.textContent).toContain("Producto A");
+    getSpy.mockRestore(); setSpy.mockRestore();
+  });
+
+  it("removes the persisted draft after successful checkout and when starting a new sale", async () => {
+    const receipt = { sale_number: "V-DRAFT-01", created_at: "2026-11-14T15:00:00Z", currency: "USD", subtotal_usd: "0.0002", total_usd: "0.0002", total_ves: "0.01", bcv_rate: "36.50000000", fx_rate: "36.50000000", fx_source: "bcv_official", fx_receipt_label: "Tasa BCV", fx_authorization_id: null, lines: [], payments: [] };
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never).mockResolvedValueOnce(receipt as never);
+    await render(); await act(async () => { click("Agregar producto A"); });
+    const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
+    expect(window.sessionStorage.getItem(key)).not.toBeNull();
+    await act(async () => { click("Monto exacto"); });
+    await act(async () => { click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    await act(async () => { click("Nueva venta"); });
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+  });
+  it("clears the in-memory cart and prior draft when shift_id changes in the same branch", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render(); await act(async () => { click("Agregar producto A"); });
+    const previousKey = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
+    expect(window.sessionStorage.getItem(previousKey)).not.toBeNull();
+    const nextShift = { ...shift, shift_id: "shift-2" };
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift: nextShift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await act(async () => { click("Actualizar"); }); await settle(); await settle();
+    expect(window.sessionStorage.getItem(previousKey)).toBeNull();
+    expect(container.textContent).toContain("Tu carrito está vacío");
+  });
+
+  it("removes a structurally invalid draft instead of restoring it", async () => {
+    const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
+    window.sessionStorage.setItem(key, JSON.stringify({ cart: [], currency: "EUR", payments: [{ method: "cash", amount: "", reference: "" }] }));
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render();
+    expect(container.textContent).toContain("Tu carrito está vacío");
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+  });
 });

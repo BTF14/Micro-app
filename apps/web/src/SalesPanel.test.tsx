@@ -425,8 +425,12 @@ describe("SalesPanel", () => {
     await render();
     expect(container.textContent).toContain("Tu carrito está vacío");
     expect(window.sessionStorage.getItem(key)).toBeNull();
+    await act(async () => root.unmount());
+    root = createRoot(container);
     const getSpy = vi.spyOn(window.sessionStorage, "getItem").mockImplementation(() => { throw new DOMException("blocked", "SecurityError"); });
     const setSpy = vi.spyOn(window.sessionStorage, "setItem").mockImplementation(() => { throw new DOMException("full", "QuotaExceededError"); });
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render();
     await act(async () => { click("Agregar producto A"); });
     expect(container.textContent).toContain("Producto A");
     getSpy.mockRestore(); setSpy.mockRestore();

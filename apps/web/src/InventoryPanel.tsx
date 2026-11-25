@@ -67,6 +67,8 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const [countProductId, setCountProductId] = useState("");
   const [countQuantity, setCountQuantity] = useState("");
   const [countBusy, setCountBusy] = useState(false);
+  const activeSearchRef = useRef(activeSearch);
+  activeSearchRef.current = activeSearch;
   const sequence = useRef(0);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
@@ -192,7 +194,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       });
       setNotice(result.replayed ? "La recepción ya estaba registrada." : "Recepción registrada y existencias actualizadas.");
       setReceiptReason("");
-      await Promise.all([fetchBalances(undefined, activeSearch), fetchReceipts()]);
+      await Promise.all([fetchBalances(undefined, activeSearchRef.current), fetchReceipts()]);
     } catch (reason) {
       fail(reason, "No se pudo registrar la recepción.");
     } finally { setReceiptBusy(false); }
@@ -226,7 +228,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       await apiRequest(`${prefix}/counts/${encodeURIComponent(created.id)}/confirm`, { method: "POST" });
       setNotice("Conteo físico confirmado y existencias actualizadas.");
       setCountReason("");
-      await Promise.all([fetchBalances(undefined, activeSearch), fetchReceipts()]);
+      await Promise.all([fetchBalances(undefined, activeSearchRef.current), fetchReceipts()]);
     } catch (reason) {
       fail(reason, "No se pudo confirmar el conteo físico.");
     } finally { setCountBusy(false); }

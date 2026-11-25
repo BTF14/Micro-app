@@ -105,6 +105,18 @@ describe("inventory read route guards", () => {
     expect(query.values).toEqual([organizationId, branchId, warehouseId, "harina", cursor, 26]);
     expectSequentialSqlParameters(query.statement, query.values);
   });
+  it("excludes a renamed-forward cursor product from the next name-sorted page", () => {
+    const cursor = "00000000-0000-4000-8000-000000000001";
+    const query = buildInventoryReadQuery({
+      organizationId, branchId, warehouseId, search: "", activeOnly: true,
+      cursor, cursorName: "a frontier", limit: 25, sort: "name", canReadCost: false,
+    });
+    expect(query.statement).toContain("(lower(p.name), p.id) > ($4, $5)");
+    expect(query.statement).toContain("p.id <> $5");
+    expect(query.values).toEqual([organizationId, branchId, warehouseId, "a frontier", cursor, 26]);
+    expectSequentialSqlParameters(query.statement, query.values);
+  });
+
   it("keeps exact barcode/SKU matches first for name sorting", () => {
     const query = buildInventoryReadQuery({
       organizationId, branchId, warehouseId, search: "750123", activeOnly: true,
@@ -123,6 +135,7 @@ describe("inventory read route guards", () => {
     });
     expect(query.statement).toContain("(CASE WHEN p.barcode = $4 THEN 0 WHEN lower(p.sku) = lower($4) THEN 1 ELSE 2 END, lower(p.name), p.id) > ($6, $7, $8)");
     expect(query.statement).toContain("ORDER BY CASE WHEN p.barcode = $4 THEN 0 WHEN lower(p.sku) = lower($4) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
+    expect(query.statement).toContain("p.id <> $8");
     expect(query.values).toEqual([organizationId, branchId, warehouseId, "SKU-42", "%SKU-42%", 0, "z exact product", cursor, 2]);
     expectSequentialSqlParameters(query.statement, query.values);
   });

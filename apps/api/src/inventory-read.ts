@@ -165,7 +165,7 @@ export function buildInventoryReadQuery(input: {
   }
   const cursorProjection = input.sort === "name"
     ? `, lower(p.name) AS cursor_name${input.search && exact !== null
-      ? `, CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END AS cursor_rank`
+      ? `, CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END AS cursor_rank`
       : ""}`
     : "";
   const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";

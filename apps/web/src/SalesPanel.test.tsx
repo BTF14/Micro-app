@@ -351,6 +351,46 @@ describe("SalesPanel", () => {
     expect(container.textContent).toContain("Referencia de autorización: auth-1");
   });
 
+  it("requires a fresh manual-FX acknowledgement after BCV resumes and later becomes unavailable", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-17T18:00:00Z"));
+    const authorization = {
+      commercial_enabled: true,
+      authorization: { id: "auth-1", rate: "104.00000000", expires_at: "2026-11-17T23:00:00Z" },
+    };
+    vi.mocked(apiRequest)
+      .mockResolvedValueOnce({ shift } as never)
+      .mockResolvedValueOnce({ warehouses } as never)
+      .mockResolvedValueOnce(authorization as never)
+      .mockResolvedValueOnce(authorization as never);
+    await render("stale", null);
+    await act(async () => { click("Agregar producto A"); click("Monto exacto"); });
+    const firstAcknowledgement = container.querySelector<HTMLInputElement>(".sales-manual-fx-ack input")!;
+    const charge = container.querySelector<HTMLButtonElement>(".sales-charge-button")!;
+    expect(firstAcknowledgement.checked).toBe(false);
+    expect(charge.disabled).toBe(true);
+    await act(async () => { firstAcknowledgement.click(); });
+    expect(container.querySelector<HTMLInputElement>(".sales-manual-fx-ack input")?.checked).toBe(true);
+    expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(false);
+
+    await act(async () => {
+      root.render(<SalesPanel organizationId={ORG} exchangeRate="36.75000000" exchangeRateStatus="current" onGoToRegister={vi.fn()} />);
+    });
+    await settle();
+    expect(container.querySelector(".sales-manual-fx-ack")).toBeNull();
+    expect(container.textContent).toContain("Tasa BCV aplicada");
+
+    await act(async () => {
+      root.render(<SalesPanel organizationId={ORG} exchangeRate={null} exchangeRateStatus="unavailable" onGoToRegister={vi.fn()} />);
+    });
+    await settle(); await settle();
+    const renewedAcknowledgement = container.querySelector<HTMLInputElement>(".sales-manual-fx-ack input");
+    expect(renewedAcknowledgement).not.toBeNull();
+    expect(renewedAcknowledgement?.checked).toBe(false);
+    expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
+    expect(container.textContent).toContain("Confirma que comunicaste al cliente la tasa manual de contingencia");
+    expect(vi.mocked(apiRequest)).toHaveBeenCalledTimes(4);
+  });
+
   it("keeps manual contingency unavailable while the commercial AC-6 gate is off", async () => {
     vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-17T18:00:00Z"));
     vi.mocked(apiRequest)

@@ -5,6 +5,10 @@ import { buildCatalogQuery } from "./catalog";
 const organizationId = "11111111-2222-4333-8444-555555555555";
 const sessionCookie = "microapp_session=synthetic-session-token";
 
+function nameCursorToken(payload: Record<string, unknown>): string {
+  return btoa(JSON.stringify(payload)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+
 
 describe("catalog SQL projection", () => {
   it("does not select cost or stock for Cashier and keeps tenant/cursor values parameterized", () => {
@@ -115,6 +119,16 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
       "/api/orgs/" + organizationId + "/catalog?sort=name&cursor=not-a-token",
       { headers: { Cookie: sessionCookie } },
     );
+    const invalidSearchRank = await app.request(
+      "/api/orgs/" + organizationId + "/catalog?sort=name&q=SKU&cursor=" +
+        nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "product", rank: 3 }),
+      { headers: { Cookie: sessionCookie } },
+    );
+    const unexpectedRankWithoutSearch = await app.request(
+      "/api/orgs/" + organizationId + "/catalog?sort=name&cursor=" +
+        nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "product", rank: 0 }),
+      { headers: { Cookie: sessionCookie } },
+    );
     const invalidSort = await app.request(
       "/api/orgs/" + organizationId + "/catalog?sort=rank",
       { headers: { Cookie: sessionCookie } },
@@ -127,6 +141,8 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
     expect(invalidLimit.status).toBe(400);
     expect(invalidCursor.status).toBe(400);
     expect(invalidNameCursor.status).toBe(400);
+    expect(invalidSearchRank.status).toBe(400);
+    expect(unexpectedRankWithoutSearch.status).toBe(400);
     expect(excessiveLimit.status).toBe(400);
     expect(invalidSort.status).toBe(400);
     await expect(invalidLimit.json()).resolves.toMatchObject({

@@ -345,7 +345,6 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(firstBody.items[0]?.name).toBe("Inactive Stocked Product");
     expect(firstBody.items[0]?.quantity_mode).toBe("integer");
     expect(firstBody.nextCursor).not.toBe(firstBody.items[0]?.product_id);
-    await admin.query("UPDATE products SET name = 'Zulu Renamed Boundary' WHERE organization_id = $1 AND id = $2", [organizationId, inactiveProductId]);
     const second = await get(root() + "/inventory?limit=1&sort=name&cursor=" + firstBody.nextCursor);
     expect(second.status).toBe(200);
     const secondBody = await second.json() as { items: Array<{ product_id: string; name: string }>; nextCursor: string | null };
@@ -356,6 +355,21 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     expect(thirdBody.items[0]?.name).toBe("Read Product B");
     expect(thirdBody.nextCursor).toBeNull();
     expect(new Set([firstBody.items[0]!.product_id, secondBody.items[0]!.product_id, thirdBody.items[0]!.product_id]).size).toBe(3);
+  });
+
+  it("keeps the inventory name cursor stable when the boundary product is renamed", async () => {
+    const first = await get(root() + "/inventory?limit=1&sort=name");
+    expect(first.status).toBe(200);
+    const firstBody = await first.json() as { items: Array<{ product_id: string; name: string }>; nextCursor: string | null };
+    expect(firstBody.items[0]?.name).toBe("Inactive Stocked Product");
+    expect(firstBody.nextCursor).not.toBeNull();
+
+    await admin.query("UPDATE products SET name = 'Zulu Renamed Boundary' WHERE organization_id = $1 AND id = $2", [organizationId, inactiveProductId]);
+    const second = await get(root() + "/inventory?limit=1&sort=name&cursor=" + firstBody.nextCursor);
+    expect(second.status).toBe(200);
+    const secondBody = await second.json() as { items: Array<{ product_id: string; name: string }>; nextCursor: string | null };
+    expect(secondBody.items[0]?.name).toBe("Read Product A");
+    await admin.query("UPDATE products SET name = 'Inactive Stocked Product' WHERE organization_id = $1 AND id = $2", [organizationId, inactiveProductId]);
   });
 
   it("returns append-only movement history with stable cursors and cost visibility", async () => {

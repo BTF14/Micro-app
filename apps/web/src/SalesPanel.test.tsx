@@ -441,6 +441,7 @@ describe("SalesPanel", () => {
     await act(async () => { click("Monto exacto"); });
     await act(async () => { click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });
     expect(window.sessionStorage.getItem(key)).toBeNull();
+    window.sessionStorage.setItem(key, JSON.stringify({ cart: [], currency: "USD", payments: [{ method: "cash", amount: "", reference: "" }] }));
     await act(async () => { click("Nueva venta"); });
     expect(window.sessionStorage.getItem(key)).toBeNull();
   });

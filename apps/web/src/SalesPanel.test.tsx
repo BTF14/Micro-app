@@ -96,6 +96,8 @@ describe("SalesPanel", () => {
     await settle();
     expect(vi.mocked(apiRequest)).toHaveBeenCalledTimes(callsBeforeRate);
     expect(container.textContent).toContain("Se recuperó la venta que tenías en curso.");
+    expect(container.textContent).toContain("Principal");
+    expect(container.querySelector(".sales-products")).not.toBeNull();
     expect(container.querySelector(".sales-workspace")).not.toBeNull();
   });
 

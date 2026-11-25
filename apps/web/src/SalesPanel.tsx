@@ -116,6 +116,7 @@ export default function SalesPanel({
   const [notice, setNotice] = useState("");
   const [receipt, setReceipt] = useState<SaleReceipt | null>(null);
   const [fxState, setFxState] = useState<FxPanelState | null>(null);
+  const [fxRefreshVersion, setFxRefreshVersion] = useState(0);
   const [manualFxAcknowledgedRate, setManualFxAcknowledgedRate] = useState<string | null>(null);
   const [lookupReset, setLookupReset] = useState(0);
   const idempotencyKey = useRef(newIdempotencyKey());
@@ -213,6 +214,7 @@ export default function SalesPanel({
       prevBranchRef.current = nextBranchId;
       prevShiftIdRef.current = nextShiftId;
       setShift(result.shift);
+      setFxRefreshVersion((value) => value + 1);
       setShiftLoaded(true);
       setWarehouses([]);
       setWarehouseId("");
@@ -223,15 +225,6 @@ export default function SalesPanel({
       const warehouseResult = await apiRequest<{ warehouses: Warehouse[] }>(
         `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/warehouses`,
       );
-      if (exchangeRateStatus !== "current" || !exchangeRate) {
-        const fxResult = await apiRequest<FxPanelState>(
-          `${base}/branches/${encodeURIComponent(result.shift.branch_id)}/fx-contingency`,
-        );
-        if (requestId !== loadSequence.current) return;
-        setFxState(fxResult ?? null);
-      } else {
-        setFxState(null);
-      }
       setManualFxAcknowledgedRate(null);
       if (requestId !== loadSequence.current) return;
       const active = warehouseResult.warehouses.filter((warehouse) => warehouse.is_active === true);
@@ -253,7 +246,32 @@ export default function SalesPanel({
     } finally {
       if (requestId === loadSequence.current) setLoading(false);
     }
-  }, [base, organizationId, exchangeRateStatus, exchangeRate]);
+  }, [base, organizationId]);
+
+  useEffect(() => {
+    const branchId = shift?.branch_id;
+    if (!branchId || (exchangeRateStatus === "current" && exchangeRate)) {
+      setManualFxAcknowledgedRate(null);
+      setFxState(null);
+      return;
+    }
+    setManualFxAcknowledgedRate(null);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await apiRequest<FxPanelState>(
+          `${base}/branches/${encodeURIComponent(branchId)}/fx-contingency`,
+        );
+        if (!cancelled) setFxState(result ?? null);
+      } catch {
+        if (!cancelled) {
+          setManualFxAcknowledgedRate(null);
+          setFxState(null);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [base, shift?.branch_id, exchangeRateStatus, exchangeRate, fxRefreshVersion]);
 
   useEffect(() => {
     if (prevOrgRef.current !== organizationId) {

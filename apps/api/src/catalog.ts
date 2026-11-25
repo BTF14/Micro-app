@@ -41,6 +41,7 @@ export function buildCatalogQuery(
   search?: string,
   sort: "id" | "name" = "id",
   cursorName?: string,
+  cursorRank?: number,
 ): CatalogQuery {
   // Keep the SQL projection tied to the same central policy used by route authorization.
   const canReadCost = authorizeCommercialOperation(role, "catalog.read_costs");
@@ -60,10 +61,20 @@ export function buildCatalogQuery(
   if (cursor) {
     if (sort === "name") {
       if (cursorName === undefined) throw new Error("A name cursor requires its normalized name.");
-      values.push(cursorName);
-      const nameParameter = values.length;
-      values.push(cursor);
-      filters.push(`(lower(name), id) > ($${nameParameter}, $${values.length})`);
+      if (normalizedSearch) {
+        if (cursorRank === undefined) throw new Error("A searched name cursor requires its search rank.");
+        values.push(cursorRank);
+        const rankParameter = values.length;
+        values.push(cursorName);
+        const nameParameter = values.length;
+        values.push(cursor);
+        filters.push(`(CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name), p.id) > (${rankParameter}, ${nameParameter}, ${values.length})`);
+      } else {
+        values.push(cursorName);
+        const nameParameter = values.length;
+        values.push(cursor);
+        filters.push(`(lower(name), id) > (${nameParameter}, ${values.length})`);
+      }
     } else {
       values.push(cursor); filters.push(`id > $${values.length}`);
     }
@@ -71,12 +82,12 @@ export function buildCatalogQuery(
   values.push(pageSize + 1);
   const order = sort === "name"
     ? (normalizedSearch
-      ? "CASE WHEN barcode = $2 THEN 0 WHEN lower(sku) = lower($2) THEN 1 ELSE 2 END, lower(name) ASC, id ASC"
+      ? "CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC"
       : "lower(name) ASC, id ASC")
     : (normalizedSearch
       ? "CASE WHEN barcode = $2 OR lower(sku) = lower($2) THEN 0 ELSE 1 END, id ASC"
       : "id ASC");
-  const statement = "SELECT " + columns + " FROM products WHERE " +
+  const statement = "SELECT " + columns + " FROM products p WHERE " +
     ["organization_id = $1", ...filters].join(" AND ") +
     " ORDER BY " + order + ` LIMIT $${values.length}`;
 
@@ -143,17 +154,23 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
 
           // Resolve the cursor's normalized sort key inside the same tenant.
           let cursorName: string | undefined;
+          let cursorRank: number | undefined;
           if (cursor && sort === "name") {
-            const cursorRow = await transaction.query<{ sort_name: string }>(
-              "SELECT lower(name) AS sort_name FROM products WHERE organization_id = $1 AND id = $2",
-              [tenant.organizationId, cursor],
+            const cursorHasSearchRank = search.length > 0;
+            const cursorRow = await transaction.query<{ sort_name: string; sort_rank?: number }>(
+              `SELECT lower(p.name) AS sort_name${cursorHasSearchRank
+                ? ", CASE WHEN p.barcode = $3 THEN 0 WHEN lower(p.sku) = lower($3) THEN 1 ELSE 2 END AS sort_rank"
+                : ""}
+                 FROM products p WHERE p.organization_id = $1 AND p.id = $2`,
+              cursorHasSearchRank ? [tenant.organizationId, cursor, search] : [tenant.organizationId, cursor],
             );
             if (!cursorRow.rows[0]) return { kind: "invalid_cursor" as const };
             cursorName = cursorRow.rows[0].sort_name;
+            if (cursorHasSearchRank) cursorRank = cursorRow.rows[0].sort_rank;
           }
           // Do not select cost_usd at all for Cashier. Do not select stock,
           // stock_quantity, branch or register data in this catalog-only phase.
-          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize, search, sort, cursorName);
+          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize, search, sort, cursorName, cursorRank);
           const queryResult = await transaction.query<CatalogRow>(query.statement, query.values);
           const hasMore = queryResult.rows.length > pageSize;
           const pageRows = queryResult.rows.slice(0, pageSize);

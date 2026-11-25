@@ -149,4 +149,17 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
       error: "INVALID_CATALOG_QUERY",
     });
   });
+
+  it("accepts 240-character name cursors and rejects 241-character cursors before database access", async () => {
+    const acceptedCursor = nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "n".repeat(240) });
+    const rejectedCursor = nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "n".repeat(241) });
+    const accepted = await app.request("/api/orgs/" + organizationId + "/catalog?sort=name&cursor=" + acceptedCursor);
+    const rejected = await app.request("/api/orgs/" + organizationId + "/catalog?sort=name&cursor=" + rejectedCursor);
+
+    // 401 proves the 240-character cursor passed validation and reached the session guard.
+    expect(accepted.status).toBe(401);
+    await expect(accepted.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
+    expect(rejected.status).toBe(400);
+    await expect(rejected.json()).resolves.toMatchObject({ error: "INVALID_CATALOG_QUERY" });
+  });
 });

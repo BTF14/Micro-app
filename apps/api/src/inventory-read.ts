@@ -13,7 +13,7 @@ function encodeNameCursor(cursor: NameCursor): string {
   const bytes = new TextEncoder().encode(JSON.stringify(cursor));
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
 }
 
 function decodeNameCursor(value: string, hasSearch: boolean): NameCursor | null {
@@ -86,6 +86,8 @@ type InventoryBalanceRow = {
   available_quantity: string;
   balance_version: string | null;
   cost_usd?: string;
+  cursor_name?: string;
+  cursor_rank?: number;
 };
 
 type InventoryMovementRow = {
@@ -227,7 +229,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
           let cursorRank: number | undefined;
           const cursorId = sort === "name" ? nameCursor?.id : cursor;
           if (cursorId && sort === "name" && nameCursor) {
-            const cursorProduct = await tx.query<{ exists: number }>(
+            const cursorProduct = await tx.query<{ cursor_exists: number }>(
               "SELECT 1 AS cursor_exists FROM products WHERE organization_id = $1 AND id = $2",
               [branch.organizationId, cursorId],
             );

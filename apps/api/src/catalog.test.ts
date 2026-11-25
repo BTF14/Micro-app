@@ -44,10 +44,10 @@ describe("catalog SQL projection", () => {
 
   it("uses normalized name keyset pagination and keeps exact barcode/SKU matches first", () => {
     const cursor = "22222222-3333-4444-8555-666666666666";
-    const query = buildCatalogQuery("cashier", organizationId, cursor, 25, "CODE", "name", "harina");
-    expect(query.statement).toContain("(lower(name), id) > ($4, $5)");
+    const query = buildCatalogQuery("cashier", organizationId, cursor, 25, "CODE", "name", "harina", 0);
+    expect(query.statement).toContain("(CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name), p.id) > ($4, $5, $6)");
     expect(query.statement).toContain("ORDER BY CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
-    expect(query.values).toEqual([organizationId, "CODE", "%CODE%", "harina", cursor, 26]);
+    expect(query.values).toEqual([organizationId, "CODE", "%CODE%", 0, "harina", cursor, 26]);
   });
 
   it("continues from an exact Z barcode match to an A partial match with the full search-rank keyset", () => {

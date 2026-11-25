@@ -19,7 +19,7 @@
 .product-editor-cancel:disabled { cursor: wait; opacity: 0.6; }
 .product-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
 .product-form label { display: grid; gap: 0.35rem; color: #405248; font-size: 0.7rem; font-weight: 650; }
-.product-form input:not([type="checkbox"]), .product-form textarea { width: 100%; min-height: 2.7rem; padding: 0.65rem 0.75rem; border: 1px solid #dce5dd; border-radius: 0.6rem; outline: none; color: #253c35; background: #fff; font: inherit; font-size: 0.78rem; font-weight: 450; }
+.product-form input:not([type="checkbox"]), .product-form textarea { width: 100%; min-height: 2.7rem; padding: 0.65rem 0.75rem; border: 1px solid #dce5dd; border-radius: 0.6rem; outline: none; color: #253c35; background: #fff; font: inherit; font-size: max(1rem, 16px); font-weight: 450; }
 .product-form textarea { resize: vertical; }
 .product-form input:focus, .product-form textarea:focus { border-color: #6d9783; box-shadow: 0 0 0 3px rgba(80,125,106,.12); }
 .product-form-wide { grid-column: 1 / -1; }
@@ -124,7 +124,7 @@
 .catalog-import-heading p:not(.eyebrow) { margin:.45rem 0 0; color:var(--muted); font-size:.78rem; line-height:1.5; }
 .catalog-import-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.8rem; }
 .catalog-import-fields label { display:grid; min-width:0; gap:.4rem; color:var(--petrol); font-size:.75rem; font-weight:650; }
-.catalog-import-fields input,.catalog-import-fields select { width:100%; min-width:0; min-height:2.8rem; padding:.6rem .7rem; border:1px solid var(--line); border-radius:.65rem; background:#fff; color:var(--ink); font:inherit; font-size:.78rem; }
+.catalog-import-fields input,.catalog-import-fields select { width:100%; min-width:0; min-height:2.8rem; padding:.6rem .7rem; border:1px solid var(--line); border-radius:.65rem; background:#fff; color:var(--ink); font:inherit; font-size:max(1rem, 16px); }
 .catalog-import-fields input[type=file] { padding:.45rem; }
 .catalog-import-hint { color:var(--muted); font-size:.67rem; font-weight:400; line-height:1.45; }
 .catalog-import-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.55rem; margin-top:1rem; }
@@ -197,4 +197,4 @@
 
 /* Keep authenticated form controls above the mobile auto-zoom threshold. */
 
-.catalog-panel input,.catalog-panel select,.catalog-panel textarea{font-size:max(1rem,16px)}
+.catalog-section input:not([type="checkbox"]), .catalog-section select, .catalog-section textarea { font-size: max(1rem, 16px); }

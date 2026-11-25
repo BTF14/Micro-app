@@ -79,7 +79,7 @@ type InventoryMovementRow = {
 export type InventoryReadSort = "id" | "name" | "relevance";
 export function buildInventoryReadQuery(input: {
   organizationId: string; branchId: string; warehouseId: string; search: string;
-  activeOnly: boolean; cursor?: string; cursorName?: string; limit: number; sort: InventoryReadSort; canReadCost: boolean;
+  activeOnly: boolean; cursor?: string; cursorName?: string; cursorRank?: number; limit: number; sort: InventoryReadSort; canReadCost: boolean;
 }): { statement: string; values: unknown[] } {
   const values: unknown[] = [input.organizationId, input.branchId, input.warehouseId];
   const filters = ["p.organization_id = $1", input.activeOnly ? "p.is_active = true" : "(p.is_active = true OR b.balance_version IS NOT NULL)"];
@@ -98,10 +98,20 @@ export function buildInventoryReadQuery(input: {
   if (input.cursor) {
     if (input.sort === "name") {
       if (input.cursorName === undefined) throw new Error("A name cursor requires its normalized name.");
-      values.push(input.cursorName);
-      const nameParameter = values.length;
-      values.push(input.cursor);
-      filters.push(`(lower(p.name), p.id) > ($${nameParameter}, $${values.length})`);
+      if (input.search) {
+        if (input.cursorRank === undefined) throw new Error("A searched name cursor requires its search rank.");
+        values.push(input.cursorRank);
+        const rankParameter = values.length;
+        values.push(input.cursorName);
+        const nameParameter = values.length;
+        values.push(input.cursor);
+        filters.push(`(CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END, lower(p.name), p.id) > (${rankParameter}, ${nameParameter}, ${values.length})`);
+      } else {
+        values.push(input.cursorName);
+        const nameParameter = values.length;
+        values.push(input.cursor);
+        filters.push(`(lower(p.name), p.id) > (${nameParameter}, ${values.length})`);
+      }
     } else {
       values.push(input.cursor); filters.push(`p.id > $${values.length}`);
     }
@@ -177,19 +187,27 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
           if (!locked) return { kind: "warehouse_not_found" as const };
 
           let cursorName: string | undefined;
+          let cursorRank: number | undefined;
           if (cursor) {
-            const cursorProduct = await tx.query<{ sort_name: string }>(
-              `SELECT lower(name) AS sort_name FROM products WHERE organization_id = $1 AND id = $2`,
-              [branch.organizationId, cursor],
+            const cursorHasSearchRank = sort === "name" && search.length > 0;
+            const cursorProduct = await tx.query<{ sort_name: string; sort_rank?: number }>(
+              `SELECT lower(p.name) AS sort_name${cursorHasSearchRank
+                ? ", CASE WHEN p.barcode = $3 THEN 0 WHEN lower(p.sku) = lower($3) THEN 1 ELSE 2 END AS sort_rank"
+                : ""}
+                 FROM products p WHERE p.organization_id = $1 AND p.id = $2`,
+              cursorHasSearchRank ? [branch.organizationId, cursor, search] : [branch.organizationId, cursor],
             );
             if (!cursorProduct.rows[0]) return { kind: "invalid_cursor" as const };
-            if (sort === "name") cursorName = cursorProduct.rows[0].sort_name;
+            if (sort === "name") {
+              cursorName = cursorProduct.rows[0].sort_name;
+              if (cursorHasSearchRank) cursorRank = cursorProduct.rows[0].sort_rank;
+            }
           }
 
           const canReadCost = authorizeCommercialOperation(branch.organizationRole, "catalog.read_costs");
           const query = buildInventoryReadQuery({
             organizationId: branch.organizationId, branchId: branch.branchId, warehouseId,
-            search, activeOnly, cursor, cursorName, limit, sort, canReadCost,
+            search, activeOnly, cursor, cursorName, cursorRank, limit, sort, canReadCost,
           });
           const rows = await tx.query<InventoryBalanceRow>(query.statement, query.values);
           const hasMore = rows.rows.length > limit;

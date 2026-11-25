@@ -70,7 +70,7 @@ Antes de registrar ventas, el cajero debe abrir un turno en la caja asignada. Se
 
 ### 6. Ventas
 
-Con un turno abierto, busca productos (también puedes usar el escáner), agrégalos al carrito y revisa cantidades y total. El modo de cantidad de cada producto determina si admite unidades enteras o fraccionarias. Si sales de la pantalla, el borrador de la venta se conserva para que puedas recuperarlo al volver. Elige la moneda de cobro (USD o VES), el método de pago y completa el importe exacto. La venta requiere una tasa BCV vigente y validada. La contingencia manual está deshabilitada actualmente (`FX_CONTINGENCY_ENABLED=false`); no cuentes con ella como alternativa de cobro.
+Con un turno abierto, busca productos y agrégalos al carrito. En Ventas, el escáner se abre desde el buscador integrado **Consultar precio** (`QuickProductLookup`): pulsa su botón **Escanear**, selecciona el producto leído y luego agrégalo al carrito. Revisa cantidades y total. El modo de cantidad de cada producto determina si admite unidades enteras o fraccionarias. Si sales de la pantalla, el borrador de la venta se conserva para que puedas recuperarlo al volver. Elige la moneda de cobro (USD o VES), el método de pago y completa el importe exacto. La venta requiere una tasa BCV vigente y validada. La contingencia manual está deshabilitada actualmente (`FX_CONTINGENCY_ENABLED=false`); no cuentes con ella como alternativa de cobro.
 
 **Una moneda por ticket en v1.1:** cada venta se cobra en USD o en VES, no combinando ambas monedas dentro del mismo ticket. Si necesitas cambiar la moneda, revisa el total y los importes antes de cobrar.
 
@@ -93,7 +93,7 @@ Aquí puedes consultar **Cierres de caja**, **Ventas** e **Inventario**, según 
 
 ## 4. Escáner con la cámara del teléfono
 
-El botón **Escanear** está disponible en **Consultar precio**, **Ventas**, **Productos** y **Inventario**.
+El botón **Escanear** está disponible en **Consultar precio**, **Productos** e **Inventario**. En **Ventas** vive dentro del buscador integrado **Consultar precio** (`QuickProductLookup`), no como un control independiente de la pantalla POS.
 
 1. Abre la pantalla y pulsa **Escanear**.
 2. Si el teléfono lo pregunta, permite el uso de la cámara mientras utilizas la aplicación.

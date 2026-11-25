@@ -217,13 +217,39 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
     expect(firstResponse.status).toBe(200);
     const first = await firstResponse.json() as { items: Array<{ id: string; name: string }>; nextCursor: string | null };
     expect(first.items[0]?.name).toBe("Tenant A Product One");
-    expect(first.nextCursor).toBe(first.items[0]?.id);
+    expect(first.nextCursor).not.toBe(first.items[0]?.id);
+    expect(first.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/);
     const secondResponse = await requestCatalog(members.owner.token, organizationA, "?limit=1&sort=name&cursor=" + first.nextCursor);
     expect(secondResponse.status).toBe(200);
     const second = await secondResponse.json() as { items: Array<{ id: string; name: string }>; nextCursor: string | null };
     expect(second.items[0]?.name).toBe("Tenant A Product Two");
     expect(second.items[0]?.id).not.toBe(first.items[0]?.id);
     expect(second.nextCursor).toBeNull();
+  });
+
+  it("keeps the catalog page boundary stable when an exact-match barcode changes", async () => {
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+    const boundary = await cleanupClient!.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, barcode, name, unit, cost_usd, price_usd, stock_quantity, is_active) VALUES ($1, $2, 'CURSOR-42', 'Zulu Boundary', 'unidad', 1.0000, 2.0000, 0, true) RETURNING id",
+      [organizationA, "BOUNDARY-" + suffix],
+    );
+    await cleanupClient!.query(
+      "INSERT INTO products (organization_id, sku, name, unit, cost_usd, price_usd, stock_quantity, is_active) VALUES ($1, $2, 'Alpha Intermediate', 'unidad', 1.0000, 2.0000, 0, true)",
+      [organizationA, "PART-CURSOR-42-" + suffix],
+    );
+
+    const firstResponse = await requestCatalog(members.owner.token, organizationA, "?limit=1&sort=name&q=CURSOR-42");
+    expect(firstResponse.status).toBe(200);
+    const first = await firstResponse.json() as { items: Array<{ id: string; name: string }>; nextCursor: string | null };
+    expect(first.items[0]?.name).toBe("Zulu Boundary");
+    expect(first.nextCursor).not.toBeNull();
+
+    await cleanupClient!.query("UPDATE products SET barcode = 'CHANGED-42' WHERE organization_id = $1 AND id = $2", [organizationA, boundary.rows[0]!.id]);
+
+    const secondResponse = await requestCatalog(members.owner.token, organizationA, "?limit=1&sort=name&q=CURSOR-42&cursor=" + first.nextCursor);
+    expect(secondResponse.status).toBe(200);
+    const second = await secondResponse.json() as { items: Array<{ id: string; name: string }>; nextCursor: string | null };
+    expect(second.items[0]?.name).toBe("Alpha Intermediate");
   });
 
   it("paginates with a validated UUID cursor and does not return extra rows", async () => {

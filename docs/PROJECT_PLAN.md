@@ -3,8 +3,8 @@
 - **Base auditada:** `main` = `e7186ae3d86873c577ce4fc8f922c364e3298919`, post-merge PR #417.
 - **Integrado:** los bloques v1.1/UI hasta #417, incluidas las nueve vistas, importador CSV, escáner móvil, cierres/Reportes/exportación CSV, `quantity_mode`, paginación `sort=name` y persistencia/recuperación de borrador de Ventas.
 - **Trabajo funcional:** no hay PRs funcionales abiertas en el corte. No se inicia otra implementación como parte de este plan.
-- **Únicos pendientes:** gates independientes de producción — **Pre-prod Audit → `ve-fx-compliance-review` → AC-6 / AC-7 → Issue #53**. La contingencia manual sigue deshabilitada hasta cumplir los gates.
-- **Gates congelados:** AC-6 OPEN; Issue #53 OPEN/P0; `BCV_SYNC_ENABLED=false`; `FX_CONTINGENCY_ENABLED=false`; freeze v1.1; `PRODUCTION: NOT READY`; presupuesto `$0`.
+- **Únicos pendientes:** gates independientes de producción — **Pre-prod Audit → `ve-fx-compliance-review` → AC-6 → Issue #53**. La contingencia manual sigue deshabilitada hasta cumplir los gates.
+- **Gates congelados:** AC-6 OPEN; AC-7 CLOSED para el alcance técnico de PR 1 (Contingencia Manual BCV); Issue #53 OPEN/P0; `BCV_SYNC_ENABLED=false`; `FX_CONTINGENCY_ENABLED=false`; freeze v1.1; `PRODUCTION: NOT READY`; presupuesto `$0`.
 - **Alcance del corte:** documentación; sin cambios de aplicación, migraciones, workflows, Neon, secretos, billing, producción ni deploy.
 
 ---

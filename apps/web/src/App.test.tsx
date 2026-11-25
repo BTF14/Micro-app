@@ -81,6 +81,8 @@ describe("Micro app authentication flow", () => {
     await settle();
     expect(container.textContent).toContain("Hola, Ana.");
     window.sessionStorage.setItem("micro-app:active-view", "reports");
+    window.sessionStorage.setItem("micro-app:sales:draft:org-1:shift-1:warehouse-1", "{}");
+    window.sessionStorage.setItem("micro-app:sales:draft:org-1:shift-2:warehouse-2", "{}");
     await act(async () => {
       window.dispatchEvent(new CustomEvent("micro-app:unauthorized"));
     });
@@ -88,6 +90,8 @@ describe("Micro app authentication flow", () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("Tu sesión expiró. Inicia sesión nuevamente.");
     expect(container.textContent).not.toContain("Hola, Ana.");
     expect(window.sessionStorage.getItem("micro-app:active-view")).toBeNull();
+    expect(window.sessionStorage.getItem("micro-app:sales:draft:org-1:shift-1:warehouse-1")).toBeNull();
+    expect(window.sessionStorage.getItem("micro-app:sales:draft:org-1:shift-2:warehouse-2")).toBeNull();
   });
 
   it("links the Google sign-in button straight to the OAuth start endpoint", async () => {

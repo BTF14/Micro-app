@@ -73,7 +73,7 @@ export function buildCatalogQuery(
         values.push(cursorName);
         const nameParameter = values.length;
         values.push(cursor);
-        filters.push(`(lower(name), id) > (${nameParameter}, ${values.length})`);
+        filters.push("(lower(p.name), p.id) > ($" + nameParameter + ", $" + values.length + ")");
       }
     } else {
       values.push(cursor); filters.push(`id > $${values.length}`);

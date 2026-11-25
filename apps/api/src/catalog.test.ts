@@ -51,6 +51,7 @@ describe("catalog SQL projection", () => {
     const query = buildCatalogQuery("cashier", organizationId, cursor, 25, "CODE", "name", "harina", 0);
     expect(query.statement).toContain("(CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name), p.id) > ($4, $5, $6)");
     expect(query.statement).toContain("ORDER BY CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
+    expect(query.statement).toContain("p.id <> $6");
     expect(query.values).toEqual([organizationId, "CODE", "%CODE%", 0, "harina", cursor, 26]);
   });
 
@@ -76,6 +77,14 @@ describe("catalog SQL projection", () => {
       expect(query.values).toEqual([organizationId, 11]);
     },
   );
+  it("excludes a renamed-forward cursor product from the next name-sorted page", () => {
+    const cursor = "22222222-3333-4444-8555-666666666666";
+    const query = buildCatalogQuery("cashier", organizationId, cursor, 25, undefined, "name", "a frontier");
+    expect(query.statement).toContain("(lower(p.name), p.id) > ($2, $3)");
+    expect(query.statement).toContain("p.id <> $3");
+    expect(query.values).toEqual([organizationId, "a frontier", cursor, 26]);
+  });
+
 });
 
 describe("GET /api/orgs/:organizationId/catalog", () => {

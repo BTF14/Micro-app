@@ -301,8 +301,8 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 .main-footer { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--line); color: #87918a; font-size: 0.65rem; }
 .main-footer-row { display: flex; justify-content: space-between; gap: 1rem; }
 
-.help-links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; color: #87918a; font-size: 0.68rem; }
-.help-links a, .help-links .text-button { color: #4a7064; font-weight: 650; }
+.help-links { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem 0.5rem; margin: 0; color: #5a665f; font-size: 0.68rem; }
+.help-links a, .help-links .text-button { display: inline-flex; align-items: center; min-height: 2rem; line-height: 1.3; color: #4a7064; font-weight: 650; }
 .help-links span[aria-hidden] { color: #c3cbc5; }
 
 .help-modal-backdrop {
@@ -479,7 +479,7 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
  .side-nav .nav-symbol{width:1.2rem;font-size:1rem}
  .side-nav .nav-lock{display:inline;margin-left:auto}
  .topbar{min-height:56px}
- button, input:not([type="checkbox"]), select, textarea, .nav-item { min-height:44px; }
+ button:not(.text-button), input:not([type="checkbox"]), select, textarea, .nav-item { min-height:44px; }
 }
 @media(min-width:761px){.mobile-nav-toggle{display:none}}
 

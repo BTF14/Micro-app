@@ -138,11 +138,13 @@ export function buildInventoryReadQuery(input: {
         const nameParameter = values.length;
         values.push(input.cursor);
         filters.push("(CASE WHEN p.barcode = $" + exact + " THEN 0 WHEN lower(p.sku) = lower($" + exact + ") THEN 1 ELSE 2 END, lower(p.name), p.id) > ($" + rankParameter + ", $" + nameParameter + ", $" + values.length + ")");
+        filters.push("p.id <> $" + values.length);
       } else {
         values.push(input.cursorName);
         const nameParameter = values.length;
         values.push(input.cursor);
         filters.push("(lower(p.name), p.id) > ($" + nameParameter + ", $" + values.length + ")");
+        filters.push("p.id <> $" + values.length);
       }
     } else {
       values.push(input.cursor); filters.push(`p.id > $${values.length}`);

@@ -7,6 +7,36 @@ import { withDatabaseClient, withDatabaseTransaction } from "./database";
 import { lockInventoryWarehouses } from "./inventory-locks";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type NameCursor = { id: string; name: string; rank?: 0 | 1 | 2 };
+
+function encodeNameCursor(cursor: NameCursor): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(cursor));
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeNameCursor(value: string, hasSearch: boolean): NameCursor | null {
+  if (value.length > 2048 || !/^[A-Za-z0-9_-]+$/.test(value)) return null;
+  try {
+    const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+    const binary = atob(base64 + "=".repeat((4 - base64.length % 4) % 4));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const candidate = parsed as Record<string, unknown>;
+    const keys = Object.keys(candidate).sort().join(",");
+    if (keys !== (hasSearch ? "id,name,rank" : "id,name")) return null;
+    if (typeof candidate.id !== "string" || !UUID_PATTERN.test(candidate.id)) return null;
+    if (typeof candidate.name !== "string" || candidate.name.length < 1 || candidate.name.length > 200) return null;
+    if (hasSearch && candidate.rank !== 0 && candidate.rank !== 1 && candidate.rank !== 2) return null;
+    return hasSearch
+      ? { id: candidate.id, name: candidate.name, rank: candidate.rank as 0 | 1 | 2 }
+      : { id: candidate.id, name: candidate.name };
+  } catch {
+    return null;
+  }
+}
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
 
@@ -131,13 +161,18 @@ export function buildInventoryReadQuery(input: {
       ? `CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC`
       : "lower(p.name) ASC, p.id ASC";
   }
+  const cursorProjection = input.sort === "name"
+    ? `, lower(p.name) AS cursor_name${input.search && exact !== null
+      ? `, CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END AS cursor_rank`
+      : ""}`
+    : "";
   const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
   const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit, p.quantity_mode,
       p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
       COALESCE(b.on_hand_quantity, 0)::numeric(14,3)::text AS on_hand_quantity,
       COALESCE(b.reserved_quantity, 0)::numeric(14,3)::text AS reserved_quantity,
       (COALESCE(b.on_hand_quantity, 0) - COALESCE(b.reserved_quantity, 0))::numeric(14,3)::text AS available_quantity,
-      b.balance_version::text AS balance_version${cost}
+      b.balance_version::text AS balance_version${cursorProjection}${cost}
     FROM products p LEFT JOIN inventory_balances b ON b.organization_id = p.organization_id
       AND b.branch_id = $2 AND b.warehouse_id = $3 AND b.product_id = p.id
     WHERE ${filters.join(" AND ")} ORDER BY ${order} LIMIT $${values.length}`;
@@ -160,7 +195,9 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
     const activeOnly = activeOnlyValue === "true";
     const sort: InventoryReadSort = sortValue === undefined ? "id" : sortValue as InventoryReadSort;
     if (search.length > 120) return c.json({ error: "INVALID_INVENTORY_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
-    if (limit === null || (cursor !== undefined && !UUID_PATTERN.test(cursor)) ||
+    const nameCursor = cursor !== undefined && sort === "name" ? decodeNameCursor(cursor, search.length > 0) : null;
+    if (limit === null ||
+        (cursor !== undefined && (sort === "name" ? nameCursor === null : !UUID_PATTERN.test(cursor))) ||
         (activeOnlyValue !== undefined && activeOnlyValue !== "true" && activeOnlyValue !== "false") ||
         (sortValue !== undefined && sortValue !== "id" && sortValue !== "name" && sortValue !== "relevance") ||
         (sort === "relevance" && cursor !== undefined)) {
@@ -188,26 +225,21 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
 
           let cursorName: string | undefined;
           let cursorRank: number | undefined;
-          if (cursor) {
-            const cursorHasSearchRank = sort === "name" && search.length > 0;
-            const cursorProduct = await tx.query<{ sort_name: string; sort_rank?: number }>(
-              `SELECT lower(p.name) AS sort_name${cursorHasSearchRank
-                ? ", CASE WHEN p.barcode = $3 THEN 0 WHEN lower(p.sku) = lower($3) THEN 1 ELSE 2 END AS sort_rank"
-                : ""}
-                 FROM products p WHERE p.organization_id = $1 AND p.id = $2`,
-              cursorHasSearchRank ? [branch.organizationId, cursor, search] : [branch.organizationId, cursor],
+          const cursorId = sort === "name" ? nameCursor?.id : cursor;
+          if (cursorId && sort === "name" && nameCursor) {
+            const cursorProduct = await tx.query<{ exists: number }>(
+              "SELECT 1 AS exists FROM products WHERE organization_id = $1 AND id = $2",
+              [branch.organizationId, cursorId],
             );
             if (!cursorProduct.rows[0]) return { kind: "invalid_cursor" as const };
-            if (sort === "name") {
-              cursorName = cursorProduct.rows[0].sort_name;
-              if (cursorHasSearchRank) cursorRank = cursorProduct.rows[0].sort_rank;
-            }
+            cursorName = nameCursor.name;
+            cursorRank = nameCursor.rank;
           }
 
           const canReadCost = authorizeCommercialOperation(branch.organizationRole, "catalog.read_costs");
           const query = buildInventoryReadQuery({
             organizationId: branch.organizationId, branchId: branch.branchId, warehouseId,
-            search, activeOnly, cursor, cursorName, cursorRank, limit, sort, canReadCost,
+            search, activeOnly, cursor: cursorId, cursorName, cursorRank, limit, sort, canReadCost,
           });
           const rows = await tx.query<InventoryBalanceRow>(query.statement, query.values);
           const hasMore = rows.rows.length > limit;
@@ -231,7 +263,15 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
                 balance_version: row.balance_version,
                 ...(canReadCost ? { cost_usd: row.cost_usd } : {}),
               })),
-              nextCursor: hasMore ? items[items.length - 1]!.product_id : null,
+              nextCursor: hasMore
+                ? sort === "name"
+                  ? encodeNameCursor({
+                    id: items[items.length - 1]!.product_id,
+                    name: items[items.length - 1]!.cursor_name!,
+                    ...(search ? { rank: items[items.length - 1]!.cursor_rank as 0 | 1 | 2 } : {}),
+                  })
+                  : items[items.length - 1]!.product_id
+                : null,
               limit,
             },
           };

@@ -110,7 +110,7 @@ export function buildInventoryReadQuery(input: {
         values.push(input.cursorName);
         const nameParameter = values.length;
         values.push(input.cursor);
-        filters.push(`(lower(p.name), p.id) > (${nameParameter}, ${values.length})`);
+        filters.push("(lower(p.name), p.id) > ($" + nameParameter + ", $" + values.length + ")");
       }
     } else {
       values.push(input.cursor); filters.push(`p.id > $${values.length}`);

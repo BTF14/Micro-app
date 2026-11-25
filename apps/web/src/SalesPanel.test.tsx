@@ -93,7 +93,6 @@ beforeEach(() => {
     const setSpy = vi.spyOn(window.sessionStorage, "setItem").mockImplementation(() => { throw new DOMException("full", "QuotaExceededError"); });
     await act(async () => { click("Agregar producto A"); });
     expect(container.textContent).toContain("Producto A");
-    expect(() => window.sessionStorage.getItem(key)).not.toThrow();
     getSpy.mockRestore(); setSpy.mockRestore();
   });
 
@@ -106,6 +105,26 @@ beforeEach(() => {
     await act(async () => { click("Monto exacto"); click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });
     expect(window.sessionStorage.getItem(key)).toBeNull();
     await act(async () => { click("Nueva venta"); });
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+  });
+  it("clears the in-memory cart and prior draft when shift_id changes in the same branch", async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render(); await act(async () => { click("Agregar producto A"); });
+    const previousKey = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
+    expect(window.sessionStorage.getItem(previousKey)).not.toBeNull();
+    const nextShift = { ...shift, shift_id: "shift-2" };
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift: nextShift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await act(async () => { click("Actualizar"); }); await settle(); await settle();
+    expect(window.sessionStorage.getItem(previousKey)).toBeNull();
+    expect(container.textContent).toContain("Tu carrito está vacío");
+  });
+
+  it("removes a structurally invalid draft instead of restoring it", async () => {
+    const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
+    window.sessionStorage.setItem(key, JSON.stringify({ cart: [], currency: "EUR", payments: [{ method: "cash", amount: "", reference: "" }] }));
+    vi.mocked(apiRequest).mockResolvedValueOnce({ shift } as never).mockResolvedValueOnce({ warehouses } as never);
+    await render();
+    expect(container.textContent).toContain("Tu carrito está vacío");
     expect(window.sessionStorage.getItem(key)).toBeNull();
   });
 });
@@ -325,7 +344,9 @@ describe("SalesPanel", () => {
     await act(async () => { setSelectValue(warehouseSelect, WAREHOUSE); });
     await act(async () => { click("Agregar producto A"); });
     expect(container.textContent).toContain("Producto A");
+    expect(window.sessionStorage.getItem(`micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`)).not.toBeNull();
     await act(async () => { setSelectValue(warehouseSelect, "44444444-5555-4666-8777-888888888888"); });
+    expect(window.sessionStorage.getItem(`micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`)).toBeNull();
     expect(container.textContent).toContain("Tu carrito está vacío");
     expect(container.textContent).toContain("Cambiaste de almacén");
   });

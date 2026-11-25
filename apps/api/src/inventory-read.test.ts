@@ -34,6 +34,10 @@ describe("inventory read route guards", () => {
     expect(invalidLimit.status).toBe(400);
     expect(await invalidLimit.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
 
+    const invalidNameCursor = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory?sort=name&cursor=not-a-token", "token");
+    expect(invalidNameCursor.status).toBe(400);
+    expect(await invalidNameCursor.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
+
     const invalidProduct = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory/movements?product_id=bad", "token");
     expect(invalidProduct.status).toBe(400);
     expect(await invalidProduct.json()).toMatchObject({ error: "INVALID_MOVEMENT_QUERY" });

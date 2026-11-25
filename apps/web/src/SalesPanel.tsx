@@ -312,9 +312,10 @@ export default function SalesPanel({
     setWarehouseId(nextId);
     if (cart.length > 0) {
       commitCart([]);
-      setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
       setNotice("Cambiaste de almacén. Se limpió el carrito para evitar mezclar existencias.");
     }
+    setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
+    setCurrency("USD");
     resetIdempotency();
   }
 

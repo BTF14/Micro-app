@@ -129,6 +129,8 @@ describe("Micro app authentication flow", () => {
     const dialog = container.querySelector('[role="dialog"]');
     expect(dialog).toBeTruthy();
     expect(dialog?.textContent).toContain("¿Qué es Micro app?");
+    expect(dialog?.textContent).toContain("Es el sistema interno de gestión comercial de tu negocio: inventario, ventas y precios en dólares con conversión a bolívares según la tasa del BCV.");
+    expect(dialog?.textContent).not.toContain("Varias partes todavía están en construcción.");
 
     const closeButton = dialog?.querySelector<HTMLButtonElement>(".help-modal-close");
     if (!closeButton) throw new Error("Close button not found");

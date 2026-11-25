@@ -68,14 +68,14 @@ describe("inventory panel", () => {
           balance({ product_id: "00000000-0000-4000-8000-000000000002", sku: "SKU-2", name: "Azúcar", on_hand_quantity: "2.000", reserved_quantity: "0.000", available_quantity: "2.000" }),
         ],
         nextCursor: null,
-        limit: 100,
+        limit: 25,
       }));
     await renderPanel();
 
     const urls = vi.mocked(fetch).mock.calls.map((call) => String(call[0]));
     expect(urls[0]).toContain(`/api/orgs/${ORG}/branches`);
     expect(urls[1]).toContain(`/branches/${BRANCH_A}/warehouses`);
-    expect(urls[2]).toContain(`/warehouses/${WAREHOUSE}/inventory?limit=100`);
+    expect(urls[2]).toContain(`/warehouses/${WAREHOUSE}/inventory?limit=25&sort=name`);
     expect(container.textContent).toContain("Sucursal: Central");
     expect(container.textContent).toContain("Almacén: Principal");
     expect(container.textContent).toContain("Harina");
@@ -90,7 +90,7 @@ describe("inventory panel", () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
       .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
-      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
       .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
     await renderPanel(false);
     expect(container.textContent).not.toContain("Recibir mercancía");
@@ -104,7 +104,7 @@ describe("inventory panel", () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
       .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
-      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
       .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
     await renderPanel(true);
     const forms=[...container.querySelectorAll<HTMLFormElement>(".inventory-operation-form")];
@@ -154,6 +154,55 @@ describe("inventory panel", () => {
     expect([...container.querySelectorAll("option")].some((option)=>option.textContent?.includes("Café molido"))).toBe(true);
   });
 
+  it("preserves the active search after receiving merchandise and confirming a physical count", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
+      .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ id: "receipt-1", replayed: false }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockResolvedValueOnce(jsonResponse({ id: "count-1" }))
+      .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+    await renderPanel(true);
+
+    const search = container.querySelector<HTMLInputElement>("#inventory-quick-search")!;
+    const setValue = (input: HTMLInputElement, value: string) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    await act(async () => { setValue(search, "Harina"); });
+    await act(async () => { container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await flush();
+    expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=Harina");
+
+    const receiptForm = container.querySelectorAll<HTMLFormElement>(".inventory-operation-form")[0]!;
+    const receiptInputs = receiptForm.querySelectorAll<HTMLInputElement>("input");
+    await act(async () => {
+      setValue(receiptInputs[0]!, "2");
+      setValue(receiptInputs[1]!, "4.25");
+      setValue(receiptInputs[2]!, "Reposición");
+      receiptForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flush();
+    expect(String(vi.mocked(fetch).mock.calls[6]?.[0])).toContain("q=Harina");
+
+    const countForm = container.querySelectorAll<HTMLFormElement>(".inventory-operation-form")[1]!;
+    const countInputs = countForm.querySelectorAll<HTMLInputElement>("input");
+    await act(async () => {
+      setValue(countInputs[0]!, "17");
+      setValue(countInputs[1]!, "Conteo de verificación");
+      countForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flush();
+    expect(String(vi.mocked(fetch).mock.calls[10]?.[0])).toContain("q=Harina");
+    expect(container.querySelector<HTMLInputElement>("#inventory-quick-search")?.value).toBe("Harina");
+  });
+
   it("explains when the member has no branch assigned without calling other endpoints", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ branches: [] }));
     await renderPanel();
@@ -186,9 +235,9 @@ describe("inventory panel", () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
       .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
-      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }))
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 25 }))
       .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
-      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 100 }));
+      .mockResolvedValueOnce(jsonResponse({ items: [], nextCursor: null, limit: 25 }));
     await renderPanel();
     await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Escanear")?.click(); });
     await act(async () => { [...container.querySelectorAll("button")].find(button => button.textContent === "Entregar código de prueba")?.click(); });

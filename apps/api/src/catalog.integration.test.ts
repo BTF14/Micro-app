@@ -212,6 +212,20 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
     expect(inactiveOrg.status).toBe(401);
   });
 
+  it("paginates catalog rows by normalized name and id", async () => {
+    const firstResponse = await requestCatalog(members.owner.token, organizationA, "?limit=1&sort=name");
+    expect(firstResponse.status).toBe(200);
+    const first = await firstResponse.json() as { items: Array<{ id: string; name: string }>; nextCursor: string | null };
+    expect(first.items[0]?.name).toBe("Tenant A Product One");
+    expect(first.nextCursor).toBe(first.items[0]?.id);
+    const secondResponse = await requestCatalog(members.owner.token, organizationA, "?limit=1&sort=name&cursor=" + first.nextCursor);
+    expect(secondResponse.status).toBe(200);
+    const second = await secondResponse.json() as { items: Array<{ id: string; name: string }>; nextCursor: string | null };
+    expect(second.items[0]?.name).toBe("Tenant A Product Two");
+    expect(second.items[0]?.id).not.toBe(first.items[0]?.id);
+    expect(second.nextCursor).toBeNull();
+  });
+
   it("paginates with a validated UUID cursor and does not return extra rows", async () => {
     const firstResponse = await requestCatalog(members.owner.token, organizationA, "?limit=1");
     expect(firstResponse.status).toBe(200);

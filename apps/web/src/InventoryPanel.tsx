@@ -55,6 +55,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [inventorySearch, setInventorySearch] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
   const [receiptReason, setReceiptReason] = useState("");
@@ -125,7 +126,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     if (!branchId || !warehouseId) return;
     const requestId = ++sequence.current;
     setLoading(true); setError("");
-    const query = new URLSearchParams({ limit: "100" });
+    const query = new URLSearchParams({ limit: "25", sort: "name" });
     if (cursor) query.set("cursor", cursor);
     if (searchTerm.trim()) query.set("q", searchTerm.trim());
     try {
@@ -145,8 +146,8 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
 
   useEffect(() => {
     setItems([]); setNextCursor(null); setReceiptProductId(""); setCountProductId("");
-    void fetchBalances();
-  }, [fetchBalances]);
+    void fetchBalances(undefined, activeSearch);
+  }, [fetchBalances, activeSearch]);
 
   const fetchReceipts = useCallback(async () => {
     if (!branchId || !warehouseId) { setReceipts([]); return; }
@@ -191,7 +192,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       });
       setNotice(result.replayed ? "La recepción ya estaba registrada." : "Recepción registrada y existencias actualizadas.");
       setReceiptReason("");
-      await Promise.all([fetchBalances(), fetchReceipts()]);
+      await Promise.all([fetchBalances(undefined, activeSearch), fetchReceipts()]);
     } catch (reason) {
       fail(reason, "No se pudo registrar la recepción.");
     } finally { setReceiptBusy(false); }
@@ -225,7 +226,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       await apiRequest(`${prefix}/counts/${encodeURIComponent(created.id)}/confirm`, { method: "POST" });
       setNotice("Conteo físico confirmado y existencias actualizadas.");
       setCountReason("");
-      await Promise.all([fetchBalances(), fetchReceipts()]);
+      await Promise.all([fetchBalances(undefined, activeSearch), fetchReceipts()]);
     } catch (reason) {
       fail(reason, "No se pudo confirmar el conteo físico.");
     } finally { setCountBusy(false); }
@@ -268,18 +269,18 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
               Almacén: <strong>{warehouses[0]?.name}</strong>
             </span>
           ) : null}
-          <button className="catalog-refresh" type="button" onClick={() => void fetchBalances(undefined, inventorySearch)} disabled={loading || !warehouseId}>
+          <button className="catalog-refresh" type="button" onClick={() => void fetchBalances(undefined, activeSearch)} disabled={loading || !warehouseId}>
             {loading ? "Actualizando…" : "Actualizar"}
           </button>
         </div>
       </div>
 
-      <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); setReceiptProductId(""); setCountProductId(""); void fetchBalances(undefined, inventorySearch); }}>
+      <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); setReceiptProductId(""); setCountProductId(""); setActiveSearch(inventorySearch.trim()); }}>
         <label className="catalog-search-label" htmlFor="inventory-quick-search">Buscar en este almacén</label>
         <input id="inventory-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={inventorySearch} onChange={(event) => setInventorySearch(event.target.value)} />
         <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>
         <button className="catalog-search-scan" type="button" onClick={() => setScannerOpen(true)} disabled={!warehouseId || loading}>Escanear</button>
-        {inventorySearch && <button className="catalog-search-clear" type="button" onClick={() => { setInventorySearch(""); setReceiptProductId(""); setCountProductId(""); void fetchBalances(); }}>Limpiar</button>}
+        {inventorySearch && <button className="catalog-search-clear" type="button" onClick={() => { setInventorySearch(""); setActiveSearch(""); setReceiptProductId(""); setCountProductId(""); }}>Limpiar</button>}
       </form>
       {error && <p className="catalog-error" role="alert">{error}</p>}
       {notice && <p className="catalog-success" role="status">{notice}</p>}
@@ -349,7 +350,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
         <>
           <div className="catalog-summary">
             <span>{items.length} {items.length === 1 ? "producto cargado" : "productos cargados"}</span>
-            <span>Máximo 100 por página</span>
+            <span>Máximo 25 por página</span>
           </div>
           <div className="catalog-table-wrap">
             <table className="catalog-table inventory-table">
@@ -392,14 +393,14 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
           </div>
           {nextCursor && (
             <div className="catalog-pagination">
-              <button type="button" className="catalog-load-more" onClick={() => void fetchBalances(nextCursor, inventorySearch)} disabled={loading}>
+              <button type="button" className="catalog-load-more" onClick={() => void fetchBalances(nextCursor, activeSearch)} disabled={loading}>
                 {loading ? "Cargando…" : "Cargar más productos"}
               </button>
             </div>
           )}
         </>
       ) : null}
-      {scannerOpen && <BarcodeScanner onDetected={(code) => { setScannerOpen(false); setInventorySearch(code); setReceiptProductId(""); setCountProductId(""); void fetchBalances(undefined, code); }} onClose={() => setScannerOpen(false)} />}
+      {scannerOpen && <BarcodeScanner onDetected={(code) => { setScannerOpen(false); setInventorySearch(code); setActiveSearch(code); setReceiptProductId(""); setCountProductId(""); }} onClose={() => setScannerOpen(false)} />}
     </section>
   );
 }

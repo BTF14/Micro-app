@@ -312,8 +312,9 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
   it("paginates inventory balances with a stable product cursor", async () => {
     const first = await get(root() + "/inventory?limit=1");
     expect(first.status).toBe(200);
-    const firstBody = await first.json() as { items: Array<{ product_id: string }>; nextCursor: string | null };
+    const firstBody = await first.json() as { items: Array<{ product_id: string; quantity_mode: "integer" | "fractional" }>; nextCursor: string | null };
     expect(firstBody.items).toHaveLength(1);
+    expect(["integer", "fractional"]).toContain(firstBody.items[0]?.quantity_mode);
     expect(firstBody.nextCursor).toBe(firstBody.items[0]!.product_id);
     expect(firstBody.nextCursor).not.toBeNull();
 
@@ -335,6 +336,24 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
       [firstProductId, secondProductId, inactiveProductId].sort(),
     );
     expect(allItems.find((item) => item.product_id === inactiveProductId)?.is_active).toBe(false);
+  });
+
+  it("paginates inventory by normalized name without duplicating or omitting products", async () => {
+    const first = await get(root() + "/inventory?limit=1&sort=name");
+    expect(first.status).toBe(200);
+    const firstBody = await first.json() as { items: Array<{ product_id: string; name: string; quantity_mode: string }>; nextCursor: string | null };
+    expect(firstBody.items[0]?.name).toBe("Inactive Stocked Product");
+    expect(firstBody.items[0]?.quantity_mode).toBe("integer");
+    const second = await get(root() + "/inventory?limit=1&sort=name&cursor=" + firstBody.nextCursor);
+    expect(second.status).toBe(200);
+    const secondBody = await second.json() as { items: Array<{ product_id: string; name: string }>; nextCursor: string | null };
+    expect(secondBody.items[0]?.name).toBe("Read Product A");
+    const third = await get(root() + "/inventory?limit=1&sort=name&cursor=" + secondBody.nextCursor);
+    expect(third.status).toBe(200);
+    const thirdBody = await third.json() as { items: Array<{ product_id: string; name: string }>; nextCursor: string | null };
+    expect(thirdBody.items[0]?.name).toBe("Read Product B");
+    expect(thirdBody.nextCursor).toBeNull();
+    expect(new Set([firstBody.items[0]!.product_id, secondBody.items[0]!.product_id, thirdBody.items[0]!.product_id]).size).toBe(3);
   });
 
   it("returns append-only movement history with stable cursors and cost visibility", async () => {

@@ -48,6 +48,7 @@ type InventoryBalanceRow = {
   barcode: string | null;
   name: string;
   unit: string;
+  quantity_mode: "integer" | "fractional";
   price_usd: string;
   minimum_stock: string;
   on_hand_quantity: string;
@@ -75,10 +76,10 @@ type InventoryMovementRow = {
 };
 
 
-export type InventoryReadSort = "id" | "relevance";
+export type InventoryReadSort = "id" | "name" | "relevance";
 export function buildInventoryReadQuery(input: {
   organizationId: string; branchId: string; warehouseId: string; search: string;
-  activeOnly: boolean; cursor?: string; limit: number; sort: InventoryReadSort; canReadCost: boolean;
+  activeOnly: boolean; cursor?: string; cursorName?: string; limit: number; sort: InventoryReadSort; canReadCost: boolean;
 }): { statement: string; values: unknown[] } {
   const values: unknown[] = [input.organizationId, input.branchId, input.warehouseId];
   const filters = ["p.organization_id = $1", input.activeOnly ? "p.is_active = true" : "(p.is_active = true OR b.balance_version IS NOT NULL)"];
@@ -94,7 +95,17 @@ export function buildInventoryReadQuery(input: {
     }
     filters.push(`(p.barcode = $${exact} OR lower(p.sku) = lower($${exact}) OR p.barcode ILIKE $${partial} ESCAPE '\\' OR p.sku ILIKE $${partial} ESCAPE '\\' OR p.name ILIKE $${partial} ESCAPE '\\')`);
   }
-  if (input.cursor) { values.push(input.cursor); filters.push(`p.id > $${values.length}`); }
+  if (input.cursor) {
+    if (input.sort === "name") {
+      if (input.cursorName === undefined) throw new Error("A name cursor requires its normalized name.");
+      values.push(input.cursorName);
+      const nameParameter = values.length;
+      values.push(input.cursor);
+      filters.push(`(lower(p.name), p.id) > ($${nameParameter}, $${values.length})`);
+    } else {
+      values.push(input.cursor); filters.push(`p.id > $${values.length}`);
+    }
+  }
   values.push(input.limit + 1);
   let order = "p.id ASC";
   if (input.sort === "relevance" && input.search && exact !== null && partial !== null && prefix !== null) {
@@ -105,6 +116,10 @@ export function buildInventoryReadQuery(input: {
       ELSE 3 END, lower(p.name) ASC, p.id ASC`;
   } else if (input.sort === "relevance") {
     order = "lower(p.name) ASC, p.id ASC";
+  } else if (input.sort === "name") {
+    order = input.search && exact !== null
+      ? `CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC`
+      : "lower(p.name) ASC, p.id ASC";
   }
   const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
   const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit, p.quantity_mode,
@@ -137,7 +152,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
     if (search.length > 120) return c.json({ error: "INVALID_INVENTORY_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
     if (limit === null || (cursor !== undefined && !UUID_PATTERN.test(cursor)) ||
         (activeOnlyValue !== undefined && activeOnlyValue !== "true" && activeOnlyValue !== "false") ||
-        (sortValue !== undefined && sortValue !== "id" && sortValue !== "relevance") ||
+        (sortValue !== undefined && sortValue !== "id" && sortValue !== "name" && sortValue !== "relevance") ||
         (sort === "relevance" && cursor !== undefined)) {
       return c.json({ error: "INVALID_INVENTORY_QUERY", message: "Los parámetros de consulta no son válidos." }, 400);
     }
@@ -161,18 +176,20 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
           const locked = await lockInventoryWarehouses(tx, branch.organizationId, [{ warehouseId, branchId: branch.branchId }]);
           if (!locked) return { kind: "warehouse_not_found" as const };
 
+          let cursorName: string | undefined;
           if (cursor) {
-            const cursorProduct = await tx.query(
-              "SELECT id FROM products WHERE organization_id = $1 AND id = $2",
+            const cursorProduct = await tx.query<{ sort_name: string }>(
+              `SELECT lower(name) AS sort_name FROM products WHERE organization_id = $1 AND id = $2`,
               [branch.organizationId, cursor],
             );
             if (!cursorProduct.rows[0]) return { kind: "invalid_cursor" as const };
+            if (sort === "name") cursorName = cursorProduct.rows[0].sort_name;
           }
 
           const canReadCost = authorizeCommercialOperation(branch.organizationRole, "catalog.read_costs");
           const query = buildInventoryReadQuery({
             organizationId: branch.organizationId, branchId: branch.branchId, warehouseId,
-            search, activeOnly, cursor, limit, sort, canReadCost,
+            search, activeOnly, cursor, cursorName, limit, sort, canReadCost,
           });
           const rows = await tx.query<InventoryBalanceRow>(query.statement, query.values);
           const hasMore = rows.rows.length > limit;
@@ -187,6 +204,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
                 barcode: row.barcode,
                 name: row.name,
                 unit: row.unit,
+                quantity_mode: row.quantity_mode,
                 price_usd: row.price_usd,
                 minimum_stock: row.minimum_stock,
                 on_hand_quantity: row.on_hand_quantity,

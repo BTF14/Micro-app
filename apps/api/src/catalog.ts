@@ -39,6 +39,8 @@ export function buildCatalogQuery(
   cursor: string | undefined,
   pageSize: number,
   search?: string,
+  sort: "id" | "name" = "id",
+  cursorName?: string,
 ): CatalogQuery {
   // Keep the SQL projection tied to the same central policy used by route authorization.
   const canReadCost = authorizeCommercialOperation(role, "catalog.read_costs");
@@ -55,12 +57,28 @@ export function buildCatalogQuery(
     values.push(normalizedSearch, `%${escapedSearch}%`);
     filters.push("(barcode = $2 OR lower(sku) = lower($2) OR name ILIKE $3 ESCAPE '\\' OR sku ILIKE $3 ESCAPE '\\' OR barcode ILIKE $3 ESCAPE '\\')");
   }
-  if (cursor) { values.push(cursor); filters.push(`id > $${values.length}`); }
+  if (cursor) {
+    if (sort === "name") {
+      if (cursorName === undefined) throw new Error("A name cursor requires its normalized name.");
+      values.push(cursorName);
+      const nameParameter = values.length;
+      values.push(cursor);
+      filters.push(`(lower(name), id) > ($${nameParameter}, $${values.length})`);
+    } else {
+      values.push(cursor); filters.push(`id > $${values.length}`);
+    }
+  }
   values.push(pageSize + 1);
+  const order = sort === "name"
+    ? (normalizedSearch
+      ? "CASE WHEN barcode = $2 THEN 0 WHEN lower(sku) = lower($2) THEN 1 ELSE 2 END, lower(name) ASC, id ASC"
+      : "lower(name) ASC, id ASC")
+    : (normalizedSearch
+      ? "CASE WHEN barcode = $2 OR lower(sku) = lower($2) THEN 0 ELSE 1 END, id ASC"
+      : "id ASC");
   const statement = "SELECT " + columns + " FROM products WHERE " +
     ["organization_id = $1", ...filters].join(" AND ") +
-    (normalizedSearch ? " ORDER BY CASE WHEN barcode = $2 OR lower(sku) = lower($2) THEN 0 ELSE 1 END, id ASC" : " ORDER BY id ASC") +
-    ` LIMIT $${values.length}`;
+    " ORDER BY " + order + ` LIMIT $${values.length}`;
 
   return { statement, values, canReadCost };
 }
@@ -90,8 +108,11 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
     const pageSize = parsePageSize(c.req.query("limit"));
     const cursor = c.req.query("cursor");
     const search = c.req.query("q")?.trim() ?? "";
+    const sortValue = c.req.query("sort");
+    const sort: "id" | "name" = sortValue === undefined ? "id" : sortValue as "id" | "name";
     if (search.length > 120) return c.json({ error: "INVALID_CATALOG_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
-    if (pageSize === null || (cursor !== undefined && !UUID_PATTERN.test(cursor))) {
+    if (pageSize === null || (cursor !== undefined && !UUID_PATTERN.test(cursor)) ||
+        (sortValue !== undefined && sortValue !== "id" && sortValue !== "name")) {
       return c.json(
         { error: "INVALID_CATALOG_QUERY", message: "Los parámetros de paginación no son válidos." },
         400,
@@ -120,9 +141,19 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
           }
           const tenant = authorization.context;
 
+          // Resolve the cursor's normalized sort key inside the same tenant.
+          let cursorName: string | undefined;
+          if (cursor && sort === "name") {
+            const cursorRow = await transaction.query<{ sort_name: string }>(
+              "SELECT lower(name) AS sort_name FROM products WHERE organization_id = $1 AND id = $2",
+              [tenant.organizationId, cursor],
+            );
+            if (!cursorRow.rows[0]) return { kind: "invalid_cursor" as const };
+            cursorName = cursorRow.rows[0].sort_name;
+          }
           // Do not select cost_usd at all for Cashier. Do not select stock,
           // stock_quantity, branch or register data in this catalog-only phase.
-          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize, search);
+          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize, search, sort, cursorName);
           const queryResult = await transaction.query<CatalogRow>(query.statement, query.values);
           const hasMore = queryResult.rows.length > pageSize;
           const pageRows = queryResult.rows.slice(0, pageSize);
@@ -159,6 +190,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
           401,
         );
       }
+      if (result.kind === "invalid_cursor") return c.json({ error: "INVALID_CATALOG_CURSOR", message: "El cursor no pertenece a esta organización." }, 400);
       if (result.kind === "forbidden") {
         return c.json({ error: "FORBIDDEN", message: "No tienes permiso para consultar el catálogo." }, 403);
       }

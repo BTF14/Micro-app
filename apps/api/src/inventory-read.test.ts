@@ -51,7 +51,7 @@ describe("inventory read route guards", () => {
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({ error: "UNAUTHENTICATED" });
   });
-  it.each(["active_only=TRUE", "active_only=1", "active_only=", "sort=rank", "sort=Relevance", "sort=", "sort=relevance&cursor=00000000-0000-4000-8000-000000000001"])(
+  it.each(["active_only=TRUE", "active_only=1", "active_only=", "sort=rank", "sort=alphabetical", "sort=Relevance", "sort=", "sort=relevance&cursor=00000000-0000-4000-8000-000000000001"])(
     "rejects invalid active_only/sort values before database access (%s)", async (query) => {
       const response = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory?" + query, "token");
       expect(response.status).toBe(400);
@@ -71,6 +71,26 @@ describe("inventory read route guards", () => {
     expect(query.statement).toContain("p.id > $");
     expect(query.statement).toContain("ORDER BY p.id ASC");
     expect(query.values).toEqual([organizationId, branchId, warehouseId, "750123", "%750123%", "00000000-0000-4000-8000-000000000001", 31]);
+    expectSequentialSqlParameters(query.statement, query.values);
+  });
+  it("returns quantity mode and paginates by normalized name plus product id", () => {
+    const cursor = "00000000-0000-4000-8000-000000000001";
+    const query = buildInventoryReadQuery({
+      organizationId, branchId, warehouseId, search: "", activeOnly: true,
+      cursor, cursorName: "harina", limit: 25, sort: "name", canReadCost: false,
+    });
+    expect(query.statement).toContain("p.quantity_mode");
+    expect(query.statement).toContain("(lower(p.name), p.id) > ($4, $5)");
+    expect(query.statement).toContain("ORDER BY lower(p.name) ASC, p.id ASC");
+    expect(query.values).toEqual([organizationId, branchId, warehouseId, "harina", cursor, 26]);
+    expectSequentialSqlParameters(query.statement, query.values);
+  });
+  it("keeps exact barcode/SKU matches first for name sorting", () => {
+    const query = buildInventoryReadQuery({
+      organizationId, branchId, warehouseId, search: "750123", activeOnly: true,
+      limit: 25, sort: "name", canReadCost: false,
+    });
+    expect(query.statement).toContain("CASE WHEN p.barcode = $4 THEN 0 WHEN lower(p.sku) = lower($4) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
     expectSequentialSqlParameters(query.statement, query.values);
   });
   it("orders relevance by exact barcode, exact SKU, then partial match and stable name/id", () => {

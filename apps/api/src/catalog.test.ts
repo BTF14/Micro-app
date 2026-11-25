@@ -42,6 +42,14 @@ describe("catalog SQL projection", () => {
     expect(query.values).toEqual([organizationId, "CODE_%", "%CODE\\_\\%%", 21]);
   });
 
+  it("uses normalized name keyset pagination and keeps exact barcode/SKU matches first", () => {
+    const cursor = "22222222-3333-4444-8555-666666666666";
+    const query = buildCatalogQuery("cashier", organizationId, cursor, 25, "CODE", "name", "harina");
+    expect(query.statement).toContain("(lower(name), id) > ($4, $5)");
+    expect(query.statement).toContain("ORDER BY CASE WHEN barcode = $2 THEN 0 WHEN lower(sku) = lower($2) THEN 1 ELSE 2 END, lower(name) ASC, id ASC");
+    expect(query.values).toEqual([organizationId, "CODE", "%CODE%", "harina", cursor, 26]);
+  });
+
   it.each(["owner", "admin", "inventory"] as const)(
     "%s may select cost but never stock",
     (role) => {
@@ -93,6 +101,10 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
       "/api/orgs/" + organizationId + "/catalog?cursor=not-a-uuid",
       { headers: { Cookie: sessionCookie } },
     );
+    const invalidSort = await app.request(
+      "/api/orgs/" + organizationId + "/catalog?sort=rank",
+      { headers: { Cookie: sessionCookie } },
+    );
     const excessiveLimit = await app.request(
       "/api/orgs/" + organizationId + "/catalog?limit=201",
       { headers: { Cookie: sessionCookie } },
@@ -101,6 +113,7 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
     expect(invalidLimit.status).toBe(400);
     expect(invalidCursor.status).toBe(400);
     expect(excessiveLimit.status).toBe(400);
+    expect(invalidSort.status).toBe(400);
     await expect(invalidLimit.json()).resolves.toMatchObject({
       error: "INVALID_CATALOG_QUERY",
     });

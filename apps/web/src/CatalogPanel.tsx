@@ -88,7 +88,7 @@ export default function CatalogPanel({
     }
     setLoading(true);
     setError("");
-    const query = new URLSearchParams({ limit: "100" });
+    const query = new URLSearchParams({ limit: "25", sort: "name" });
     if (cursor) query.set("cursor", cursor);
     if (searchTerm.trim()) query.set("q", searchTerm.trim());
 
@@ -192,7 +192,7 @@ export default function CatalogPanel({
 
       <div className="catalog-summary">
         <span>{items.length} {items.length === 1 ? "producto cargado" : "productos cargados"}</span>
-        <span>Máximo 100 por página</span>
+        <span>Máximo 25 por página</span>
       </div>
 
       {loading && items.length === 0 ? (

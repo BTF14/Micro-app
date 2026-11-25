@@ -282,7 +282,7 @@ describe("Micro app authentication flow", () => {
     expect(container.textContent).toContain("US$ 10,00");
     expect(container.textContent).toContain("No hay una tasa BCV validada");
     expect(container.textContent).not.toContain("Bs. 870,53");
-    expect(vi.mocked(fetch).mock.calls[3][0]).toBe("/api/orgs/org-1/catalog?limit=100");
+    expect(vi.mocked(fetch).mock.calls[3][0]).toBe("/api/orgs/org-1/catalog?limit=25&sort=name");
   });
 
   it("revokes the session on logout and returns to the login screen", async () => {

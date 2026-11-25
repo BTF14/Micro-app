@@ -48,7 +48,7 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
 const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   {
     heading: "Qué datos guardamos",
-    body: "Tu nombre y correo de la cuenta de Google con la que inicias sesión, y la información del negocio que se registre en el sistema (por ejemplo, inventario y ventas, a medida que esas funciones se habiliten).",
+    body: "Tu nombre y correo de la cuenta de Google con la que inicias sesión, y la información del negocio que se registre en el sistema (catálogo, inventario, caja y ventas).",
   },
   {
     heading: "Para qué los usamos",
@@ -68,7 +68,7 @@ const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "Nota",
-    body: "Este es un aviso de privacidad básico para una aplicación interna todavía en desarrollo. Si el negocio empieza a manejar datos de clientes o el sistema se abre al público, conviene una revisión legal formal antes de ese paso.",
+    body: "Este es un aviso de privacidad básico para uso interno del negocio. Si el negocio empieza a manejar datos de clientes o el sistema se abre al público, conviene una revisión legal formal antes de ese paso.",
   },
 ];
 

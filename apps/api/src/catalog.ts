@@ -23,7 +23,7 @@ function decodeNameCursor(value: string, hasSearch: boolean): NameCursor | null 
     const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
     const binary = atob(base64 + "=".repeat((4 - base64.length % 4) % 4));
     const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-    const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes));
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const candidate = parsed as Record<string, unknown>;
     const keys = Object.keys(candidate).sort().join(",");

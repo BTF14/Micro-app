@@ -344,6 +344,8 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     const firstBody = await first.json() as { items: Array<{ product_id: string; name: string; quantity_mode: string }>; nextCursor: string | null };
     expect(firstBody.items[0]?.name).toBe("Inactive Stocked Product");
     expect(firstBody.items[0]?.quantity_mode).toBe("integer");
+    expect(firstBody.nextCursor).not.toBe(firstBody.items[0]?.product_id);
+    await admin.query("UPDATE products SET name = 'Zulu Renamed Boundary' WHERE organization_id = $1 AND id = $2", [organizationId, inactiveProductId]);
     const second = await get(root() + "/inventory?limit=1&sort=name&cursor=" + firstBody.nextCursor);
     expect(second.status).toBe(200);
     const secondBody = await second.json() as { items: Array<{ product_id: string; name: string }>; nextCursor: string | null };

@@ -203,6 +203,47 @@ describe("inventory panel", () => {
     expect(container.querySelector<HTMLInputElement>("#inventory-quick-search")?.value).toBe("Harina");
   });
 
+  it("refreshes a pending receipt with the newest active search filter", async () => {
+    let resolveReceipt!: (response: Response) => void;
+    const pendingReceipt = new Promise<Response>((resolve) => { resolveReceipt = resolve; });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
+      .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockImplementationOnce(() => pendingReceipt)
+      .mockResolvedValueOnce(jsonResponse({ items: [balance({ name: "Azúcar" })], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance({ name: "Azúcar" })], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+    await renderPanel(true);
+
+    const setValue = (input: HTMLInputElement, value: string) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const receiptForm = container.querySelectorAll<HTMLFormElement>(".inventory-operation-form")[0]!;
+    const receiptInputs = receiptForm.querySelectorAll<HTMLInputElement>("input");
+    await act(async () => {
+      setValue(receiptInputs[0]!, "2");
+      setValue(receiptInputs[1]!, "4.25");
+      setValue(receiptInputs[2]!, "Reposición pendiente");
+      receiptForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    const search = container.querySelector<HTMLInputElement>("#inventory-quick-search")!;
+    await act(async () => { setValue(search, "Azúcar"); });
+    await act(async () => {
+      container.querySelector<HTMLFormElement>(".catalog-search")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flush();
+    expect(String(vi.mocked(fetch).mock.calls[5]?.[0])).toContain("q=Az%C3%BAcar");
+
+    await act(async () => { resolveReceipt(jsonResponse({ id: "receipt-pending", replayed: false })); });
+    await flush();
+    expect(String(vi.mocked(fetch).mock.calls[6]?.[0])).toContain("q=Az%C3%BAcar");
+    expect(container.querySelector<HTMLInputElement>("#inventory-quick-search")?.value).toBe("Azúcar");
+  });
+
   it("explains when the member has no branch assigned without calling other endpoints", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ branches: [] }));
     await renderPanel();

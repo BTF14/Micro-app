@@ -141,6 +141,11 @@ describe("Micro app authentication flow", () => {
     if (!privacyButton) throw new Error("Privacy button not found");
     await act(async () => { privacyButton.click(); });
     expect(container.querySelector('[role="dialog"]')?.textContent).toContain("Qué datos guardamos");
+    const privacyDialog = container.querySelector('[role="dialog"]');
+    expect(privacyDialog?.textContent).toContain("Tu nombre y correo de la cuenta de Google con la que inicias sesión, y la información del negocio que se registre en el sistema (catálogo, inventario, caja y ventas).");
+    expect(privacyDialog?.textContent).toContain("Este es un aviso de privacidad básico para uso interno del negocio. Si el negocio empieza a manejar datos de clientes o el sistema se abre al público, conviene una revisión legal formal antes de ese paso.");
+    expect(privacyDialog?.textContent).not.toContain("todavía en desarrollo");
+    expect(privacyDialog?.textContent).not.toContain("a medida que esas funciones se habiliten");
   });
 
   it("shows help links (WhatsApp support, FAQ, privacy) on the authenticated dashboard footer", async () => {

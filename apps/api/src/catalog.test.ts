@@ -111,6 +111,10 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
       "/api/orgs/" + organizationId + "/catalog?cursor=not-a-uuid",
       { headers: { Cookie: sessionCookie } },
     );
+    const invalidNameCursor = await app.request(
+      "/api/orgs/" + organizationId + "/catalog?sort=name&cursor=not-a-token",
+      { headers: { Cookie: sessionCookie } },
+    );
     const invalidSort = await app.request(
       "/api/orgs/" + organizationId + "/catalog?sort=rank",
       { headers: { Cookie: sessionCookie } },
@@ -122,6 +126,7 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
 
     expect(invalidLimit.status).toBe(400);
     expect(invalidCursor.status).toBe(400);
+    expect(invalidNameCursor.status).toBe(400);
     expect(excessiveLimit.status).toBe(400);
     expect(invalidSort.status).toBe(400);
     await expect(invalidLimit.json()).resolves.toMatchObject({

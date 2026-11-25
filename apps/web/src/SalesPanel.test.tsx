@@ -102,7 +102,8 @@ beforeEach(() => {
     await render(); await act(async () => { click("Agregar producto A"); });
     const key = `micro-app:sales:draft:${ORG}:shift-1:${WAREHOUSE}`;
     expect(window.sessionStorage.getItem(key)).not.toBeNull();
-    await act(async () => { click("Monto exacto"); click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });
+    await act(async () => { click("Monto exacto"); });
+    await act(async () => { click("Cobrar venta"); await new Promise(resolve => setTimeout(resolve, 0)); });
     expect(window.sessionStorage.getItem(key)).toBeNull();
     await act(async () => { click("Nueva venta"); });
     expect(window.sessionStorage.getItem(key)).toBeNull();

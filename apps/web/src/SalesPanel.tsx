@@ -72,6 +72,29 @@ function paymentScale(currency: Currency): { precision: number; scale: number } 
   return currency === "USD" ? { precision: 14, scale: 4 } : { precision: 14, scale: 2 };
 }
 function newIdempotencyKey(): string { return crypto.randomUUID(); }
+const SALES_DRAFT_PREFIX = "micro-app:sales:draft:";
+type SalesDraft = { cart: CartLine[]; currency: Currency; payments: PaymentLine[] };
+function salesDraftKey(org: string, shift: string | null, warehouse: string): string | null { return shift && warehouse ? SALES_DRAFT_PREFIX + org + ":" + shift + ":" + warehouse : null; }
+function removeSalesDraft(key: string | null): void { if (!key) return; try { window.sessionStorage.removeItem(key); } catch { /* Storage may be blocked. */ } }
+function parseSalesDraft(raw: string): SalesDraft | null {
+  try {
+    const value: unknown = JSON.parse(raw); if (!value || typeof value !== "object") return null;
+    const draft = value as Record<string, unknown>;
+    if ((draft.currency !== "USD" && draft.currency !== "VES") || !Array.isArray(draft.cart) || !Array.isArray(draft.payments) || draft.payments.length < 1 || draft.payments.length > 10) return null;
+    const cart: CartLine[] = [];
+    for (const item of draft.cart) {
+      if (!item || typeof item !== "object") return null;
+      const line = item as Record<string, unknown>; const p = line.product as Record<string, unknown> | null;
+      if (typeof line.quantity !== "string" || !p || typeof p !== "object" || typeof p.product_id !== "string" || !p.product_id || typeof p.is_active !== "boolean" || typeof p.sku !== "string" || !(p.barcode === null || typeof p.barcode === "string") || typeof p.name !== "string' || typeof p.unit !== "string" || (p.quantity_mode !== "integer" && p.quantity_mode !== "fractional") || typeof p.price_usd !== "string" || typeof p.available_quantity !== "string") return null;
+      if (parseNumeric(line.quantity, 14, 3) <= 0n || parseNumeric(p.price_usd, 14, 4) <= 0n || parseNumeric(p.available_quantity, 14, 3) < 0n) return null;
+      cart.push({ product: { product_id: p.product_id, is_active: p.is_active, sku: p.sku, barcode: p.barcode, name: p.name, unit: p.unit, quantity_mode: p.quantity_mode, price_usd: p.price_usd, available_quantity: p.available_quantity }, quantity: line.quantity, quantityInput: formatQuantityInput(line.quantity), quantityValid: true });
+    }
+    const methods: PaymentMethod[] = ["cash", "card", "transfer", "mobile_payment", "other"]; const payments: PaymentLine[] = [];
+    for (const item of draft.payments) { if (!item || typeof item !== "object") return null; const p = item as Record<string, unknown>; if (!methods.includes(p.method as PaymentMethod) || typeof p.amount !== "string" || typeof p.reference !== "string" || !(p.cashReceived === undefined || typeof p.cashReceived === "string")) return null; payments.push({ id: nextPaymentLineId(), method: p.method as PaymentMethod, amount: p.amount, reference: p.reference, ...(typeof p.cashReceived === "string" ? { cashReceived: p.cashReceived } : {}) }); }
+    return { cart, currency: draft.currency, payments };
+  } catch { return null; }
+}
+
 let paymentLineSequence = 0;
 function nextPaymentLineId(): string { paymentLineSequence += 1; return `payment-${paymentLineSequence}`; }
 
@@ -100,8 +123,14 @@ export default function SalesPanel({
   const loadSequence = useRef(0);
   const prevOrgRef = useRef(organizationId);
   const prevBranchRef = useRef<string | null>(null);
+  const prevShiftIdRef = useRef<string | null>(null);
+  const hydratedDraftKeyRef = useRef<string | null>(null);
+  const activeDraftKeyRef = useRef<string | null>(null);
+  const skipDraftPersistRef = useRef(false);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
+  const shiftId = shift?.id ?? shift?.shift_id ?? shift?.branch_id ?? null;
+  const draftKey = salesDraftKey(organizationId, shiftId, warehouseId);
   const bcvAvailable = exchangeRateStatus === "current" && exchangeRate !== null;
   const activeManualFx = fxState?.commercial_enabled === true && fxState.authorization &&
     new Date(fxState.authorization.expires_at).getTime() > Date.now() ? fxState.authorization : null;

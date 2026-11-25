@@ -1,4 +1,4 @@
-## Turno  — sincronización documental post-PR #417 (2026-11-25)
+## Turno 62 — sincronización documental post-PR #417 (2026-11-25)
 
 - GitHub `main` verificado en `e7186ae3d86873c577ce4fc8f922c364e3298919`, merge commit de PR #417; búsqueda de PRs abiertas en `BTF14/Micro-app` devolvió cero.
 - Se consolida el cierre de v1.1/UI: nueve vistas, importador CSV, escáner móvil, cierres/Reportes/CSV, `quantity_mode`, paginación alfabética y borrador recuperable de Ventas están integrados en `main`; migraciones versionadas 0001–0030.

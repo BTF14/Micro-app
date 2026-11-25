@@ -90,7 +90,7 @@ function parseSalesDraft(raw: string): SalesDraft | null {
       cart.push({ product: { product_id: p.product_id, is_active: p.is_active, sku: p.sku, barcode: p.barcode, name: p.name, unit: p.unit, quantity_mode: p.quantity_mode, price_usd: p.price_usd, available_quantity: p.available_quantity }, quantity: line.quantity, quantityInput: formatQuantityInput(line.quantity), quantityValid: true });
     }
     const methods: PaymentMethod[] = ["cash", "card", "transfer", "mobile_payment", "other"]; const payments: PaymentLine[] = [];
-    for (const item of draft.payments) { if (!item || typeof item !== "object") return null; const p = item as Record<string, unknown>; if (!methods.includes(p.method as PaymentMethod) || typeof p.amount !== "string" || typeof p.reference !== "string" || !(p.cashReceived === undefined || typeof p.cashReceived === "string")) return null; payments.push({ id: nextPaymentLineId(), method: p.method as PaymentMethod, amount: p.amount, reference: p.reference, ...(typeof p.cashReceived === "string" ? { cashReceived: p.cashReceived } : {}) }); }
+    for (const item of draft.payments) { if (!item || typeof item !== "object") return null; const p = item as Record<string, unknown>; if (!methods.includes(p.method as PaymentMethod) || typeof p.amount !== "string" || typeof p.reference !== "string" || typeof p.cashReceived !== "string") return null; payments.push({ id: nextPaymentLineId(), method: p.method as PaymentMethod, amount: p.amount, reference: p.reference, ...(typeof p.cashReceived === "string" ? { cashReceived: p.cashReceived } : {}) }); }
     return { cart, currency: draft.currency, payments };
   } catch { return null; }
 }
@@ -300,7 +300,7 @@ export default function SalesPanel({
     if (!draftKey || hydratedDraftKeyRef.current !== draftKey || receipt) return;
     if (skipDraftPersistRef.current) { skipDraftPersistRef.current = false; return; }
     if (cart.length === 0) { removeSalesDraft(draftKey); return; }
-    const payload = { cart: cart.map((line) => ({ product: line.product, quantity: line.quantity })), currency, payments: payments.map(({ method, amount, reference, cashReceived }) => ({ method, amount, reference, ...(cashReceived !== undefined ? { cashReceived } : {}) })) };
+    const payload = { cart: cart.map((line) => ({ product: line.product, quantity: line.quantity })), currency, payments: payments.map(({ method, amount, reference, cashReceived }) => ({ method, amount, reference, cashReceived: cashReceived ?? "" })) };
     try { window.sessionStorage.setItem(draftKey, JSON.stringify(payload)); } catch { /* Storage may be blocked or full. */ }
   }, [draftKey, cart, currency, payments, receipt]);
 

@@ -46,7 +46,7 @@ describe("catalog SQL projection", () => {
     const cursor = "22222222-3333-4444-8555-666666666666";
     const query = buildCatalogQuery("cashier", organizationId, cursor, 25, "CODE", "name", "harina");
     expect(query.statement).toContain("(lower(name), id) > ($4, $5)");
-    expect(query.statement).toContain("ORDER BY CASE WHEN barcode = $2 THEN 0 WHEN lower(sku) = lower($2) THEN 1 ELSE 2 END, lower(name) ASC, id ASC");
+    expect(query.statement).toContain("ORDER BY CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
     expect(query.values).toEqual([organizationId, "CODE", "%CODE%", "harina", cursor, 26]);
   });
 

@@ -50,6 +50,16 @@ describe("catalog SQL projection", () => {
     expect(query.values).toEqual([organizationId, "CODE", "%CODE%", "harina", cursor, 26]);
   });
 
+  it("continues from an exact Z barcode match to an A partial match with the full search-rank keyset", () => {
+    const cursor = "22222222-3333-4444-8555-666666666666";
+    // The cursor row is an exact barcode match (rank 0, name Z...).
+    // A later partial match (rank 2, name A...) must still be on the next page.
+    const query = buildCatalogQuery("cashier", organizationId, cursor, 1, "SKU-42", "name", "z exact product", 0);
+    expect(query.statement).toContain("(CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name), p.id) > ($4, $5, $6)");
+    expect(query.statement).toContain("ORDER BY CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
+    expect(query.values).toEqual([organizationId, "SKU-42", "%SKU-42%", 0, "z exact product", cursor, 2]);
+  });
+
   it.each(["owner", "admin", "inventory"] as const)(
     "%s may select cost but never stock",
     (role) => {

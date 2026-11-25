@@ -8,7 +8,7 @@
 
 Los snapshots fechados inferiores son históricos; no reutilizar SHA ni inferir aplicación remota sin revalidación.
 
-------
+---
 
 ## Snapshot histórico — 2026-11-08 UTC
 

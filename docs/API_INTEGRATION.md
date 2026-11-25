@@ -4,7 +4,7 @@
 
 Rutas verificadas en los módulos montados:
 - Catálogo: `GET /api/orgs/:organizationId/catalog` (incluye cursor `sort=name`); `POST` y `PATCH` para escritura.
-- Importador: handlers de preview/apply registrados por `registerCatalogImportRoutes` (migración 0029).
+- Importador: `POST /api/orgs/:organizationId/catalog/imports/preview` y `POST /api/orgs/:organizationId/catalog/imports/apply` (migración 0029).
 - Inventario: lectura y movimientos por sucursal/almacén; conteos y recepciones.
 - Ventas: `POST /api/orgs/:organizationId/branches/:branchId/checkout`; `GET .../sales/:saleId`. Checkout aplica `quantity_mode` y snapshots.
 - Turnos/cierres: `GET /api/orgs/:organizationId/register-shifts`, vistas current y registers, creación y cierre de turno, además de `GET /api/orgs/:organizationId/branches/:branchId/register-shifts/:shiftId/closure-summary`.
@@ -17,7 +17,7 @@ El estado de PRs, gates y próximo paso se mantiene exclusivamente en [CURRENT_S
 
 Los addenda y snapshots inferiores se conservan como historia y no prevalecen sobre este corte.
 
-------
+---
 > **Archivo histórico — no usar como estado operativo.** Las entradas siguientes se conservan por trazabilidad y describen estados de su fecha. GitHub en vivo y el checkpoint superior prevalecen.
 
 

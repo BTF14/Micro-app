@@ -233,8 +233,8 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
       "INSERT INTO products (organization_id, sku, barcode, name, unit, cost_usd, price_usd, stock_quantity, is_active) VALUES ($1, $2, 'CURSOR-42', 'Zulu Boundary', 'unidad', 1.0000, 2.0000, 0, true) RETURNING id",
       [organizationA, "BOUNDARY-" + suffix],
     );
-    await cleanupClient!.query(
-      "INSERT INTO products (organization_id, sku, name, unit, cost_usd, price_usd, stock_quantity, is_active) VALUES ($1, $2, 'Alpha Intermediate', 'unidad', 1.0000, 2.0000, 0, true)",
+    const intermediate = await cleanupClient!.query<{ id: string }>(
+      "INSERT INTO products (organization_id, sku, name, unit, cost_usd, price_usd, stock_quantity, is_active) VALUES ($1, $2, 'Alpha Intermediate', 'unidad', 1.0000, 2.0000, 0, true) RETURNING id",
       [organizationA, "PART-CURSOR-42-" + suffix],
     );
 
@@ -250,6 +250,7 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
     expect(secondResponse.status).toBe(200);
     const second = await secondResponse.json() as { items: Array<{ id: string; name: string }>; nextCursor: string | null };
     expect(second.items[0]?.name).toBe("Alpha Intermediate");
+    await cleanupClient!.query("DELETE FROM products WHERE organization_id = $1 AND id = ANY($2::uuid[])", [organizationA, [boundary.rows[0]!.id, intermediate.rows[0]!.id]]);
   });
 
   it("paginates with a validated UUID cursor and does not return extra rows", async () => {

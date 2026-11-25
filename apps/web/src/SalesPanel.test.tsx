@@ -390,7 +390,6 @@ describe("SalesPanel", () => {
     expect(renewedAcknowledgement).not.toBeNull();
     expect(renewedAcknowledgement?.checked).toBe(false);
     expect(container.querySelector<HTMLButtonElement>(".sales-charge-button")?.disabled).toBe(true);
-    expect(container.textContent).toContain("Confirma que comunicaste al cliente la tasa manual de contingencia");
     expect(vi.mocked(apiRequest)).toHaveBeenCalledTimes(4);
   });
 

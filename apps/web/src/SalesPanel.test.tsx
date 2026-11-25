@@ -365,7 +365,8 @@ describe("SalesPanel", () => {
       .mockResolvedValueOnce(authorization as never)
       .mockResolvedValueOnce(authorization as never);
     await render("stale", null);
-    await act(async () => { click("Agregar producto A"); click("Monto exacto"); });
+    await act(async () => { click("Agregar producto A"); });
+    await act(async () => { click("Monto exacto"); });
     const firstAcknowledgement = container.querySelector<HTMLInputElement>(".sales-manual-fx-ack input")!;
     const charge = container.querySelector<HTMLButtonElement>(".sales-charge-button")!;
     expect(firstAcknowledgement.checked).toBe(false);

@@ -28,7 +28,8 @@
 .success-alert { border: 1px solid #cce2d2; color: #2f6946; background: #f2faf4; }
 .auth-security { display: flex; align-items: flex-start; gap: .5rem; margin: 1.8rem 0 0; color: #77817c; font-size: .7rem; line-height: 1.6; }
 .auth-security span { color: #47735e; font-size: 1rem; }
-.auth-setup-note { margin: 1.1rem 0 0; color: #98a19b; font-size: .65rem; line-height: 1.6; text-align: center; }
+.auth-setup-note { margin: 1.1rem 0 0; color: #98a19b; font-size: .65rem; line-height: 1.6; text-align: center; text-wrap: balance; }
+.auth-form-wrap .help-links { margin-top: 0.9rem; justify-content: center; }
 .auth-setup-note a { color: #47735e; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .auth-mobile-brand { display: none; align-items: center; gap: .6rem; margin-bottom: 2.5rem; color: var(--petrol-dark); }
 .auth-mobile-brand .brand-mark { width: 2rem; height: 2rem; font-size: 1.4rem; }

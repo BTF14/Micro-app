@@ -93,6 +93,19 @@ describe("inventory read route guards", () => {
     expect(query.statement).toContain("CASE WHEN p.barcode = $4 THEN 0 WHEN lower(p.sku) = lower($4) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
     expectSequentialSqlParameters(query.statement, query.values);
   });
+  it("continues from an exact Z barcode match to an A partial match with the full search-rank keyset", () => {
+    const cursor = "00000000-0000-4000-8000-000000000001";
+    // The cursor row is an exact barcode match (rank 0, name Z...).
+    // A later partial match (rank 2, name A...) must still be on the next page.
+    const query = buildInventoryReadQuery({
+      organizationId, branchId, warehouseId, search: "SKU-42", activeOnly: true,
+      cursor, cursorName: "z exact product", cursorRank: 0, limit: 1, sort: "name", canReadCost: false,
+    });
+    expect(query.statement).toContain("(CASE WHEN p.barcode = $4 THEN 0 WHEN lower(p.sku) = lower($4) THEN 1 ELSE 2 END, lower(p.name), p.id) > ($6, $7, $8)");
+    expect(query.statement).toContain("ORDER BY CASE WHEN p.barcode = $4 THEN 0 WHEN lower(p.sku) = lower($4) THEN 1 ELSE 2 END, lower(p.name) ASC, p.id ASC");
+    expect(query.values).toEqual([organizationId, branchId, warehouseId, "SKU-42", "%SKU-42%", 0, "z exact product", cursor, 2]);
+    expectSequentialSqlParameters(query.statement, query.values);
+  });
   it("orders relevance by exact barcode, exact SKU, then partial match and stable name/id", () => {
     const query = buildInventoryReadQuery({ organizationId, branchId, warehouseId, search: "750123", activeOnly: true, limit: 30, sort: "relevance", canReadCost: false });
     expect(query.statement.indexOf("WHEN p.barcode = $4")).toBeLessThan(query.statement.indexOf("WHEN lower(p.sku) = lower($4)"));

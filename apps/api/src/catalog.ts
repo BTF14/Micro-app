@@ -8,6 +8,36 @@ import type { OrganizationRole } from "./tenant-context";
 
 const SESSION_COOKIE = "microapp_session";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type NameCursor = { id: string; name: string; rank?: 0 | 1 | 2 };
+
+function encodeNameCursor(cursor: NameCursor): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(cursor));
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeNameCursor(value: string, hasSearch: boolean): NameCursor | null {
+  if (value.length > 2048 || !/^[A-Za-z0-9_-]+$/.test(value)) return null;
+  try {
+    const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+    const binary = atob(base64 + "=".repeat((4 - base64.length % 4) % 4));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const candidate = parsed as Record<string, unknown>;
+    const keys = Object.keys(candidate).sort().join(",");
+    if (keys !== (hasSearch ? "id,name,rank" : "id,name")) return null;
+    if (typeof candidate.id !== "string" || !UUID_PATTERN.test(candidate.id)) return null;
+    if (typeof candidate.name !== "string" || candidate.name.length < 1 || candidate.name.length > 200) return null;
+    if (hasSearch && candidate.rank !== 0 && candidate.rank !== 1 && candidate.rank !== 2) return null;
+    return hasSearch
+      ? { id: candidate.id, name: candidate.name, rank: candidate.rank as 0 | 1 | 2 }
+      : { id: candidate.id, name: candidate.name };
+  } catch {
+    return null;
+  }
+}
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGE_SIZE = 200;
 
@@ -46,11 +76,12 @@ export function buildCatalogQuery(
   // Keep the SQL projection tied to the same central policy used by route authorization.
   const canReadCost = authorizeCommercialOperation(role, "catalog.read_costs");
 
+  const normalizedSearch = search?.trim() ?? "";
   const columns =
     "id, is_active, sku, barcode, name, description, unit, quantity_mode, price_usd::text AS price_usd" +
-    (canReadCost ? ", cost_usd::text AS cost_usd" : "");
-
-  const normalizedSearch = search?.trim() ?? "";
+    (sort === "name" ? ", lower(p.name) AS cursor_name" +
+      (normalizedSearch ? ", CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END AS cursor_rank" : "") : "") +
+    (canReadCost ? ", p.cost_usd::text AS cost_usd" : "");
   const escapedSearch = normalizedSearch.replace(/[\\%_]/g, (character) => "\\" + character);
   const values: unknown[] = [organizationId];
   const filters: string[] = [];
@@ -122,7 +153,9 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
     const sortValue = c.req.query("sort");
     const sort: "id" | "name" = sortValue === undefined ? "id" : sortValue as "id" | "name";
     if (search.length > 120) return c.json({ error: "INVALID_CATALOG_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
-    if (pageSize === null || (cursor !== undefined && !UUID_PATTERN.test(cursor)) ||
+    const nameCursor = cursor !== undefined && sort === "name" ? decodeNameCursor(cursor, search.length > 0) : null;
+    if (pageSize === null ||
+        (cursor !== undefined && (sort === "name" ? nameCursor === null : !UUID_PATTERN.test(cursor))) ||
         (sortValue !== undefined && sortValue !== "id" && sortValue !== "name")) {
       return c.json(
         { error: "INVALID_CATALOG_QUERY", message: "Los parámetros de paginación no son válidos." },
@@ -152,25 +185,22 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
           }
           const tenant = authorization.context;
 
-          // Resolve the cursor's normalized sort key inside the same tenant.
+          // Validate cursor ownership, but keep its page-boundary sort tuple immutable.
           let cursorName: string | undefined;
           let cursorRank: number | undefined;
-          if (cursor && sort === "name") {
-            const cursorHasSearchRank = search.length > 0;
-            const cursorRow = await transaction.query<{ sort_name: string; sort_rank?: number }>(
-              `SELECT lower(p.name) AS sort_name${cursorHasSearchRank
-                ? ", CASE WHEN p.barcode = $3 THEN 0 WHEN lower(p.sku) = lower($3) THEN 1 ELSE 2 END AS sort_rank"
-                : ""}
-                 FROM products p WHERE p.organization_id = $1 AND p.id = $2`,
-              cursorHasSearchRank ? [tenant.organizationId, cursor, search] : [tenant.organizationId, cursor],
+          const cursorId = sort === "name" ? nameCursor?.id : cursor;
+          if (cursorId && sort === "name" && nameCursor) {
+            const cursorRow = await transaction.query<{ exists: number }>(
+              "SELECT 1 AS exists FROM products WHERE organization_id = $1 AND id = $2",
+              [tenant.organizationId, cursorId],
             );
             if (!cursorRow.rows[0]) return { kind: "invalid_cursor" as const };
-            cursorName = cursorRow.rows[0].sort_name;
-            if (cursorHasSearchRank) cursorRank = cursorRow.rows[0].sort_rank;
+            cursorName = nameCursor.name;
+            cursorRank = nameCursor.rank;
           }
           // Do not select cost_usd at all for Cashier. Do not select stock,
           // stock_quantity, branch or register data in this catalog-only phase.
-          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursor, pageSize, search, sort, cursorName, cursorRank);
+          const query = buildCatalogQuery(tenant.role, tenant.organizationId, cursorId, pageSize, search, sort, cursorName, cursorRank);
           const queryResult = await transaction.query<CatalogRow>(query.statement, query.values);
           const hasMore = queryResult.rows.length > pageSize;
           const pageRows = queryResult.rows.slice(0, pageSize);
@@ -194,7 +224,15 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
             kind: "ok" as const,
             body: {
               items,
-              nextCursor: hasMore ? pageRows[pageRows.length - 1]!.id : null,
+              nextCursor: hasMore
+                ? sort === "name"
+                  ? encodeNameCursor({
+                    id: pageRows[pageRows.length - 1]!.id,
+                    name: pageRows[pageRows.length - 1]!.cursor_name!,
+                    ...(search ? { rank: pageRows[pageRows.length - 1]!.cursor_rank as 0 | 1 | 2 } : {}),
+                  })
+                  : pageRows[pageRows.length - 1]!.id
+                : null,
               limit: pageSize,
             },
           };

@@ -228,7 +228,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
           const cursorId = sort === "name" ? nameCursor?.id : cursor;
           if (cursorId && sort === "name" && nameCursor) {
             const cursorProduct = await tx.query<{ exists: number }>(
-              "SELECT 1 AS exists FROM products WHERE organization_id = $1 AND id = $2",
+              "SELECT 1 AS cursor_exists FROM products WHERE organization_id = $1 AND id = $2",
               [branch.organizationId, cursorId],
             );
             if (!cursorProduct.rows[0]) return { kind: "invalid_cursor" as const };

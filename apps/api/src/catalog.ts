@@ -191,7 +191,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
           const cursorId = sort === "name" ? nameCursor?.id : cursor;
           if (cursorId && sort === "name" && nameCursor) {
             const cursorRow = await transaction.query<{ exists: number }>(
-              "SELECT 1 AS exists FROM products WHERE organization_id = $1 AND id = $2",
+              "SELECT 1 AS cursor_exists FROM products WHERE organization_id = $1 AND id = $2",
               [tenant.organizationId, cursorId],
             );
             if (!cursorRow.rows[0]) return { kind: "invalid_cursor" as const };

@@ -29,7 +29,7 @@ function decodeNameCursor(value: string, hasSearch: boolean): NameCursor | null 
     const keys = Object.keys(candidate).sort().join(",");
     if (keys !== (hasSearch ? "id,name,rank" : "id,name")) return null;
     if (typeof candidate.id !== "string" || !UUID_PATTERN.test(candidate.id)) return null;
-    if (typeof candidate.name !== "string" || candidate.name.trim().length === 0 || candidate.name.length > 200 || candidate.name.includes("\\u0000")) return null;
+    if (typeof candidate.name !== "string" || candidate.name.trim().length === 0 || candidate.name.length > 200 || candidate.name.includes("\u0000")) return null;
     if (hasSearch && candidate.rank !== 0 && candidate.rank !== 1 && candidate.rank !== 2) return null;
     return hasSearch
       ? { id: candidate.id, name: candidate.name, rank: candidate.rank as 0 | 1 | 2 }

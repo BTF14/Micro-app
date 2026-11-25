@@ -136,4 +136,18 @@ describe("inventory read route guards", () => {
     expect(query.values).toEqual([organizationId, branchId, warehouseId, "750123", "%750123%", "750123%", 31]);
     expectSequentialSqlParameters(query.statement, query.values);
   });
+
+  it("accepts 240-character name cursors and rejects 241-character cursors before database access", async () => {
+    const acceptedCursor = nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "n".repeat(240) });
+    const rejectedCursor = nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "n".repeat(241) });
+    const root = "/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory?sort=name&cursor=";
+    const accepted = await request(root + acceptedCursor);
+    const rejected = await request(root + rejectedCursor);
+
+    // 401 proves the 240-character cursor passed validation and reached the session guard.
+    expect(accepted.status).toBe(401);
+    expect(await accepted.json()).toMatchObject({ error: "UNAUTHENTICATED" });
+    expect(rejected.status).toBe(400);
+    expect(await rejected.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
+  });
 });

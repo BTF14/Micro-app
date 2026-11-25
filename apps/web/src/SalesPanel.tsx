@@ -85,7 +85,7 @@ function parseSalesDraft(raw: string): SalesDraft | null {
     for (const item of draft.cart) {
       if (!item || typeof item !== "object") return null;
       const line = item as Record<string, unknown>; const p = line.product as Record<string, unknown> | null;
-      if (typeof line.quantity !== "string" || !p || typeof p !== "object" || typeof p.product_id !== "string" || !p.product_id || typeof p.is_active !== "boolean" || typeof p.sku !== "string" || !(p.barcode === null || typeof p.barcode === "string") || typeof p.name !== "string' || typeof p.unit !== "string" || (p.quantity_mode !== "integer" && p.quantity_mode !== "fractional") || typeof p.price_usd !== "string" || typeof p.available_quantity !== "string") return null;
+      if (typeof line.quantity !== "string" || !p || typeof p !== "object" || typeof p.product_id !== "string" || !p.product_id || typeof p.is_active !== "boolean" || typeof p.sku !== "string" || !(p.barcode === null || typeof p.barcode === "string") || typeof p.name !== "string" || typeof p.unit !== "string" || (p.quantity_mode !== "integer" && p.quantity_mode !== "fractional") || typeof p.price_usd !== "string" || typeof p.available_quantity !== "string") return null;
       if (parseNumeric(line.quantity, 14, 3) <= 0n || parseNumeric(p.price_usd, 14, 4) <= 0n || parseNumeric(p.available_quantity, 14, 3) < 0n) return null;
       cart.push({ product: { product_id: p.product_id, is_active: p.is_active, sku: p.sku, barcode: p.barcode, name: p.name, unit: p.unit, quantity_mode: p.quantity_mode, price_usd: p.price_usd, available_quantity: p.available_quantity }, quantity: line.quantity, quantityInput: formatQuantityInput(line.quantity), quantityValid: true });
     }

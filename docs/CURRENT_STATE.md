@@ -3,8 +3,8 @@
 - **Repositorio/base exacta:** `BTF14/Micro-app`; `main` = `e7186ae3d86873c577ce4fc8f922c364e3298919` (merge commit de PR #417, verificado en GitHub).
 - **Integración:** PR #417 MERGED. No hay PRs funcionales abiertas en el repositorio al momento de este corte; el trabajo integrado de producto/UI v1.1 está en `main`.
 - **Capacidades vigentes:** nueve vistas; importador CSV; escáner móvil; cierres, Reportes y exportación CSV; `quantity_mode` y snapshots; paginación alfabética `sort=name` de 25; borrador persistente/recuperable en Ventas; migraciones versionadas `0001–0030`. Este inventario describe GitHub `main`; no implica que Neon `main` haya aplicado automáticamente todas las migraciones.
-- **Siguiente paso único:** cierre independiente **Pre-prod Audit → `ve-fx-compliance-review` → AC-6 / AC-7 → Issue #53**. La CI verde no cierra estos gates.
-- **Gates congelados e intactos:** AC-6 OPEN; Issue #53 OPEN/P0; `BCV_SYNC_ENABLED=false`; `FX_CONTINGENCY_ENABLED=false`; freeze v1.1; **`PRODUCTION: NOT READY`**; presupuesto **`$0`**.
+- **Siguiente paso único:** cierre independiente **Pre-prod Audit → `ve-fx-compliance-review` → AC-6 → Issue #53**. La CI verde no cierra estos gates.
+- **Gates congelados e intactos:** AC-6 OPEN; AC-7 CLOSED para el alcance técnico de PR 1 (Contingencia Manual BCV); Issue #53 OPEN/P0; `BCV_SYNC_ENABLED=false`; `FX_CONTINGENCY_ENABLED=false`; freeze v1.1; **`PRODUCTION: NOT READY`**; presupuesto **`$0`**.
 - **Alcance de esta sincronización:** solo documentación. No se modifican `apps/**`, `packages/**`, `functions/**`, `scripts/**`, workflows, migraciones SQL, `docs/PRODUCTION_READINESS.md` ni `docs/progress/*`.
 
 ---

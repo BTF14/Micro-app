@@ -405,6 +405,12 @@ export default function App() {
   useEffect(() => {
     const handleUnauthorized = () => {
       clearStoredView();
+      try {
+        for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
+          const key = window.sessionStorage.key(index);
+          if (key?.startsWith("micro-app:sales:draft:")) window.sessionStorage.removeItem(key);
+        }
+      } catch { /* Logout must still complete when session storage is unavailable. */ }
       setSession(null);
       setBcvRate(null);
       setBcvError("");
@@ -497,6 +503,12 @@ export default function App() {
     try {
       await apiRequest<void>("/auth/logout", { method: "POST" });
       clearStoredView();
+      try {
+        for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
+          const key = window.sessionStorage.key(index);
+          if (key?.startsWith("micro-app:sales:draft:")) window.sessionStorage.removeItem(key);
+        }
+      } catch { /* Logout must still complete when session storage is unavailable. */ }
       setSession(null);
       setBcvRate(null);
       setBcvError("");

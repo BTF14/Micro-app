@@ -72,6 +72,29 @@ function paymentScale(currency: Currency): { precision: number; scale: number } 
   return currency === "USD" ? { precision: 14, scale: 4 } : { precision: 14, scale: 2 };
 }
 function newIdempotencyKey(): string { return crypto.randomUUID(); }
+const SALES_DRAFT_PREFIX = "micro-app:sales:draft:";
+type SalesDraft = { cart: CartLine[]; currency: Currency; payments: PaymentLine[] };
+function salesDraftKey(org: string, shift: string | null, warehouse: string): string | null { return shift && warehouse ? SALES_DRAFT_PREFIX + org + ":" + shift + ":" + warehouse : null; }
+function removeSalesDraft(key: string | null): void { if (!key) return; try { window.sessionStorage.removeItem(key); } catch { /* Storage may be blocked. */ } }
+function parseSalesDraft(raw: string): SalesDraft | null {
+  try {
+    const value: unknown = JSON.parse(raw); if (!value || typeof value !== "object") return null;
+    const draft = value as Record<string, unknown>;
+    if ((draft.currency !== "USD" && draft.currency !== "VES") || !Array.isArray(draft.cart) || !Array.isArray(draft.payments) || draft.payments.length < 1 || draft.payments.length > 10) return null;
+    const cart: CartLine[] = [];
+    for (const item of draft.cart) {
+      if (!item || typeof item !== "object") return null;
+      const line = item as Record<string, unknown>; const p = line.product as Record<string, unknown> | null;
+      if (typeof line.quantity !== "string" || !p || typeof p !== "object" || typeof p.product_id !== "string" || !p.product_id || typeof p.is_active !== "boolean" || typeof p.sku !== "string" || !(p.barcode === null || typeof p.barcode === "string") || typeof p.name !== "string" || typeof p.unit !== "string" || (p.quantity_mode !== "integer" && p.quantity_mode !== "fractional") || typeof p.price_usd !== "string" || typeof p.available_quantity !== "string") return null;
+      if (parseNumeric(line.quantity, 14, 3) <= 0n || parseNumeric(p.price_usd, 14, 4) <= 0n || parseNumeric(p.available_quantity, 14, 3) < 0n) return null;
+      cart.push({ product: { product_id: p.product_id, is_active: p.is_active, sku: p.sku, barcode: p.barcode, name: p.name, unit: p.unit, quantity_mode: p.quantity_mode, price_usd: p.price_usd, available_quantity: p.available_quantity }, quantity: line.quantity, quantityInput: formatQuantityInput(line.quantity), quantityValid: true });
+    }
+    const methods: PaymentMethod[] = ["cash", "card", "transfer", "mobile_payment", "other"]; const payments: PaymentLine[] = [];
+    for (const item of draft.payments) { if (!item || typeof item !== "object") return null; const p = item as Record<string, unknown>; if (!methods.includes(p.method as PaymentMethod) || typeof p.amount !== "string" || typeof p.reference !== "string" || typeof p.cashReceived !== "string") return null; payments.push({ id: nextPaymentLineId(), method: p.method as PaymentMethod, amount: p.amount, reference: p.reference, ...(typeof p.cashReceived === "string" ? { cashReceived: p.cashReceived } : {}) }); }
+    return { cart, currency: draft.currency, payments };
+  } catch { return null; }
+}
+
 let paymentLineSequence = 0;
 function nextPaymentLineId(): string { paymentLineSequence += 1; return `payment-${paymentLineSequence}`; }
 
@@ -100,8 +123,14 @@ export default function SalesPanel({
   const loadSequence = useRef(0);
   const prevOrgRef = useRef(organizationId);
   const prevBranchRef = useRef<string | null>(null);
+  const prevShiftIdRef = useRef<string | null>(null);
+  const hydratedDraftKeyRef = useRef<string | null>(null);
+  const activeDraftKeyRef = useRef<string | null>(null);
+  const skipDraftPersistRef = useRef(false);
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
+  const shiftId = shift?.id ?? shift?.shift_id ?? shift?.branch_id ?? null;
+  const draftKey = salesDraftKey(organizationId, shiftId, warehouseId);
   const bcvAvailable = exchangeRateStatus === "current" && exchangeRate !== null;
   const activeManualFx = fxState?.commercial_enabled === true && fxState.authorization &&
     new Date(fxState.authorization.expires_at).getTime() > Date.now() ? fxState.authorization : null;
@@ -164,7 +193,12 @@ export default function SalesPanel({
       const result = await apiRequest<{ shift: Shift | null }>(`${base}/register-shifts/current`);
       if (requestId !== loadSequence.current) return;
       const nextBranchId = result.shift?.branch_id ?? null;
-      if (prevBranchRef.current !== null && prevBranchRef.current !== nextBranchId) {
+      const nextShiftId = result.shift?.id ?? result.shift?.shift_id ?? result.shift?.branch_id ?? null;
+      const shiftChanged = prevShiftIdRef.current !== null && prevShiftIdRef.current !== nextShiftId;
+      if (prevBranchRef.current !== null && (prevBranchRef.current !== nextBranchId || shiftChanged || !result.shift)) {
+        removeSalesDraft(activeDraftKeyRef.current);
+        activeDraftKeyRef.current = null;
+        hydratedDraftKeyRef.current = null;
         const hadCart = cartRef.current.length > 0;
         commitCart([]);
         setReceipt(null);
@@ -177,6 +211,7 @@ export default function SalesPanel({
         if (hadCart) setNotice("Cambió la sucursal o el turno activo. Se limpió el carrito.");
       }
       prevBranchRef.current = nextBranchId;
+      prevShiftIdRef.current = nextShiftId;
       setShift(result.shift);
       setShiftLoaded(true);
       setWarehouses([]);
@@ -224,6 +259,10 @@ export default function SalesPanel({
     if (prevOrgRef.current !== organizationId) {
       prevOrgRef.current = organizationId;
       prevBranchRef.current = null;
+      prevShiftIdRef.current = null;
+      removeSalesDraft(activeDraftKeyRef.current);
+      activeDraftKeyRef.current = null;
+      hydratedDraftKeyRef.current = null;
       commitCart([]);
       setReceipt(null);
       setCurrency("USD");
@@ -241,14 +280,42 @@ export default function SalesPanel({
     }
   }, [organizationId, shift?.branch_id, warehouseId, warehouses.length]);
 
+  useEffect(() => {
+    if (!shiftLoaded || !warehouseLoaded || !draftKey || hydratedDraftKeyRef.current === draftKey) return;
+    activeDraftKeyRef.current = draftKey;
+    let raw: string | null = null;
+    try { raw = window.sessionStorage.getItem(draftKey); } catch { /* Continue without restoring. */ }
+    const draft = raw === null ? null : parseSalesDraft(raw);
+    if (raw !== null && draft === null) removeSalesDraft(draftKey);
+    if (!receipt && cartRef.current.length === 0 && draft?.cart.length) {
+      commitCart(draft.cart); setCurrency(draft.currency); setPayments(draft.payments);
+      setNotice("Se recuperó la venta que tenías en curso."); skipDraftPersistRef.current = true;
+    } else if (!receipt && cartRef.current.length === 0 && draft && draft.cart.length === 0) {
+      setCurrency(draft.currency); setPayments(draft.payments);
+    }
+    hydratedDraftKeyRef.current = draftKey;
+  }, [shiftLoaded, warehouseLoaded, draftKey, receipt]);
+
+  useEffect(() => {
+    if (!draftKey || hydratedDraftKeyRef.current !== draftKey || receipt) return;
+    if (skipDraftPersistRef.current) { skipDraftPersistRef.current = false; return; }
+    if (cart.length === 0) { removeSalesDraft(draftKey); return; }
+    const payload = { cart: cart.map((line) => ({ product: line.product, quantity: line.quantity })), currency, payments: payments.map(({ method, amount, reference, cashReceived }) => ({ method, amount, reference, cashReceived: cashReceived ?? "" })) };
+    try { window.sessionStorage.setItem(draftKey, JSON.stringify(payload)); } catch { /* Storage may be blocked or full. */ }
+  }, [draftKey, cart, currency, payments, receipt]);
+
   function changeWarehouse(nextId: string) {
     if (nextId === warehouseId) return;
+    removeSalesDraft(activeDraftKeyRef.current);
+    activeDraftKeyRef.current = null;
+    hydratedDraftKeyRef.current = null;
     setWarehouseId(nextId);
     if (cart.length > 0) {
       commitCart([]);
-      setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
       setNotice("Cambiaste de almacén. Se limpió el carrito para evitar mezclar existencias.");
     }
+    setPayments([{ id: nextPaymentLineId(), method: "cash", amount: "", reference: "" }]);
+    setCurrency("USD");
     resetIdempotency();
   }
 
@@ -433,6 +500,7 @@ export default function SalesPanel({
         { method: "POST", headers: { "Idempotency-Key": idempotencyKey.current }, body: JSON.stringify(body) },
       );
       setReceipt(result);
+      removeSalesDraft(draftKey);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No se pudo completar la venta. Puedes reintentar sin cambiar el cobro.");
     } finally {
@@ -441,6 +509,7 @@ export default function SalesPanel({
   }
 
   function newSale() {
+    removeSalesDraft(draftKey);
     setReceipt(null);
     commitCart([]);
     setLookupReset((value) => value + 1);

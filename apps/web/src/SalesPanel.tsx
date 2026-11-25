@@ -251,9 +251,11 @@ export default function SalesPanel({
   useEffect(() => {
     const branchId = shift?.branch_id;
     if (!branchId || (exchangeRateStatus === "current" && exchangeRate)) {
+      setManualFxAcknowledgedRate(null);
       setFxState(null);
       return;
     }
+    setManualFxAcknowledgedRate(null);
     let cancelled = false;
     void (async () => {
       try {
@@ -262,7 +264,10 @@ export default function SalesPanel({
         );
         if (!cancelled) setFxState(result ?? null);
       } catch {
-        if (!cancelled) setFxState(null);
+        if (!cancelled) {
+          setManualFxAcknowledgedRate(null);
+          setFxState(null);
+        }
       }
     })();
     return () => { cancelled = true; };

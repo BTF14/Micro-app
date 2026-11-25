@@ -6,6 +6,10 @@ const organizationId = "11111111-2222-4333-8444-555555555555";
 const branchId = "22222222-3333-4444-8555-666666666666";
 const warehouseId = "33333333-4444-4555-8666-777777777777";
 
+function nameCursorToken(payload: Record<string, unknown>): string {
+  return btoa(JSON.stringify(payload)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+
 function expectSequentialSqlParameters(statement: string, values: unknown[]) {
   const placeholders = [...statement.matchAll(/\$(\d+)/g)].map((match) => Number(match[1]));
   const maxPlaceholder = Math.max(0, ...placeholders);
@@ -35,8 +39,20 @@ describe("inventory read route guards", () => {
     expect(await invalidLimit.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
 
     const invalidNameCursor = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory?sort=name&cursor=not-a-token", "token");
+    const invalidSearchRank = await request(
+      "/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId +
+        "/inventory?sort=name&q=SKU&cursor=" + nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "product", rank: 3 }),
+      "token",
+    );
+    const unexpectedRankWithoutSearch = await request(
+      "/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId +
+        "/inventory?sort=name&cursor=" + nameCursorToken({ id: "22222222-3333-4444-8555-666666666666", name: "product", rank: 0 }),
+      "token",
+    );
     expect(invalidNameCursor.status).toBe(400);
     expect(await invalidNameCursor.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
+    expect(invalidSearchRank.status).toBe(400);
+    expect(unexpectedRankWithoutSearch.status).toBe(400);
 
     const invalidProduct = await request("/api/orgs/" + organizationId + "/branches/" + branchId + "/warehouses/" + warehouseId + "/inventory/movements?product_id=bad", "token");
     expect(invalidProduct.status).toBe(400);

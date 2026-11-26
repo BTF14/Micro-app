@@ -60,7 +60,6 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
     );
     const userId = user.rows[0]!.id;
     await admin.query("INSERT INTO organization_members (organization_id,user_id,role) VALUES ($1,$2,$3)", [f.organizationId,userId,role]);
-    await admin.query("INSERT INTO branch_memberships (organization_id,branch_id,user_id) VALUES ($1,$2,$3)", [f.organizationId,f.branchId,userId]);
     const token = "shift-api-session-" + crypto.randomUUID();
     await admin.query("INSERT INTO auth_sessions (user_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '1 day')", [userId,await sha256Hex(token)]);
     return { ...f, userId, token };

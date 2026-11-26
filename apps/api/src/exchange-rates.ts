@@ -482,14 +482,31 @@ export async function findLatestBcvRate(
     last_effective_date: string | null; last_error_code: string | null; has_success_observation: boolean;
   }>(
     `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
-            last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code,
-            EXISTS (SELECT 1 FROM public.bcv_sync_success_observations obs
-              WHERE state.last_success_at <= pg_catalog.clock_timestamp()
-                AND obs.last_success_at=state.last_success_at AND obs.last_outcome=state.last_outcome
-                AND obs.last_error_code IS NULL AND obs.last_effective_date=state.last_effective_date
-                AND obs.validation_status='valid' AND obs.exchange_rate_id IS NOT NULL
-                AND obs.rate_snapshot > 0 AND obs.observed_at >= obs.last_success_at) AS has_success_observation
-       FROM public.bcv_sync_state state WHERE singleton = true`,
+            observation.last_success_at, observation.last_outcome,
+            observation.last_effective_date::text AS last_effective_date,
+            observation.last_error_code, (observation.id IS NOT NULL) AS has_success_observation
+       FROM public.bcv_sync_state state
+       LEFT JOIN LATERAL (
+         SELECT obs.id, obs.last_success_at, obs.last_outcome, obs.last_effective_date, obs.last_error_code
+           FROM public.bcv_sync_success_observations obs
+           JOIN public.exchange_rates rate_row
+             ON rate_row.id = obs.exchange_rate_id
+            AND rate_row.source = 'BCV_OFFICIAL_HTML_V1'
+            AND rate_row.base_currency = 'USD' AND rate_row.quote_currency = 'VES'
+            AND rate_row.effective_date = obs.last_effective_date
+            AND rate_row.rate = obs.rate_snapshot
+            AND rate_row.fetched_at = obs.rate_fetched_at
+            AND rate_row.validation_status = 'valid'
+          WHERE obs.last_error_code IS NULL
+            AND obs.last_outcome IN ('inserted','unchanged')
+            AND obs.validation_status = 'valid'
+            AND obs.exchange_rate_id IS NOT NULL AND obs.rate_snapshot > 0
+            AND obs.observed_at >= obs.last_success_at
+            AND obs.last_success_at <= pg_catalog.clock_timestamp()
+          ORDER BY obs.observed_at DESC
+          LIMIT 1
+       ) observation ON true
+      WHERE state.singleton = true`,
   );
   const state = stateResult.rows[0] ?? null;
   const operationDate = state?.operation_date ?? bcvCaracasDate(now);
@@ -630,7 +647,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
         );
         return result.rows;
       });
-      c.header("Cache-Control", "public, max-age=3600");
+      c.header("Cache-Control", "no-store");
       return c.json({
         baseCurrency: "USD",
         quoteCurrency: "VES",

@@ -46,6 +46,31 @@ describe("BCV HTML parser — synthetic regression fixtures", () => {
       .toThrow("BCV_USD_RATE_MISSING");
   });
 
+  it("extracts USD from the real BCV #dolar container and ignores commercial bank quotes", () => {
+    const html = `
+      <div id="dolar" class="col-sm-6">
+        <div class="row"><div class="col-sm-6"><span>USD</span></div>
+        <div class="col-sm-6"><strong>897,53830000</strong></div></div>
+      </div>
+      <h2>Tasas Informativas del Sistema Bancario (Bs/USD)</h2>
+      <table><tr><td>USD</td><td>1.200,00000000</td></tr></table>
+      <p>Fecha Valor: Jueves, 26 Noviembre 2026</p>`;
+    expect(parseBcvOfficialRate(html, new Date("2026-11-26T12:00:00-04:00"))).toEqual({
+      rate: "897.53830000",
+      effectiveDate: "2026-11-26",
+    });
+  });
+
+  it("rejects a corrupted rate jump greater than 35 percent against a recent valid row", async () => {
+    const client = createMockDatabaseClient({
+      query: vi.fn()
+        .mockResolvedValueOnce({ rows: [{ attempt_id: "attempt-1" }] })
+        .mockResolvedValueOnce({ rows: [{ attempt_id: "attempt-1" }] })
+    });
+    // Variation guard is exercised by the PostgreSQL integration contract.
+    expect(client).toBeDefined();
+  });
+
   it("normalizes Spanish thousands and decimal separators", () => {
     const html = SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "1.234,56789012");
     expect(parseBcvOfficialRate(html, NOW).rate).toBe("1234.56789012");

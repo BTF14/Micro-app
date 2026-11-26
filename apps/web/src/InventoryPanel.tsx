@@ -72,8 +72,8 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const sequence = useRef(0);
   const receiptIdempotencyKey = useRef(crypto.randomUUID());
   const countIdempotencyKey = useRef(crypto.randomUUID());
-  const receiptFingerprint = JSON.stringify([organizationId, branchId, warehouseId, receiptProductId || manageableProducts[0]?.product_id || "", receiptQuantity, receiptCost, receiptReason]);
-  const countFingerprint = JSON.stringify([organizationId, branchId, warehouseId, countProductId || manageableProducts[0]?.product_id || "", countQuantity, countReason]);
+  const receiptFingerprint = JSON.stringify([organizationId, branchId, warehouseId, receiptProductId || items.find((item) => item.is_active)?.product_id || "", receiptQuantity, receiptCost, receiptReason]);
+  const countFingerprint = JSON.stringify([organizationId, branchId, warehouseId, countProductId || items.find((item) => item.is_active)?.product_id || "", countQuantity, countReason]);
   const receiptFingerprintRef = useRef(receiptFingerprint);
   const countFingerprintRef = useRef(countFingerprint);
   if (receiptFingerprintRef.current !== receiptFingerprint) {

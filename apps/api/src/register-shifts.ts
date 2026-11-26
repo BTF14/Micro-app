@@ -185,12 +185,12 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
         const rows = await tx.query<BranchRow>(
           `SELECT b.id, b.name, b.slug
              FROM public.branches b
-             JOIN public.branch_memberships bm
-               ON bm.organization_id = b.organization_id AND bm.branch_id = b.id
-            WHERE b.organization_id = $1 AND bm.user_id = $2
-              AND b.is_active = true AND bm.is_active = true
-            ORDER BY lower(b.name), b.id`,
-          [authorization.context.organizationId, authorization.context.userId],
+             LEFT JOIN public.branch_memberships bm
+               ON bm.organization_id=b.organization_id AND bm.branch_id=b.id AND bm.user_id=$2
+            WHERE b.organization_id=$1 AND b.is_active=true
+              AND ($3 IN ('owner','admin') OR bm.is_active=true)
+            ORDER BY lower(b.name),b.id`,
+          [authorization.context.organizationId, authorization.context.userId, authorization.context.role],
         );
         return { kind: "ok" as const, items: rows.rows };
       }));

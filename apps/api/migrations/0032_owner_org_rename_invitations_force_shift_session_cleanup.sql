@@ -44,9 +44,9 @@ ALTER TABLE public.register_shifts
         AND force_close_reason !~ '[[:cntrl:]]')
   );
 
--- The 0004 table CHECK hard-coded closed_by_user_id = cashier_user_id. Replace
--- only that lifecycle predicate; the trigger below now distinguishes normal
--- cashier closure from the audited owner/admin forced-close transition.
+-- Replace the legacy 0004 CHECK that required every close to be performed by
+-- the cashier. The trigger below now enforces cashier-only normal close and
+-- owner/admin-only forced close.
 DO $drop_legacy_shift_close_check$
 DECLARE constraint_name text;
 BEGIN
@@ -299,7 +299,8 @@ BEGIN
   v_email:=lower(btrim(p_email));
   IF p_email IS NULL OR length(v_email) NOT BETWEEN 3 AND 320 OR v_email ~ '[[:cntrl:]]'
      OR p_google_sub IS NULL OR length(p_google_sub) NOT BETWEEN 1 AND 255
-     OR p_display_name IS NULL OR length(btrim(p_display_name)) NOT BETWEEN 1 AND 200 THEN
+     OR p_display_name IS NULL OR length(btrim(p_display_name)) NOT BETWEEN 1 AND 320
+     OR p_display_name ~ '[[:cntrl:]]' THEN
     RAISE EXCEPTION 'GOOGLE_INVITATION_INPUT_INVALID' USING ERRCODE='22023';
   END IF;
   PERFORM 1 FROM public.auth_allowlist a WHERE lower(a.email)=v_email AND a.is_active FOR SHARE;
@@ -386,98 +387,11 @@ DECLARE
  v_email text; v_handoff record; v_user uuid; v_org uuid; v_consumed timestamptz;
 BEGIN
  v_email:=lower(btrim(p_email));
- IF p_handle_hash IS NULL OR p_handle_hash !~ '^[a-f0-9]{64}
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
-AS $cleanup_expired_auth_sessions$
-DECLARE v_deleted integer;
-BEGIN
-  WITH expired AS (
-    SELECT s.ctid FROM public.auth_sessions s
-     WHERE s.expires_at < pg_catalog.clock_timestamp()-interval '48 hours'
-        OR s.revoked_at < pg_catalog.clock_timestamp()-interval '48 hours'
-     ORDER BY COALESCE(s.revoked_at,s.expires_at),s.id
-     LIMIT 500 FOR UPDATE SKIP LOCKED
-  ), deleted AS (
-    DELETE FROM public.auth_sessions s USING expired e WHERE s.ctid=e.ctid RETURNING 1
-  ) SELECT count(*)::integer INTO v_deleted FROM deleted;
-  RETURN v_deleted;
-END;
-$cleanup_expired_auth_sessions$;
-ALTER FUNCTION public.cleanup_expired_auth_sessions() OWNER TO microapp_migrator;
-
--- Remove runtime table writes that have moved behind the narrow definer APIs.
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.organizations FROM microapp_runtime;
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.organization_members FROM microapp_runtime;
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.auth_allowlist FROM microapp_runtime;
-REVOKE INSERT ON TABLE public.app_users FROM microapp_runtime;
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.register_shifts FROM microapp_runtime;
-REVOKE DELETE ON TABLE public.auth_sessions FROM microapp_runtime;
-
-REVOKE ALL ON FUNCTION public.rename_organization(uuid,uuid,text,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.invite_organization_member(uuid,uuid,text,text,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.set_organization_member_access(uuid,uuid,uuid,text,boolean) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.revoke_organization_invitation(uuid,uuid,uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.consume_google_login_invitation(text,text,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.force_close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.cleanup_expired_auth_sessions() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.consume_auth_bootstrap(text,text,text,text,text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.rename_organization(uuid,uuid,text,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.invite_organization_member(uuid,uuid,text,text,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.set_organization_member_access(uuid,uuid,uuid,text,boolean) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.revoke_organization_invitation(uuid,uuid,uuid) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.consume_google_login_invitation(text,text,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.force_close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_auth_sessions() TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.consume_auth_bootstrap(text,text,text,text,text) TO microapp_runtime;
-
-COMMIT;
-
-    OR p_state_hash IS NULL OR p_state_hash !~ '^[a-f0-9]{64}
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
-AS $cleanup_expired_auth_sessions$
-DECLARE v_deleted integer;
-BEGIN
-  WITH expired AS (
-    SELECT s.ctid FROM public.auth_sessions s
-     WHERE s.expires_at < pg_catalog.clock_timestamp()-interval '48 hours'
-        OR s.revoked_at < pg_catalog.clock_timestamp()-interval '48 hours'
-     ORDER BY COALESCE(s.revoked_at,s.expires_at),s.id
-     LIMIT 500 FOR UPDATE SKIP LOCKED
-  ), deleted AS (
-    DELETE FROM public.auth_sessions s USING expired e WHERE s.ctid=e.ctid RETURNING 1
-  ) SELECT count(*)::integer INTO v_deleted FROM deleted;
-  RETURN v_deleted;
-END;
-$cleanup_expired_auth_sessions$;
-ALTER FUNCTION public.cleanup_expired_auth_sessions() OWNER TO microapp_migrator;
-
--- Remove runtime table writes that have moved behind the narrow definer APIs.
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.organizations FROM microapp_runtime;
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.organization_members FROM microapp_runtime;
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.auth_allowlist FROM microapp_runtime;
-REVOKE INSERT,UPDATE,DELETE ON TABLE public.register_shifts FROM microapp_runtime;
-REVOKE DELETE ON TABLE public.auth_sessions FROM microapp_runtime;
-
-REVOKE ALL ON FUNCTION public.rename_organization(uuid,uuid,text,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.invite_organization_member(uuid,uuid,text,text,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.set_organization_member_access(uuid,uuid,uuid,text,boolean) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.revoke_organization_invitation(uuid,uuid,uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.consume_google_login_invitation(text,text,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.force_close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric,text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.cleanup_expired_auth_sessions() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.rename_organization(uuid,uuid,text,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.invite_organization_member(uuid,uuid,text,text,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.set_organization_member_access(uuid,uuid,uuid,text,boolean) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.revoke_organization_invitation(uuid,uuid,uuid) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.consume_google_login_invitation(text,text,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.force_close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_auth_sessions() TO microapp_runtime;
-
-COMMIT;
-
+ IF p_handle_hash IS NULL OR p_handle_hash !~ '^[a-f0-9]{64}$'
+    OR p_state_hash IS NULL OR p_state_hash !~ '^[a-f0-9]{64}$'
     OR p_email IS NULL OR length(v_email) NOT BETWEEN 3 AND 320 OR v_email ~ '[[:cntrl:]]'
     OR p_google_sub IS NULL OR length(p_google_sub) NOT BETWEEN 1 AND 255
-    OR p_display_name IS NULL OR length(btrim(p_display_name)) NOT BETWEEN 1 AND 200
+    OR p_display_name IS NULL OR length(btrim(p_display_name)) NOT BETWEEN 1 AND 320
     OR p_display_name ~ '[[:cntrl:]]' THEN
    RAISE EXCEPTION 'AUTH_BOOTSTRAP_INPUT_INVALID' USING ERRCODE='22023';
  END IF;
@@ -536,7 +450,9 @@ ALTER FUNCTION public.cleanup_expired_auth_sessions() OWNER TO microapp_migrator
 -- Remove runtime table writes that have moved behind the narrow definer APIs.
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.organizations FROM microapp_runtime;
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.organization_members FROM microapp_runtime;
+GRANT INSERT (organization_id,user_id,role) ON TABLE public.organization_members TO microapp_runtime;
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.auth_allowlist FROM microapp_runtime;
+REVOKE INSERT ON TABLE public.app_users FROM microapp_runtime;
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.register_shifts FROM microapp_runtime;
 REVOKE DELETE ON TABLE public.auth_sessions FROM microapp_runtime;
 
@@ -547,6 +463,7 @@ REVOKE ALL ON FUNCTION public.revoke_organization_invitation(uuid,uuid,uuid) FRO
 REVOKE ALL ON FUNCTION public.consume_google_login_invitation(text,text,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.force_close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.cleanup_expired_auth_sessions() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.consume_auth_bootstrap(text,text,text,text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.rename_organization(uuid,uuid,text,text) TO microapp_runtime;
 GRANT EXECUTE ON FUNCTION public.invite_organization_member(uuid,uuid,text,text,text) TO microapp_runtime;
 GRANT EXECUTE ON FUNCTION public.set_organization_member_access(uuid,uuid,uuid,text,boolean) TO microapp_runtime;
@@ -554,5 +471,6 @@ GRANT EXECUTE ON FUNCTION public.revoke_organization_invitation(uuid,uuid,uuid) 
 GRANT EXECUTE ON FUNCTION public.consume_google_login_invitation(text,text,text) TO microapp_runtime;
 GRANT EXECUTE ON FUNCTION public.force_close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric,text) TO microapp_runtime;
 GRANT EXECUTE ON FUNCTION public.cleanup_expired_auth_sessions() TO microapp_runtime;
+GRANT EXECUTE ON FUNCTION public.consume_auth_bootstrap(text,text,text,text,text) TO microapp_runtime;
 
 COMMIT;

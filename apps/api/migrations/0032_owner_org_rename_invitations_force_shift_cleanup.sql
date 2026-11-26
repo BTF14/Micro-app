@@ -104,7 +104,7 @@ CREATE OR REPLACE FUNCTION public.rename_organization(
 ) RETURNS TABLE(id uuid,name text,slug text,is_active boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
 AS $rename_organization$
-DECLARE v_name text; v_slug text;
+DECLARE v_name text; v_slug text; v_old_name text; v_old_slug text;
 BEGIN
   v_name:=btrim(p_name); v_slug:=lower(btrim(p_slug));
   PERFORM 1 FROM public.organizations o WHERE o.id=p_organization_id AND o.is_active FOR UPDATE;
@@ -122,19 +122,13 @@ BEGIN
   IF EXISTS(SELECT 1 FROM public.organizations o WHERE o.slug=v_slug AND o.id<>p_organization_id) THEN
     RAISE EXCEPTION 'ORGANIZATION_SLUG_ALREADY_EXISTS' USING ERRCODE='23505';
   END IF;
-  RETURN QUERY
-    WITH old AS (
-      SELECT o.name AS old_name,o.slug AS old_slug FROM public.organizations o WHERE o.id=p_organization_id
-    ), changed AS (
-      UPDATE public.organizations o SET name=v_name,slug=v_slug,updated_at=pg_catalog.clock_timestamp()
-       WHERE o.id=p_organization_id
-       RETURNING o.id,o.name,o.slug,o.is_active
-    )
-    SELECT c.id,c.name,c.slug,c.is_active FROM changed c;
+  SELECT o.name,o.slug INTO v_old_name,v_old_slug FROM public.organizations o WHERE o.id=p_organization_id;
+  UPDATE public.organizations o SET name=v_name,slug=v_slug,updated_at=pg_catalog.clock_timestamp()
+   WHERE o.id=p_organization_id;
+  RETURN QUERY SELECT o.id,o.name,o.slug,o.is_active FROM public.organizations o WHERE o.id=p_organization_id;
   INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata)
-  SELECT p_organization_id,p_actor_user_id,'organization.renamed','organization',p_organization_id::text,
-    pg_catalog.jsonb_build_object('old_name',o.old_name,'old_slug',o.old_slug,'new_name',v_name,'new_slug',v_slug)
-  FROM old o;
+  VALUES(p_organization_id,p_actor_user_id,'organization.renamed','organization',p_organization_id::text,
+    pg_catalog.jsonb_build_object('old_name',v_old_name,'old_slug',v_old_slug,'new_name',v_name,'new_slug',v_slug));
 END;
 $rename_organization$;
 ALTER FUNCTION public.rename_organization(uuid,uuid,text,text) OWNER TO microapp_migrator;
@@ -150,7 +144,7 @@ BEGIN
    WHERE m.organization_id=p_organization_id AND m.user_id=p_actor_user_id
      AND m.role='owner' AND m.is_active AND u.is_active FOR UPDATE OF m,u;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_MANAGEMENT_FORBIDDEN' USING ERRCODE='42501'; END IF;
-  IF p_role NOT IN ('admin','cashier','inventory') THEN RAISE EXCEPTION 'ORGANIZATION_INVITATION_ROLE_INVALID' USING ERRCODE='22023'; END IF;
+  IF p_role IS NULL OR p_role NOT IN ('admin','cashier','inventory') THEN RAISE EXCEPTION 'ORGANIZATION_INVITATION_ROLE_INVALID' USING ERRCODE='22023'; END IF;
   v_email:=lower(btrim(p_email));
   IF p_email IS NULL OR length(v_email) NOT BETWEEN 3 AND 320 OR v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'
      OR v_email ~ '[[:cntrl:]]' OR (p_note IS NOT NULL AND (length(p_note)>500 OR p_note ~ '[[:cntrl:]]')) THEN
@@ -198,7 +192,7 @@ CREATE OR REPLACE FUNCTION public.set_organization_member_access(
 ) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
 AS $set_organization_member_access$
-DECLARE v_target public.app_users%ROWTYPE; v_email text; v_old_role text; v_old_active boolean;
+DECLARE v_email text; v_old_role text; v_old_active boolean;
 BEGIN
   PERFORM 1 FROM public.organization_members m JOIN public.app_users u ON u.id=m.user_id
    WHERE m.organization_id=p_organization_id AND m.user_id=p_actor_user_id
@@ -206,12 +200,10 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_MANAGEMENT_FORBIDDEN' USING ERRCODE='42501'; END IF;
   IF p_role NOT IN ('admin','cashier','inventory') THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_ROLE_INVALID' USING ERRCODE='22023'; END IF;
   IF p_target_user_id=p_actor_user_id THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_SELF_MODIFICATION_FORBIDDEN' USING ERRCODE='42501'; END IF;
-  SELECT u.*,m.role,m.is_active INTO v_target FROM public.app_users u
-    JOIN public.organization_members m ON m.user_id=u.id
+  SELECT u.email,m.role,m.is_active INTO v_email,v_old_role,v_old_active
+    FROM public.app_users u JOIN public.organization_members m ON m.user_id=u.id
    WHERE m.organization_id=p_organization_id AND m.user_id=p_target_user_id FOR UPDATE OF u,m;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_NOT_FOUND' USING ERRCODE='P0002'; END IF;
-  SELECT m.role,m.is_active INTO v_old_role,v_old_active FROM public.organization_members m
-   WHERE m.organization_id=p_organization_id AND m.user_id=p_target_user_id;
   IF v_old_role='owner' THEN RAISE EXCEPTION 'ORGANIZATION_OWNER_ROLE_IMMUTABLE' USING ERRCODE='42501'; END IF;
   IF (NOT p_is_active OR (v_old_role='cashier' AND p_role<>'cashier')) AND EXISTS(
     SELECT 1 FROM public.register_shifts s WHERE s.organization_id=p_organization_id
@@ -228,7 +220,7 @@ BEGIN
     END IF;
     IF NOT EXISTS(SELECT 1 FROM public.organization_members m WHERE m.user_id=p_target_user_id AND m.is_active)
        AND NOT EXISTS(SELECT 1 FROM public.organization_invitations i
-         WHERE lower(i.email)=lower(v_target.email) AND i.status='pending' AND i.organization_id<>p_organization_id) THEN
+         WHERE lower(i.email)=lower(v_email) AND i.status='pending' AND i.organization_id<>p_organization_id) THEN
       UPDATE public.auth_allowlist SET is_active=false,updated_at=pg_catalog.clock_timestamp()
        WHERE lower(email)=lower(v_target.email);
     END IF;
@@ -290,24 +282,23 @@ BEGIN
   PERFORM 1 FROM public.auth_allowlist a WHERE lower(a.email)=v_email AND a.is_active FOR SHARE;
   IF NOT FOUND THEN RETURN; END IF;
   IF EXISTS(SELECT 1 FROM public.app_users u WHERE lower(u.email)=v_email) THEN RETURN; END IF;
-  CREATE TEMP TABLE IF NOT EXISTS pg_temp.invitation_consume_ids(id uuid PRIMARY KEY, organization_id uuid, role text) ON COMMIT DROP;
-  TRUNCATE pg_temp.invitation_consume_ids;
-  INSERT INTO pg_temp.invitation_consume_ids(id,organization_id,role)
-  SELECT i.id,i.organization_id,i.role
-    FROM public.organization_invitations i JOIN public.organizations o ON o.id=i.organization_id
+  PERFORM 1 FROM public.organization_invitations i JOIN public.organizations o ON o.id=i.organization_id
    WHERE i.email=v_email AND i.status='pending' AND o.is_active
    ORDER BY i.organization_id,i.id FOR UPDATE OF i;
   IF NOT FOUND THEN RETURN; END IF;
   INSERT INTO public.app_users(email,display_name,google_sub,email_verified_at)
   VALUES(v_email,btrim(p_display_name),p_google_sub,pg_catalog.clock_timestamp()) RETURNING id INTO v_user;
-  FOR v_inv IN SELECT id,organization_id,role FROM pg_temp.invitation_consume_ids ORDER BY organization_id,id LOOP
+  FOR v_inv IN SELECT i.id,i.organization_id,i.role FROM public.organization_invitations i
+    JOIN public.organizations o ON o.id=i.organization_id
+   WHERE i.email=v_email AND i.status='pending' AND o.is_active
+   ORDER BY i.organization_id,i.id LOOP
     INSERT INTO public.organization_members(organization_id,user_id,role,is_active)
     VALUES(v_inv.organization_id,v_user,v_inv.role,true);
     UPDATE public.organization_invitations SET status='accepted',accepted_user_id=v_user,
       accepted_at=pg_catalog.clock_timestamp(),updated_at=pg_catalog.clock_timestamp()
      WHERE id=v_inv.id;
     INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata)
-    SELECT v_inv.organization_id,i.invited_by_user_id,'organization_invitation.accepted',
+    SELECT v_inv.organization_id,v_user,'organization_invitation.accepted',
       'organization_invitation',v_inv.id::text,
       pg_catalog.jsonb_build_object('email',v_email,'user_id',v_user,'role',v_inv.role)
       FROM public.organization_invitations i WHERE i.id=v_inv.id;

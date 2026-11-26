@@ -53,6 +53,9 @@ test("owner can open and explicitly close their own register shift from the work
         body: JSON.stringify({ items: [{ id: branchId, name: "Sucursal Centro", slug: "centro" }] }),
       });
     }
+    if (method === "GET" && path.endsWith("/register-shifts/open")) {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
+    }
     if (method === "GET" && path.endsWith("/register-shifts/current")) {
       return route.fulfill({
         status: 200,

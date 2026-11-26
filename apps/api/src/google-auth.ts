@@ -368,7 +368,7 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
 
     const sub = typeof userInfo.sub === "string" ? userInfo.sub : "";
     const rawEmail = typeof userInfo.email === "string" ? userInfo.email : "";
-    const emailVerified = userInfo.email_verified === true || userInfo.email_verified === "true";
+    const emailVerified = userInfo.email_verified === true;
     const displayName = typeof userInfo.name === "string" && userInfo.name.trim() ? userInfo.name.trim() : rawEmail;
     const email = rawEmail.trim().toLowerCase();
 

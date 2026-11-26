@@ -310,26 +310,28 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
   });
 
   afterAll(async () => {
-    await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
-    await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
-    await cleanupClient.query("DELETE FROM app_users WHERE email = $1", [googleEmail]);
-    await cleanupClient.query("DELETE FROM auth_bootstrap_attempts WHERE organization_name = $1", [bootstrapOrgName]);
-    // auth_bootstrap still references the organization this test's bootstrap
-    // run created (ON DELETE RESTRICT by design, so a sealed bootstrap can
-    // never be silently orphaned in production). Reset the singleton sentinel
-    // back to its unconsumed state before the organization can be deleted,
-    // so later re-runs of this suite against a long-lived database exercise
-    // the bootstrap path again instead of immediately finding it sealed.
-    await cleanupClient.query(
-      "UPDATE auth_bootstrap SET consumed_at = NULL, consumed_by_email = NULL, created_organization_id = NULL WHERE id = true AND created_organization_id IN (SELECT id FROM organizations WHERE name = $1)",
-      [bootstrapOrgName],
-    );
-    await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [bootstrapOrgName]);
-    await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email) = lower($1)", [googleEmail]);
-    await cleanupClient.end();
+    await cleanupClient.query("ALTER TABLE public.audit_logs DISABLE TRIGGER USER");
+    try {
+      await cleanupClient.query("DELETE FROM public.audit_logs WHERE organization_id IN (SELECT id FROM public.organizations WHERE name = $1)", [bootstrapOrgName]);
+      await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
+      await cleanupClient.query("DELETE FROM organization_invitations WHERE organization_id IN (SELECT id FROM organizations WHERE name = $1)");
+      await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
+      await cleanupClient.query("DELETE FROM app_users WHERE email = $1", [googleEmail]);
+      await cleanupClient.query("DELETE FROM auth_bootstrap_attempts WHERE organization_name = $1", [bootstrapOrgName]);
+      // Keep the singleton bootstrap sentinel consistent with the sealed-bootstrap contract.
+      await cleanupClient.query(
+        "UPDATE auth_bootstrap SET consumed_at = NULL, consumed_by_email = NULL, created_organization_id = NULL WHERE id = true AND created_organization_id IN (SELECT id FROM organizations WHERE name = $1)",
+        [bootstrapOrgName],
+      );
+      await cleanupClient.query("DELETE FROM organizations WHERE name = $1", [bootstrapOrgName]);
+      await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email) = lower($1)", [googleEmail]);
+    } finally {
+      await cleanupClient.query("ALTER TABLE public.audit_logs ENABLE TRIGGER USER");
+      await cleanupClient.end();
+    }
   });
 
-  function mockGoogleIdentity(sub: string, emailVerified: boolean): void {
+  function mockGoogleIdentity(sub: string, emailVerified: boolean | string, identityEmail = googleEmail): void {
     fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : (input as Request).url ?? String(input);
       if (url.startsWith("https://oauth2.googleapis.com/token")) {
@@ -377,6 +379,22 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     expect(callback.status).toBe(302);
     expect(callback.headers.get("location")).toContain("auth_error=not_allowlisted");
     const user = await cleanupClient.query("SELECT 1 FROM app_users WHERE email = $1", [googleEmail]);
+    expect(user.rows).toHaveLength(0);
+    fetchSpy.mockRestore();
+  });
+
+  it("requires the Google email_verified claim to be the boolean true", async () => {
+    const unverifiedEmail = `google-string-verified-${crypto.randomUUID()}@example.test`;
+    const { cookieHeader, state } = await startGoogleFlow();
+    mockGoogleIdentity("sub-string-verified", "true", unverifiedEmail);
+    const callback = await app.fetch(new Request(
+      `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+      { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
+    ), googleEnv);
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toContain("auth_error=email_not_verified");
+    expect(extractCookiePairs(callback).microapp_session).toBeUndefined();
+    const user = await cleanupClient.query("SELECT 1 FROM app_users WHERE email = $1", [unverifiedEmail]);
     expect(user.rows).toHaveLength(0);
     fetchSpy.mockRestore();
   });
@@ -469,6 +487,91 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     expect(handoff.rows[0]!.consumed_at).toBeNull();
 
     await cleanupClient.query("DELETE FROM auth_bootstrap_attempts WHERE organization_name = $1", [orgName]);
+  });
+
+  it("consumes a pending organization invitation on a verified Google first login", async () => {
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    const invitedEmail = `google-invited-${suffix}@example.test`;
+    const invitedOrgName = `Invited Store ${suffix}`;
+    const invitedOrgSlug = `invited-store-${suffix}`;
+    const ownerEmail = `invitation-owner-${suffix}@example.test`;
+    let organizationId: string | undefined;
+    let ownerId: string | undefined;
+    let invitedUserId: string | undefined;
+    try {
+      const owner = await cleanupClient.query<{ id: string }>(
+        "INSERT INTO app_users (email, display_name) VALUES ($1, $2) RETURNING id",
+        [ownerEmail, "Invitation Owner"],
+      );
+      ownerId = owner.rows[0]!.id;
+      const organization = await cleanupClient.query<{ id: string }>(
+        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
+        [invitedOrgName, invitedOrgSlug],
+      );
+      organizationId = organization.rows[0]!.id;
+      await cleanupClient.query(
+        "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
+        [organizationId, ownerId],
+      );
+      await cleanupClient.query(
+        "INSERT INTO auth_allowlist (email, added_by) VALUES ($1, 'integration-test')",
+        [invitedEmail],
+      );
+      await cleanupClient.query(
+        "INSERT INTO organization_invitations (organization_id, email, role, invited_by_user_id) VALUES ($1, $2, 'cashier', $3)",
+        [organizationId, invitedEmail, ownerId],
+      );
+
+      const { cookieHeader, state } = await startGoogleFlow();
+      mockGoogleIdentity("sub-invited-" + suffix, true, invitedEmail);
+      const callback = await app.fetch(new Request(
+        `https://api.example/auth/google/callback?code=test-code&state=${state}`,
+        { headers: { Cookie: cookieHeader, "CF-Connecting-IP": nextIntegrationIp() } },
+      ), googleEnv);
+      expect(callback.status).toBe(302);
+      expect(callback.headers.get("location")).toBe(`${googleOrigin}/`);
+      expect(extractCookiePairs(callback).microapp_session).toBeTruthy();
+      fetchSpy.mockRestore();
+
+      const accepted = await cleanupClient.query<{
+        user_id: string; google_sub: string; role: string; status: string; accepted_user_id: string;
+      }>(
+        `SELECT u.id AS user_id,u.google_sub,m.role,i.status,i.accepted_user_id
+           FROM public.app_users u
+           JOIN public.organization_members m ON m.user_id=u.id AND m.organization_id=$2
+           JOIN public.organization_invitations i ON i.organization_id=$2 AND i.email=lower(u.email)
+          WHERE lower(u.email)=lower($1)`,
+        [invitedEmail, organizationId],
+      );
+      expect(accepted.rows).toEqual([{
+        user_id: expect.any(String), google_sub: "sub-invited-" + suffix,
+        role: "cashier", status: "accepted", accepted_user_id: expect.any(String),
+      }]);
+      invitedUserId = accepted.rows[0]!.user_id;
+      expect(accepted.rows[0]!.accepted_user_id).toBe(invitedUserId);
+      const audit = await cleanupClient.query(
+        "SELECT 1 FROM public.audit_logs WHERE organization_id=$1 AND actor_user_id=$2 AND action='organization_invitation.accepted'",
+        [organizationId, invitedUserId],
+      );
+      expect(audit.rows).toHaveLength(1);
+    } finally {
+      if (fetchSpy) fetchSpy.mockRestore();
+      await cleanupClient.query("ALTER TABLE public.audit_logs DISABLE TRIGGER USER");
+      try {
+        if (organizationId) {
+          await cleanupClient.query("DELETE FROM public.audit_logs WHERE organization_id=$1", [organizationId]);
+          await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email=$1)", [invitedEmail]);
+          await cleanupClient.query("DELETE FROM organization_invitations WHERE organization_id=$1", [organizationId]);
+          await cleanupClient.query("DELETE FROM organization_members WHERE organization_id=$1", [organizationId]);
+          await cleanupClient.query("DELETE FROM organizations WHERE id=$1", [organizationId]);
+        }
+        if (invitedUserId) await cleanupClient.query("DELETE FROM app_users WHERE id=$1", [invitedUserId]);
+        if (ownerId) await cleanupClient.query("DELETE FROM app_users WHERE id=$1", [ownerId]);
+        await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email)=lower($1)", [invitedEmail]);
+      } finally {
+        await cleanupClient.query("ALTER TABLE public.audit_logs ENABLE TRIGGER USER");
+      }
+    }
   });
 
   it("runs the one-time bootstrap exactly once, then seals it even with the correct token", async () => {

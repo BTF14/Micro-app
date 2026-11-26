@@ -216,15 +216,15 @@ BEGIN
   -- An active membership in another tenant preserves shared allowlist and sessions.
   INSERT INTO public.organization_members(organization_id,user_id,role) VALUES(org2,cashier2,'inventory');
   INSERT INTO public.auth_allowlist(email,is_active,added_by) VALUES('cashier2-0032@example.test',true,'0032-test');
-  INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES(cashier2,repeat('h',64),pg_catalog.clock_timestamp()+interval '1 day');
+  INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES(cashier2,repeat('d',64),pg_catalog.clock_timestamp()+interval '1 day');
   PERFORM public.set_organization_member_access(org1,owner1,cashier2,'cashier',false);
   IF NOT EXISTS(SELECT 1 FROM public.auth_allowlist WHERE lower(email)='cashier2-0032@example.test' AND is_active)
-     OR NOT EXISTS(SELECT 1 FROM public.auth_sessions WHERE token_hash=repeat('h',64) AND revoked_at IS NULL) THEN
+     OR NOT EXISTS(SELECT 1 FROM public.auth_sessions WHERE token_hash=repeat('d',64) AND revoked_at IS NULL) THEN
     RAISE EXCEPTION '0032_OTHER_TENANT_MEMBERSHIP_DID_NOT_PRESERVE_ACCESS';
   END IF;
   PERFORM public.set_organization_member_access(org2,owner2,cashier2,'inventory',false);
   IF EXISTS(SELECT 1 FROM public.auth_allowlist WHERE lower(email)='cashier2-0032@example.test' AND is_active)
-     OR NOT EXISTS(SELECT 1 FROM public.auth_sessions WHERE token_hash=repeat('h',64) AND revoked_at IS NOT NULL) THEN
+     OR NOT EXISTS(SELECT 1 FROM public.auth_sessions WHERE token_hash=repeat('d',64) AND revoked_at IS NOT NULL) THEN
     RAISE EXCEPTION '0032_LAST_TENANT_DEACTIVATION_DID_NOT_REVOKE_ACCESS';
   END IF;
 

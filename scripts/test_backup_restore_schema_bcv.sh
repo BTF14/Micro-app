@@ -231,6 +231,9 @@ psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0032_
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'
+-- pg_get_constraintdef() qualifies built-ins according to search_path.
+-- Pin it identically for source and restored principals to keep the manifest canonical.
+SET search_path = pg_catalog, public;
 SELECT 'tables|' || COALESCE(string_agg(table_name, ',' ORDER BY table_name), '')
   FROM information_schema.tables
  WHERE table_schema = 'public' AND table_type = 'BASE TABLE';

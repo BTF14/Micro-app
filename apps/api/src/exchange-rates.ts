@@ -205,24 +205,24 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
   // dedicated #dolar container. Resolve the element by its actual tag name
   // and walk balanced same-tag tokens so nested layout elements remain inside
   // the official block while commercial-bank quotes remain outside it.
-  const dolarOpen = [...html.matchAll(/<([a-z][a-z0-9:-]*)\\b(?=[^>]*\\bid\\s*=\\s*["']dolar["'])[^>]*>/gi)][0];
+  const dolarOpen = [...html.matchAll(/<([a-z][a-z0-9:-]*)\b(?=[^>]*\bid\s*=\s*["']dolar["'])[^>]*>/gi)][0];
   if (dolarOpen && dolarOpen.index !== undefined) {
     const tagName = dolarOpen[1]!.toLowerCase();
     const openEnd = dolarOpen.index + dolarOpen[0].length;
     let depth = 1;
-    const tagTokens = new RegExp(`<\\/?${tagName}\\b[^>]*>`, "gi");
+    const tagTokens = new RegExp(\`<\\/?\${tagName}\\b[^>]*>\`, "gi");
     tagTokens.lastIndex = openEnd;
     let closeEnd = -1;
     for (let token = tagTokens.exec(html); token; token = tagTokens.exec(html)) {
-      if (new RegExp(`^</${tagName}\\b`, "i").test(token[0])) depth -= 1;
-      else if (!/\\/>$/.test(token[0])) depth += 1;
+      if (new RegExp(\`^</\${tagName}\\b\`, "i").test(token[0])) depth -= 1;
+      else if (!/\/>$/.test(token[0])) depth += 1;
       if (depth === 0) { closeEnd = token.index; break; }
     }
     if (closeEnd > openEnd) {
       const dolarBlock = html.slice(openEnd, closeEnd);
-      const usdIndex = dolarBlock.search(/\\bUSD\\b/i);
+      const usdIndex = dolarBlock.search(/\bUSD\b/i);
       if (usdIndex >= 0) {
-        const valueMatch = dolarBlock.slice(usdIndex).match(/<strong\\b[^>]*>\\s*([\\d.,]+)\\s*<\\/strong>/i);
+        const valueMatch = dolarBlock.slice(usdIndex).match(/<strong\b[^>]*>\s*([\d.,]+)\s*<\/strong>/i);
         if (valueMatch) {
           try { rate = parseLocalizedRate(valueMatch[1]!); }
           catch (error) { if (error instanceof Error) candidateError = error; }

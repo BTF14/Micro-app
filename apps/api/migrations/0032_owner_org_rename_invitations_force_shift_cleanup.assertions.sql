@@ -72,6 +72,13 @@ BEGIN
      OR pg_catalog.has_table_privilege('microapp_runtime','public.app_users','INSERT') THEN
     RAISE EXCEPTION '0032_RUNTIME_DIRECT_DML_PRIVILEGE_PRESENT';
   END IF;
+  IF NOT pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','organization_id','INSERT')
+     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','user_id','INSERT')
+     OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','role','INSERT')
+     OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','is_active','INSERT')
+     OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','updated_at','INSERT') THEN
+    RAISE EXCEPTION '0032_BOOTSTRAP_ONLY_MEMBER_INSERT_COLUMNS_INVALID';
+  END IF;
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.organization_invitations','SELECT')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.organization_invitations','INSERT')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.organization_invitations','UPDATE')

@@ -222,6 +222,7 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
       return c.json({ id: result.id, status: "recorded", replayed: result.replayed }, result.replayed ? 200 : 201);
     } catch (error) {
       const code = postgresCode(error);
+      if (code === "55P03") return c.json({ error: "INVENTORY_LOCK_TIMEOUT", message: "El inventario está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo." }, 409);
       const message = error instanceof Error ? error.message : "";
       if (code === "23505" && message.includes("INVENTORY_RECEIPT_IDEMPOTENCY_CONFLICT")) {
         return c.json({ error: "IDEMPOTENCY_KEY_REUSED", message: "La clave de idempotencia ya fue utilizada con una solicitud diferente." }, 409);

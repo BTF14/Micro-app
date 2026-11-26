@@ -123,8 +123,12 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
           return { kind: "forbidden" as const };
         }
         const branch = auth.context;
-        const locked = await lockInventoryWarehouses(tx, branch.organizationId, [{ warehouseId, branchId: branch.branchId }]);
-        if (!locked) return { kind: "not_found" as const };
+        const warehouse = await tx.query<{ id: string }>(
+          `SELECT id FROM public.warehouses
+            WHERE organization_id = $1 AND branch_id = $2 AND id = $3 AND is_active = true`,
+          [branch.organizationId, branch.branchId, warehouseId],
+        );
+        if (!warehouse.rows[0]) return { kind: "not_found" as const };
         const rows = await tx.query<{ id: string; reason: string; created_by: string; created_at: string; line_count: string }>(
           `SELECT r.id,r.reason,r.created_by,r.created_at::text AS created_at,
              count(l.product_id)::text AS line_count

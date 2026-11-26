@@ -29,6 +29,22 @@ describe("BCV HTML parser — synthetic regression fixtures", () => {
     });
   });
 
+  it("extracts the official USD paragraph from the captured BCV DOM fixture", () => {
+    expect(parseBcvOfficialRate(officialBcvHomepageHtml, new Date("2026-11-09T12:00:00-04:00"))).toEqual({
+      rate: "897.53830000",
+      effectiveDate: "2026-11-09",
+    });
+  });
+
+  it("does not mistake commercial-bank USD quotes for the official BCV rate", () => {
+    const withoutOfficialBlock = officialBcvHomepageHtml.replace(
+      /<p><img[^>]*>\\s*USD<\\/p>\\s*<p><strong>897,53830000<\\/strong><\\/p>/i,
+      "<p>USD rate unavailable</p>",
+    );
+    expect(() => parseBcvOfficialRate(withoutOfficialBlock, new Date("2026-11-09T12:00:00-04:00")))
+      .toThrow("BCV_USD_RATE_MISSING");
+  });
+
   it("normalizes Spanish thousands and decimal separators", () => {
     const html = SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "1.234,56789012");
     expect(parseBcvOfficialRate(html, NOW).rate).toBe("1234.56789012");

@@ -109,7 +109,10 @@ export default function RegisterShiftsPanel({ organizationId, role, userName, on
 
 
   function updateForceDraft(shiftId: string, field: "usd" | "ves" | "reason", value: string) {
-    setForceDrafts(current => ({ ...current, [shiftId]: { usd: "", ves: "", reason: "", ...current[shiftId], [field]: value } }));
+    setForceDrafts(current => {
+      const previous = current[shiftId] ?? { usd: "", ves: "", reason: "" };
+      return { ...current, [shiftId]: { ...previous, [field]: value } };
+    });
   }
   async function forceCloseShift(openShift: OpenShift, event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

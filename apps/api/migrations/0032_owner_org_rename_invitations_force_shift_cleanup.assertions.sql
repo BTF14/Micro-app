@@ -69,14 +69,36 @@ BEGIN
      OR pg_catalog.has_table_privilege('microapp_runtime','public.register_shifts','UPDATE')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.register_shifts','DELETE')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.auth_sessions','DELETE')
-     OR pg_catalog.has_table_privilege('microapp_runtime','public.app_users','INSERT') THEN
+     OR pg_catalog.has_table_privilege('microapp_runtime','public.app_users','INSERT')
+     OR EXISTS (
+       SELECT 1
+         FROM pg_catalog.pg_attribute a
+        WHERE a.attrelid IN (
+          'public.organizations'::regclass,
+          'public.auth_allowlist'::regclass,
+          'public.register_shifts'::regclass,
+          'public.app_users'::regclass,
+          'public.organization_invitations'::regclass
+        )
+          AND a.attnum>0 AND NOT a.attisdropped
+          AND (pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname,'INSERT')
+            OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname,'UPDATE'))
+     ) THEN
     RAISE EXCEPTION '0032_RUNTIME_DIRECT_DML_PRIVILEGE_PRESENT';
   END IF;
   IF NOT pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','organization_id','INSERT')
      OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','user_id','INSERT')
      OR NOT pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','role','INSERT')
      OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','is_active','INSERT')
-     OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','updated_at','INSERT') THEN
+     OR pg_catalog.has_column_privilege('microapp_runtime','public.organization_members','updated_at','INSERT')
+     OR EXISTS (
+       SELECT 1 FROM pg_catalog.pg_attribute a
+        WHERE a.attrelid='public.organization_members'::regclass
+          AND a.attnum>0 AND NOT a.attisdropped
+          AND ((a.attname NOT IN ('organization_id','user_id','role')
+                AND pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname,'INSERT'))
+            OR pg_catalog.has_column_privilege('microapp_runtime',a.attrelid,a.attname,'UPDATE'))
+     ) THEN
     RAISE EXCEPTION '0032_BOOTSTRAP_ONLY_MEMBER_INSERT_COLUMNS_INVALID';
   END IF;
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.organization_invitations','SELECT')

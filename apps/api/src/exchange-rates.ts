@@ -208,7 +208,6 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
   if (dolarOpen && dolarOpen.index !== undefined) {
     const openEnd = dolarOpen.index + dolarOpen[0].length;
     let depth = 1;
-    let cursor = openEnd;
     const divTokens = /<\/?div\b[^>]*>/gi;
     divTokens.lastIndex = openEnd;
     let closeEnd = -1;

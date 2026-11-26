@@ -183,7 +183,7 @@ const source = "BCV_OFFICIAL_HTML_V1";
       );
       expect(failedState.rows[0]).toMatchObject({
         last_outcome: "failed",
-        last_error_code: "BCV_SOURCE_HTTP_ERROR",
+        last_error_code: "BCV_SOURCE_HTTP_5XX",
         last_success_at: priorSuccessAt,
       });
     } finally {

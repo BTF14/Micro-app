@@ -76,7 +76,7 @@ async function authorizeOwnShift(
   // Owner/Admin have organization-wide branch scope, but owning a shift always
   // requires an explicit active branch assignment just like Cashier. This is a
   // read-only preflight; opening/closing SQL revalidates under its own locks.
-  if (branch.organizationRole !== "owner" && branch.organizationRole !== "admin") {
+  if ((branch.organizationRole !== "owner" && branch.organizationRole !== "admin") || operation !== "register.shift.read_own") {
     const assignment = await tx.query<{ active: boolean }>(
       `SELECT EXISTS (SELECT 1 FROM public.branch_memberships WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3 AND is_active) AS active`,
       [branch.organizationId, branch.branchId, branch.userId],

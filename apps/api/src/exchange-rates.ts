@@ -210,11 +210,11 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
     const tagName = dolarOpen[1]!.toLowerCase();
     const openEnd = dolarOpen.index + dolarOpen[0].length;
     let depth = 1;
-    const tagTokens = new RegExp(\`<\\/?\${tagName}\\b[^>]*>\`, "gi");
+    const tagTokens = new RegExp(`<\\/?${tagName}\\b[^>]*>`, "gi");
     tagTokens.lastIndex = openEnd;
     let closeEnd = -1;
     for (let token = tagTokens.exec(html); token; token = tagTokens.exec(html)) {
-      if (new RegExp(\`^</\${tagName}\\b\`, "i").test(token[0])) depth -= 1;
+      if (new RegExp(`^</${tagName}\\b`, "i").test(token[0])) depth -= 1;
       else if (!/\/>$/.test(token[0])) depth += 1;
       if (depth === 0) { closeEnd = token.index; break; }
     }

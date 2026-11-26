@@ -10,6 +10,16 @@ type IdentityRow = { current_user: string; session_user: string };
 type StateRow = { singleton: boolean; last_outcome: string | null };
 type RateRow = { id: string; validation_status: "valid" | "stale" };
 
+export const BCV_SYNC_MAX_ATTEMPTS = 3;
+const BCV_SYNC_RETRY_BACKOFF_MS = [150, 350] as const;
+
+export function isRetryableBcvSyncFailure(error: unknown): boolean {
+  const code = safeBcvSyncErrorCode(error);
+  return code === "BCV_SOURCE_TIMEOUT" ||
+    code === "BCV_SOURCE_TLS_OR_NETWORK_ERROR" ||
+    code === "BCV_SOURCE_HTTP_5XX";
+}
+
 export type BcvNodeSyncResult =
   | { status: "skipped"; outcome: "inserted" | "unchanged" }
   | { status: "synced"; outcome: "inserted" | "unchanged" | "older" | "superseded" };
@@ -121,6 +131,8 @@ export async function runBcvNodeSync(
   forceSync = false,
   createClient?: DatabaseClientFactory,
   now = new Date(),
+  wait: (milliseconds: number) => Promise<void> = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
 ): Promise<BcvNodeSyncResult> {
   if (!databaseUrl) throw new Error("BCV_SYNC_DATABASE_URL_MISSING");
   const verifiedFactory = createVerifiedBcvDatabaseClientFactory(createClient);
@@ -135,9 +147,16 @@ export async function runBcvNodeSync(
       return { status: "skipped", outcome };
     }
   }
-  try {
-    return { status: "synced", outcome: await syncBcvOfficialRate(databaseUrl, verifiedFactory) };
-  } catch (error) {
-    throw new Error(safeBcvSyncErrorCode(error));
+  for (let attempt = 1; attempt <= BCV_SYNC_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return { status: "synced", outcome: await syncBcvOfficialRate(databaseUrl, verifiedFactory) };
+    } catch (error) {
+      const code = safeBcvSyncErrorCode(error);
+      if (attempt >= BCV_SYNC_MAX_ATTEMPTS || !isRetryableBcvSyncFailure(error)) {
+        throw new Error(code);
+      }
+      await wait(BCV_SYNC_RETRY_BACKOFF_MS[attempt - 1]!);
+    }
   }
+  throw new Error("BCV_SYNC_UNKNOWN");
 }

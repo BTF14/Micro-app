@@ -878,8 +878,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect(response.status).toBe(201);
       expect((await readBalance()).on_hand_quantity).toBe("1.000");
 
-      // A later failed producer attempt revokes eligibility for subsequent
-      // checkouts even though the prepublished row and prior success remain.
+      // A later failed producer attempt must not erase the append-only
+      // confirmation that already covers today's operation date.
       await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
       );
@@ -887,18 +887,19 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         checkoutBody("1.000", "23.8500"),
         "future-prepublication-revoked-" + crypto.randomUUID(),
       );
-      expect(revoked.status).toBe(409);
-      expect((await readBalance()).on_hand_quantity).toBe("1.000");
+      expect(revoked.status, await revoked.clone().text()).toBe(201);
+      expect((await readBalance()).on_hand_quantity).toBe("0.000");
     } finally {
       await setBcvSyncState("inserted");
       await client.query("UPDATE public.exchange_rates SET validation_status=$2 WHERE id=$1",[prepublishedRateId,priorPrepublishedStatus ?? "stale"]);
     }
   });
 
-  it("database guard blocks direct runtime sale completion after the latest BCV sync failed", async () => {
+  it("database guard preserves direct runtime completion after a later failed attempt when prior rate is confirmed", async () => {
     const runtimeClient = new Client({ connectionString: databaseUrl });
     await runtimeClient.connect();
     try {
+      await setBcvSyncState("unchanged");
       await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",
       );
@@ -925,8 +926,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         "UPDATE public.sales SET status='completed',completed_at=now() WHERE id=$1",
         [sale.rows[0]!.id],
       ).then(() => null, (error: { code?: string; message?: string }) => error);
-      expect(guardError).toMatchObject({ code: "23514" });
-      expect(guardError?.message).toContain("SALE_REQUIRES_CURRENT_BCV_RATE");
+      expect(guardError).toBeNull();
     } finally {
       await runtimeClient.query("ROLLBACK");
     }

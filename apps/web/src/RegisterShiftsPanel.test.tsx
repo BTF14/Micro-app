@@ -189,8 +189,8 @@ describe("Register shifts workspace", () => {
     expect(container.textContent).toContain("Turnos abiertos de la sucursal");
     expect(container.textContent).toContain("Ana Pérez");
     expect(container.textContent).toContain("Cierre forzado");
-    const inputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-form input")];
-    const reason = container.querySelector<HTMLTextAreaElement>(".register-shift-form textarea");
+    const inputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-values .register-shift-form input")];
+    const reason = container.querySelector<HTMLTextAreaElement>(".register-shift-values .register-shift-form textarea");
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
     if (inputs.length !== 2 || !reason || !setter) throw new Error("Forced-close inputs not found");
     await act(async () => {

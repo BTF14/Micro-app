@@ -878,8 +878,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect(response.status).toBe(201);
       expect((await readBalance()).on_hand_quantity).toBe("1.000");
 
-      // A later failed producer attempt revokes eligibility for subsequent
-      // checkouts even though the prepublished row and prior success remain.
+      // A later failed producer attempt must not erase the append-only
+      // confirmation that already covers today's operation date.
       await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
       );
@@ -887,18 +887,19 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         checkoutBody("1.000", "23.8500"),
         "future-prepublication-revoked-" + crypto.randomUUID(),
       );
-      expect(revoked.status).toBe(409);
-      expect((await readBalance()).on_hand_quantity).toBe("1.000");
+      expect(revoked.status, await revoked.clone().text()).toBe(201);
+      expect((await readBalance()).on_hand_quantity).toBe("0.000");
     } finally {
       await setBcvSyncState("inserted");
       await client.query("UPDATE public.exchange_rates SET validation_status=$2 WHERE id=$1",[prepublishedRateId,priorPrepublishedStatus ?? "stale"]);
     }
   });
 
-  it("database guard blocks direct runtime sale completion after the latest BCV sync failed", async () => {
+  it("database guard preserves direct runtime completion after a later failed attempt when prior rate is confirmed", async () => {
     const runtimeClient = new Client({ connectionString: databaseUrl });
     await runtimeClient.connect();
     try {
+      await setBcvSyncState("unchanged");
       await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",
       );
@@ -925,8 +926,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         "UPDATE public.sales SET status='completed',completed_at=now() WHERE id=$1",
         [sale.rows[0]!.id],
       ).then(() => null, (error: { code?: string; message?: string }) => error);
-      expect(guardError).toMatchObject({ code: "23514" });
-      expect(guardError?.message).toContain("SALE_REQUIRES_CURRENT_BCV_RATE");
+      expect(guardError).toBeNull();
     } finally {
       await runtimeClient.query("ROLLBACK");
     }
@@ -939,10 +939,11 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await setBcvSyncState("unchanged");
   });
 
-  it("blocks a new sale after the latest BCV sync attempt fails, despite a valid same-day rate", async () => {
+  it("fails closed when the same-day rate row is stale despite historical observation", async () => {
     await seedBalance("2.000");
     const key = "sync-failed-" + crypto.randomUUID();
     try {
+      await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
       await setBcvSyncState("failed");
       const response = await request(checkoutBody("1.000", "23.8500"), key);
       expect(response.status).toBe(409);
@@ -954,12 +955,13 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       );
       expect(sales.rows[0].count).toBe(0);
     } finally {
+      await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
       await setBcvSyncState("unchanged");
     }
   });
 
 
-  it("rejects direct runtime completion with past/future rates and with failed or running sync state", async () => {
+  it("rejects past/future rates but retains a confirmed same-day rate after failed or running attempts", async () => {
     const dates = await client.query<{ past: string; future: string }>(
       "SELECT ($1::date-1)::text AS past,($1::date+2)::text AS future",
       [rateDate],
@@ -998,23 +1000,22 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
       );
-      await expect(directInsert({id:rateId,rate:"250.12345678"},"direct-failed-sync-"+crypto.randomUUID()))
-        .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+      expect((await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)", [rateDate])).rows).toHaveLength(1);
       await producerClient.query(
         "UPDATE public.bcv_sync_state SET last_outcome='running',last_error_code=NULL,updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
       );
-      await expect(directInsert({id:rateId,rate:"250.12345678"},"direct-running-sync-"+crypto.randomUUID()))
-        .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+      expect((await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)", [rateDate])).rows).toHaveLength(1);
     } finally {
       await setBcvSyncState("inserted");
       for (const id of createdCandidateIds) await client.query("DELETE FROM public.exchange_rates WHERE id=$1",[id]);
     }
   });
 
-  it("blocks a new sale while a stale BCV sync attempt remains running", async () => {
+  it("fails closed for a stale running attempt when no successful observation remains", async () => {
     await seedBalance("2.000");
     const key = "sync-stale-running-" + crypto.randomUUID();
     try {
+      await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
       await setBcvSyncState("running");
       await client.query("UPDATE public.bcv_sync_state SET last_attempt_at=pg_catalog.clock_timestamp()-interval '2 hours' WHERE singleton=true");
       const response = await request(checkoutBody("1.000", "23.8500"), key);
@@ -1022,20 +1023,23 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
       expect((await readBalance()).on_hand_quantity).toBe("2.000");
     } finally {
+      await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
       await setBcvSyncState("inserted");
     }
   });
 
-  it("blocks when the last successful sync effective date does not match today", async () => {
+  it("fails closed when no observation covers today even if mutable state has an old date", async () => {
     await seedBalance("2.000");
     const key = "sync-date-mismatch-" + crypto.randomUUID();
     try {
+      await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
       await setBcvSyncState("unchanged", "1900-01-01");
       const response = await request(checkoutBody("1.000", "23.8500"), key);
       expect(response.status).toBe(409);
       expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
       expect((await readBalance()).on_hand_quantity).toBe("2.000");
     } finally {
+      await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
       await setBcvSyncState("unchanged");
     }
   });
@@ -1767,7 +1771,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
 
 
 
-  it("checkout waits for a sync failure that locked BCV first and then rejects with 409", async () => {
+  it("checkout waits for a sync failure but preserves the already confirmed daily rate", async () => {
     await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1",[rateId]);
     await setBcvSyncState("inserted");
     const eligible = await client.query("SELECT * FROM public.select_bcv_rate_for_operation($1::date)",[rateDate]);
@@ -1786,9 +1790,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect(settled).toBe(false);
       await producerClient.query("COMMIT");
       const response = await responsePromise;
-      expect(response.status).toBe(409);
-      expect((await response.json() as {error:string}).error).toBe("BCV_RATE_NOT_CURRENT");
-      expect((await readBalance()).on_hand_quantity).toBe("2.000");
+      expect(response.status, await response.clone().text()).toBe(201);
+      expect((await readBalance()).on_hand_quantity).toBe("1.000");
     } finally {
       await producerClient.query("ROLLBACK").catch(() => undefined);
       if(responsePromise) await responsePromise.catch(() => undefined);
@@ -1944,14 +1947,16 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     }
   });
 
-  it("rolls back every direct runtime write when BCV becomes ineligible before sale completion", async () => {
+  it("commits direct runtime completion when the prior daily rate remains confirmed after a failed attempt", async () => {
     await seedBalance("10.000");
-    const key = "direct-runtime-rollback-" + crypto.randomUUID();
+    const key = "direct-runtime-confirmed-" + crypto.randomUUID();
+    await setBcvSyncState("inserted");
     await producerClient.query(
       "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
     );
     await runtimeClient.query("BEGIN");
     let saleId = "";
+    let committed = false;
     try {
       const inserted = await runtimeClient.query<{ id: string }>(
         `INSERT INTO public.sales (
@@ -1985,10 +1990,11 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         "INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata) VALUES($1,$2,'sale.completed','sale',$3,'{}'::jsonb)",
         [organizationId,userId,saleId],
       );
-      await expect(runtimeClient.query("UPDATE public.sales SET status='completed',completed_at=pg_catalog.clock_timestamp() WHERE id=$1",[saleId]))
-        .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+      await runtimeClient.query("UPDATE public.sales SET status='completed',completed_at=pg_catalog.clock_timestamp() WHERE id=$1",[saleId]);
+      await runtimeClient.query("COMMIT");
+      committed = true;
     } finally {
-      await runtimeClient.query("ROLLBACK");
+      if (!committed) await runtimeClient.query("ROLLBACK").catch(() => undefined);
       await setBcvSyncState("inserted");
     }
     const counts = await client.query(
@@ -1999,8 +2005,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
          (SELECT count(*)::int FROM public.audit_logs WHERE organization_id=$1 AND action='sale.completed' AND entity_id=$3::text) AS audits`,
       [organizationId,key,saleId],
     );
-    expect(counts.rows[0]).toEqual({ completed_sales: 0, payments: 0, movements: 0, audits: 0 });
-    expect((await readBalance()).on_hand_quantity).toBe("10.000");
+    expect(counts.rows[0]).toEqual({ completed_sales: 1, payments: 1, movements: 1, audits: 1 });
+    expect((await readBalance()).on_hand_quantity).toBe("9.000");
   });
 
   it("rejects fractional checkout quantities for integer products", async () => {

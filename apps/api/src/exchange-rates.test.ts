@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import officialBcvHomepageHtml from "./fixtures/bcv-homepage-dom-2026-11-09.html?raw";
 import { fetchBcvOfficialRate, findApplicableBcvRate, findLatestBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, syncBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
+import app from "./index";
 
 const NOW = new Date("2026-11-05T12:00:00-04:00");
 
@@ -26,6 +27,37 @@ describe("BCV HTML parser — synthetic regression fixtures", () => {
     expect(parseBcvOfficialRate(SYNTHETIC_BCV_HTML_FIXTURE, NOW)).toEqual({
       rate: "894.88760000",
       effectiveDate: "2026-11-05",
+    });
+  });
+
+  it("extracts the official USD paragraph from the captured BCV DOM fixture", () => {
+    expect(parseBcvOfficialRate(officialBcvHomepageHtml, new Date("2026-11-09T12:00:00-04:00"))).toEqual({
+      rate: "897.53830000",
+      effectiveDate: "2026-11-09",
+    });
+  });
+
+  it("does not mistake commercial-bank USD quotes for the official BCV rate", () => {
+    const withoutOfficialBlock = officialBcvHomepageHtml.replace(
+      /<p><img[^>]*>\s*USD<\/p>\s*<p><strong>897,53830000<\/strong><\/p>/i,
+      "<p>USD rate unavailable</p>",
+    );
+    expect(() => parseBcvOfficialRate(withoutOfficialBlock, new Date("2026-11-09T12:00:00-04:00")))
+      .toThrow("BCV_USD_RATE_MISSING");
+  });
+
+  it("extracts USD from the real BCV #dolar container and ignores commercial bank quotes", () => {
+    const html = `
+      <div id="dolar" class="col-sm-6">
+        <div class="row"><div class="col-sm-6"><span>USD</span></div>
+        <div class="col-sm-6"><strong>897,53830000</strong></div></div>
+      </div>
+      <h2>Tasas Informativas del Sistema Bancario (Bs/USD)</h2>
+      <table><tr><td>USD</td><td>1.200,00000000</td></tr></table>
+      <p>Fecha Valor: Jueves, 26 Noviembre 2026</p>`;
+    expect(parseBcvOfficialRate(html, new Date("2026-11-26T12:00:00-04:00"))).toEqual({
+      rate: "897.53830000",
+      effectiveDate: "2026-11-26",
     });
   });
 
@@ -371,6 +403,44 @@ describe("BCV synchronization failure and cleanup semantics", () => {
     vi.useRealTimers();
   });
 
+  it("rejects a rate jump above 35 percent against a recent valid official row", async () => {
+    let attemptId = "";
+    const statements: string[] = [];
+    const createClient = vi.fn(() => {
+      return {
+        connect: vi.fn(async () => undefined),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          const sql = statement.trim();
+          statements.push(sql);
+          if (sql.includes("SET attempt_id =")) {
+            attemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (sql.includes("FOR UPDATE")) return { rows: [{ attempt_id: attemptId }] };
+          if (sql.includes("abs($1::numeric - prior.rate)")) return { rows: [{ exceeds_limit: true }] };
+          if (sql === "ROLLBACK" || sql === "COMMIT") return { rows: [] };
+          if (sql.includes("SET last_outcome = 'failed'")) return { rows: [{ attempt_id: attemptId }] };
+          return { rows: [] };
+        }),
+        end: vi.fn(async () => undefined),
+      } as unknown as DatabaseClient;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(officialBcvHomepageHtml, {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    })));
+    try {
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).rejects.toThrow("BCV_RATE_VARIATION_OUT_OF_RANGE");
+      expect(statements.some((sql) => sql.includes("get_recent_bcv_rate_baseline"))).toBe(true);
+      expect(statements.some((sql) => sql.includes("INSERT INTO public.exchange_rates"))).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("records a fetch failure with a separate short-lived DB connection", async () => {
     const events: string[] = [];
     let attemptId = "";
@@ -653,5 +723,72 @@ describe("BCV latest-rate Caracas midnight boundary", () => {
     await expect(findLatestBcvRate(latestClient("2026-11-07", [mondayRate]), new Date("2026-11-07T04:00:00.000Z")))
       .resolves.toMatchObject({ status: "current", priority: "weekend_prepublished", operation_date: "2026-11-07", effective_date: "2026-11-09" });
     await expect(findLatestBcvRate(latestClient("2026-11-07", []), new Date("2026-11-07T04:00:00.000Z"))).resolves.toBeNull();
+  });
+
+  it("does not expose a weekday prepublished rate without a same-Caracas-day sync", async () => {
+    let call = 0;
+    const client = {
+      query: async <Row = unknown>() => {
+        call += 1;
+        if (call === 1) return { rows: [{
+          operation_date: "2026-11-09",
+          last_success_at: "2026-11-06T18:00:00.000Z",
+          last_outcome: "inserted",
+          last_effective_date: "2026-11-10",
+          last_error_code: null,
+          has_success_observation: true,
+        }] as Row[] };
+        return { rows: [{
+          id: "tuesday", rate: "896.10000000", effective_date: "2026-11-10",
+          validation_status: "valid", fetched_at: "2026-11-06T18:00:00.000Z",
+        }] as Row[] };
+      },
+    } as unknown as DatabaseClient;
+    await expect(findLatestBcvRate(client, new Date("2026-11-09T12:00:00-04:00")))
+      .resolves.toMatchObject({ status: "stale", effective_date: "2026-11-10" });
+  });
+
+  it("marks an exact-day row stale when no durable success observation confirms it", async () => {
+    let call = 0;
+    const client = {
+      query: async <Row = unknown>() => {
+        call += 1;
+        if (call === 1) return { rows: [{
+          operation_date: "2026-11-06", last_success_at: null, last_outcome: null,
+          last_effective_date: null, last_error_code: null, has_success_observation: false,
+        }] as Row[] };
+        return { rows: [fridayRate] as Row[] };
+      },
+    } as unknown as DatabaseClient;
+    await expect(findLatestBcvRate(client, new Date("2026-11-07T03:59:59.000Z")))
+      .resolves.toMatchObject({ status: "stale", effective_date: "2026-11-06" });
+  });
+});
+
+
+describe("public BCV read route guard", () => {
+  it("sets no-store on history validation responses and rate-limits by trusted CF-Connecting-IP", async () => {
+    const ip = "203.0.113.44";
+    let lastResponse: Response | undefined;
+    for (let request = 0; request < 120; request += 1) {
+      lastResponse = await app.fetch(
+        new Request("https://api.example/api/exchange-rates/history?limit=0", {
+          headers: { "CF-Connecting-IP": ip },
+        }),
+        { APP_ENV: "production" },
+      );
+      expect(lastResponse.status).toBe(400);
+      expect(lastResponse.headers.get("Cache-Control")).toBe("no-store");
+    }
+
+    const limited = await app.fetch(
+      new Request("https://api.example/api/exchange-rates/latest", {
+        headers: { "CF-Connecting-IP": ip },
+      }),
+      { APP_ENV: "production" },
+    );
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("Cache-Control")).toBe("no-store");
+    expect(Number(limited.headers.get("Retry-After"))).toBeGreaterThan(0);
   });
 });

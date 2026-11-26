@@ -113,10 +113,11 @@ async function findActiveManualFxAuthorization(
 
 /**
  * A new sale requires the BCV row selected by the 0027 Caracas-date priority
- * policy and a healthy sync state. lock_bcv_sync_state_with_error() takes FOR SHARE
- * against the producer's UPDATE and holds
- * it until the checkout transaction commits or rolls back; it is not held
- * while the BCV HTTP fetch runs.
+ * policy and a durable successful observation covering that effective date.
+ * lock_bcv_sync_state_with_error() retains the producer/checkout FOR SHARE lock
+ * order, but its mutable last_outcome/last_error_code are not success evidence.
+ * The append-only observation and its exact exchange_rates row remain usable
+ * after a later attempt is failed or running. The lock is never held during HTTP.
  */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
   const fallbackToday = bcvCaracasDate(now);
@@ -128,22 +129,32 @@ export async function findApplicableCheckoutRate(tx: import("./database").Databa
     last_error_code: string | null;
   }>(
     `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
-            last_success_at,
-            last_outcome,
-            last_effective_date::text AS last_effective_date,
-            last_error_code
+            obs.last_success_at, obs.last_outcome,
+            obs.last_effective_date::text AS last_effective_date,
+            obs.last_error_code
        FROM public.lock_bcv_sync_state_with_error() sync_state
-      WHERE EXISTS (
-        SELECT 1 FROM public.bcv_sync_success_observations obs
-         WHERE obs.last_success_at=sync_state.last_success_at
-           AND obs.last_outcome=sync_state.last_outcome
-           AND obs.last_error_code IS NULL
-           AND obs.last_effective_date=sync_state.last_effective_date
-           AND obs.validation_status='valid'
-           AND obs.exchange_rate_id IS NOT NULL
-           AND obs.rate_snapshot > 0
-           AND obs.observed_at >= obs.last_success_at
-      )`,
+       CROSS JOIN LATERAL (
+         SELECT observation.last_success_at, observation.last_outcome,
+                observation.last_effective_date, observation.last_error_code
+           FROM public.bcv_sync_success_observations observation
+           JOIN public.exchange_rates rate_row
+             ON rate_row.id = observation.exchange_rate_id
+            AND rate_row.source = 'BCV_OFFICIAL_HTML_V1'
+            AND rate_row.base_currency = 'USD' AND rate_row.quote_currency = 'VES'
+            AND rate_row.effective_date = observation.last_effective_date
+            AND rate_row.rate = observation.rate_snapshot
+            AND rate_row.fetched_at = observation.rate_fetched_at
+            AND rate_row.validation_status = 'valid'
+          WHERE observation.last_error_code IS NULL
+            AND observation.last_outcome IN ('inserted','unchanged')
+            AND observation.validation_status = 'valid'
+            AND observation.exchange_rate_id IS NOT NULL
+            AND observation.rate_snapshot > 0
+            AND observation.observed_at >= observation.last_success_at
+            AND observation.last_success_at <= pg_catalog.clock_timestamp()
+          ORDER BY observation.observed_at DESC
+          LIMIT 1
+       ) obs`,
   );
   const state = syncState.rows[0];
   if (!state) return null;

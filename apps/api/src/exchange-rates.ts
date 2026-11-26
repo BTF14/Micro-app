@@ -13,6 +13,38 @@ const MAX_EFFECTIVE_DATE_FUTURE_DAYS = 7;
 
 export const BCV_STALE_RUNNING_THRESHOLD_SECONDS = 300;
 
+// Per-isolate fallback guard keyed only by Cloudflare's trusted edge IP header.
+// The deliberately generous ceiling protects public read endpoints without
+// penalizing ordinary users behind shared carrier/NAT addresses.
+const PUBLIC_RATE_LIMIT_WINDOW_MS = 60_000;
+const PUBLIC_RATE_LIMIT_MAX_REQUESTS = 120;
+const publicRateLimitBuckets = new Map<string, { startedAt: number; count: number }>();
+
+function applyPublicExchangeRateGuard(c: { req: { header(name: string): string | undefined }; header(name: string, value: string): void; json(body: unknown, status?: number): Response }): Response | null {
+  const ip = c.req.header("CF-Connecting-IP")?.trim();
+  // Local tests and non-Cloudflare deployments without a trusted edge IP keep
+  // their existing contract; never trust X-Forwarded-For supplied by clients.
+  if (!ip || ip.length > 64 || !/^[0-9a-fA-F:.]+$/.test(ip)) return null;
+  const now = Date.now();
+  const current = publicRateLimitBuckets.get(ip);
+  const bucket = !current || now - current.startedAt >= PUBLIC_RATE_LIMIT_WINDOW_MS
+    ? { startedAt: now, count: 0 }
+    : current;
+  bucket.count += 1;
+  publicRateLimitBuckets.set(ip, bucket);
+  if (publicRateLimitBuckets.size > 10_000) {
+    for (const [key, value] of publicRateLimitBuckets) {
+      if (now - value.startedAt >= PUBLIC_RATE_LIMIT_WINDOW_MS) publicRateLimitBuckets.delete(key);
+    }
+  }
+  if (bucket.count <= PUBLIC_RATE_LIMIT_MAX_REQUESTS) return null;
+  const retryAfter = Math.max(1, Math.ceil((bucket.startedAt + PUBLIC_RATE_LIMIT_WINDOW_MS - now) / 1000));
+  c.header("Cache-Control", "no-store");
+  c.header("Retry-After", String(retryAfter));
+  return c.json({ error: "RATE_LIMITED", message: "Demasiadas consultas. Inténtalo de nuevo en unos segundos." }, 429);
+}
+
+
 export function isBcvSyncStateStaleRunning(
   lastOutcome: string | null,
   attemptAgeSeconds: number | null,
@@ -168,12 +200,46 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
   const text = normalizeHtmlText(html);
   let rate: string | null = null;
   let candidateError: Error | null = null;
-  for (const match of text.matchAll(/\bUSD\b\s*([\d.,]+)/gi)) {
-    try {
-      rate = parseLocalizedRate(match[1]!);
-      break;
-    } catch (error) {
-      if (error instanceof Error) candidateError = error;
+
+  // The live BCV Drupal homepage exposes the official USD quote in its
+  // dedicated #dolar container. Resolve the element by its actual tag name
+  // and walk balanced same-tag tokens so nested layout elements remain inside
+  // the official block while commercial-bank quotes remain outside it.
+  const dolarOpen = [...html.matchAll(/<([a-z][a-z0-9:-]*)\b(?=[^>]*\bid\s*=\s*["']dolar["'])[^>]*>/gi)][0];
+  if (dolarOpen && dolarOpen.index !== undefined) {
+    const tagName = dolarOpen[1]!.toLowerCase();
+    const openEnd = dolarOpen.index + dolarOpen[0].length;
+    let depth = 1;
+    const tagTokens = new RegExp(`<\\/?${tagName}\\b[^>]*>`, "gi");
+    tagTokens.lastIndex = openEnd;
+    let closeEnd = -1;
+    for (let token = tagTokens.exec(html); token; token = tagTokens.exec(html)) {
+      if (new RegExp(`^</${tagName}\\b`, "i").test(token[0])) depth -= 1;
+      else if (!/\/>$/.test(token[0])) depth += 1;
+      if (depth === 0) { closeEnd = token.index; break; }
+    }
+    if (closeEnd > openEnd) {
+      const dolarBlock = html.slice(openEnd, closeEnd);
+      const usdIndex = dolarBlock.search(/\bUSD\b/i);
+      if (usdIndex >= 0) {
+        const valueMatch = dolarBlock.slice(usdIndex).match(/<strong\b[^>]*>\s*([\d.,]+)\s*<\/strong>/i);
+        if (valueMatch) {
+          try { rate = parseLocalizedRate(valueMatch[1]!); }
+          catch (error) { if (error instanceof Error) candidateError = error; }
+        }
+      }
+    }
+  }
+
+  // Retain fixture/legacy markup support, but only accept the adjacent official
+  // USD label/value paragraph pair; never scan arbitrary USD values in tables.
+  if (!rate) {
+    const usdBlocks = html.matchAll(
+      /<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bUSD\b(?:(?!<\/p>)[\s\S])*<\/p>\s*<p\b[^>]*>\s*(?:<strong\b[^>]*>)?\s*([\d.,]+)\s*(?:<\/strong>)?\s*<\/p>/gi,
+    );
+    for (const match of usdBlocks) {
+      try { rate = parseLocalizedRate(match[1]!); break; }
+      catch (error) { if (error instanceof Error) candidateError = error; }
     }
   }
   if (!rate) {
@@ -201,7 +267,11 @@ export async function fetchBcvOfficialRate(now = new Date()): Promise<BcvOfficia
     // Keep transport details as a cause for safe classification only; never log them.
     throw new Error("BCV_SOURCE_FETCH_FAILED", { cause: error });
   }
-  if (!response.ok) throw new Error("BCV_SOURCE_HTTP_ERROR");
+  if (!response.ok) {
+    throw new Error(response.status >= 500 && response.status <= 599
+      ? "BCV_SOURCE_HTTP_5XX"
+      : "BCV_SOURCE_HTTP_ERROR");
+  }
   const finalUrl = new URL(response.url || BCV_SOURCE_URL);
   if (finalUrl.protocol !== "https:" || finalUrl.hostname !== "www.bcv.org.ve") {
     throw new Error("BCV_SOURCE_REDIRECT_REJECTED");
@@ -277,6 +347,7 @@ const SAFE_BCV_SYNC_ERROR_CODES = new Set([
   "BCV_EFFECTIVE_DATE_INVALID",
   "BCV_EFFECTIVE_DATE_OUT_OF_RANGE",
   "BCV_SOURCE_HTTP_ERROR",
+  "BCV_SOURCE_HTTP_5XX",
   "BCV_SOURCE_TIMEOUT",
   "BCV_SOURCE_TLS_OR_NETWORK_ERROR",
   "BCV_SYNC_DATABASE_URL_MISSING",
@@ -285,6 +356,7 @@ const SAFE_BCV_SYNC_ERROR_CODES = new Set([
   "BCV_SOURCE_CONTENT_TYPE_INVALID",
   "BCV_USD_RATE_MISSING",
   "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE",
+  "BCV_RATE_VARIATION_OUT_OF_RANGE",
   "BCV_SYNC_STATE_ROW_MISSING",
 ]);
 
@@ -389,6 +461,18 @@ export async function syncBcvOfficialRate(
         }
 
         try {
+          // Anti-corruption guard: compare only with the latest valid official
+          // observation from the preceding 15 effective-date days. A first
+          // historical observation has no baseline and is accepted; a jump
+          // beyond +/-35% is rejected before any rate row is written.
+          const previousRate = await tx.query<{ exceeds_limit: boolean }>(
+            `SELECT (abs($1::numeric - prior.rate) / prior.rate) > 0.35 AS exceeds_limit
+               FROM public.get_recent_bcv_rate_baseline($2::date) AS prior(rate)`,
+            [rate.rate, rate.effectiveDate],
+          );
+          if (previousRate.rows[0]?.exceeds_limit) {
+            throw new Error("BCV_RATE_VARIATION_OUT_OF_RANGE");
+          }
           const outcome = await persistBcvOfficialRate(tx, rate);
           await tx.query(
             `UPDATE public.bcv_sync_state
@@ -482,14 +566,31 @@ export async function findLatestBcvRate(
     last_effective_date: string | null; last_error_code: string | null; has_success_observation: boolean;
   }>(
     `SELECT (pg_catalog.clock_timestamp() AT TIME ZONE 'America/Caracas')::date::text AS operation_date,
-            last_success_at,last_outcome,last_effective_date::text AS last_effective_date,last_error_code,
-            EXISTS (SELECT 1 FROM public.bcv_sync_success_observations obs
-              WHERE state.last_success_at <= pg_catalog.clock_timestamp()
-                AND obs.last_success_at=state.last_success_at AND obs.last_outcome=state.last_outcome
-                AND obs.last_error_code IS NULL AND obs.last_effective_date=state.last_effective_date
-                AND obs.validation_status='valid' AND obs.exchange_rate_id IS NOT NULL
-                AND obs.rate_snapshot > 0 AND obs.observed_at >= obs.last_success_at) AS has_success_observation
-       FROM public.bcv_sync_state state WHERE singleton = true`,
+            observation.last_success_at, observation.last_outcome,
+            observation.last_effective_date::text AS last_effective_date,
+            observation.last_error_code, (observation.id IS NOT NULL) AS has_success_observation
+       FROM public.bcv_sync_state state
+       LEFT JOIN LATERAL (
+         SELECT obs.id, obs.last_success_at, obs.last_outcome, obs.last_effective_date, obs.last_error_code
+           FROM public.bcv_sync_success_observations obs
+           JOIN public.exchange_rates rate_row
+             ON rate_row.id = obs.exchange_rate_id
+            AND rate_row.source = 'BCV_OFFICIAL_HTML_V1'
+            AND rate_row.base_currency = 'USD' AND rate_row.quote_currency = 'VES'
+            AND rate_row.effective_date = obs.last_effective_date
+            AND rate_row.rate = obs.rate_snapshot
+            AND rate_row.fetched_at = obs.rate_fetched_at
+            AND rate_row.validation_status = 'valid'
+          WHERE obs.last_error_code IS NULL
+            AND obs.last_outcome IN ('inserted','unchanged')
+            AND obs.validation_status = 'valid'
+            AND obs.exchange_rate_id IS NOT NULL AND obs.rate_snapshot > 0
+            AND obs.observed_at >= obs.last_success_at
+            AND obs.last_success_at <= pg_catalog.clock_timestamp()
+          ORDER BY obs.observed_at DESC
+          LIMIT 1
+       ) observation ON true
+      WHERE state.singleton = true`,
   );
   const state = stateResult.rows[0] ?? null;
   const operationDate = state?.operation_date ?? bcvCaracasDate(now);
@@ -513,7 +614,15 @@ export async function findLatestBcvRate(
   const nearestFutureDate = futureCandidates[0]?.effective_date;
   const nearestFutureRows = nearestFutureDate ? futureCandidates.filter((row) => row.effective_date === nearestFutureDate) : [];
   const future = nearestFutureRows.length === 1 ? nearestFutureRows[0] : undefined;
-  if (!hasValidExact && future && state?.has_success_observation && state.last_success_at !== null &&
+  const operationWeekday = new Date(Date.parse(`${operationDate}T00:00:00.000Z`)).getUTCDay();
+  const weekendOperation = operationWeekday === 0 || operationWeekday === 6;
+  const observationSuccessAt = state?.last_success_at instanceof Date
+    ? state.last_success_at.getTime()
+    : state?.last_success_at ? Date.parse(state.last_success_at) : Number.NaN;
+  const weekdaySyncConfirmed = Number.isFinite(observationSuccessAt) &&
+    observationSuccessAt >= Date.parse(`${operationDate}T04:00:00.000Z`);
+  if (!hasValidExact && future && state?.has_success_observation &&
+      (weekendOperation || weekdaySyncConfirmed) &&
       (state.last_outcome === "inserted" || state.last_outcome === "unchanged") &&
       state.last_error_code === null && state.last_effective_date !== null &&
       state.last_effective_date >= future.effective_date) {
@@ -608,6 +717,9 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
   });
 
   app.get("/api/exchange-rates/history", async (c) => {
+    c.header("Cache-Control", "no-store");
+    const blocked = applyPublicExchangeRateGuard(c);
+    if (blocked) return blocked;
     const rawLimit = c.req.query("limit") ?? "30";
     if (!/^\d{1,3}$/.test(rawLimit)) {
       return c.json({ error: "INVALID_LIMIT", message: "El límite debe estar entre 1 y 365." }, 400);
@@ -630,7 +742,7 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
         );
         return result.rows;
       });
-      c.header("Cache-Control", "public, max-age=3600");
+      c.header("Cache-Control", "no-store");
       return c.json({
         baseCurrency: "USD",
         quoteCurrency: "VES",
@@ -648,13 +760,16 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
   });
 
   app.get("/api/exchange-rates/latest", async (c) => {
+    c.header("Cache-Control", "no-store");
+    const blocked = applyPublicExchangeRateGuard(c);
+    if (blocked) return blocked;
     try {
       const row = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
         findLatestBcvRate(client),
       );
       c.header("Cache-Control", "no-store");
-      if (!row) {
-        return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "No existe una tasa BCV publicada disponible." }, 503);
+      if (!row || row.status === "stale") {
+        return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "No existe una tasa BCV válida y confirmada para la fecha operativa." }, 503);
       }
       return c.json({
         baseCurrency: "USD",

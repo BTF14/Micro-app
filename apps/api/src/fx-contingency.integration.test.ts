@@ -574,7 +574,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-33
     expect(stillActive.rows[0].status).toBe("active");
   });
 
-  it("PG-30 a later failed sync revokes an earlier inserted recovery observation", async () => {
+  it("PG-30 keeps contingency recovery fail-closed after a later failed sync despite prior rate availability", async () => {
     const branch = await createBranch("PG30");
     const authId = await createAuthorization(branch, "101.00000000");
     const auth = await admin.query<{ starts_at: Date }>("SELECT starts_at FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
@@ -583,7 +583,7 @@ describe.skipIf(!safeDb)("FX contingency PostgreSQL integration — PG-01..PG-33
     await updateSync("inserted", today, oldSuccess);
     await updateSync("failed", today, oldSuccess);
     await expect(runtime.query("SELECT public.transition_fx_contingency_authorization($1::uuid,$2::uuid,$3::uuid,'bcv_restored',$4::uuid,'owner','BCV superseded success test')", [organizationId, branch, authId, ownerId]))
-      .rejects.toThrow(/FX_BCV_RECOVERY_NOT_ELIGIBLE/);
+      .rejects.toThrow(/FX_BCV_RECOVERY_EVIDENCE_MISSING/);
     const state = await admin.query("SELECT status FROM public.fx_contingency_authorizations WHERE id=$1", [authId]);
     expect(state.rows[0].status).toBe("active");
   });

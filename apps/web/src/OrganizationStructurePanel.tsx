@@ -6,7 +6,7 @@ type Register = { id: string; name: string; code: string; is_active: boolean };
 type Branch = { id: string; name: string; slug: string; is_active: boolean; warehouses: Warehouse[]; registers: Register[] };
 type Member = { user_id: string; display_name: string; email: string; role: string; organization_active: boolean; branch_memberships: Record<string, boolean> };
 type Invitation = { id: string; email: string; role: string; note: string | null; created_at: string };
-type Structure = { branches: Branch[]; members: Member[]; invitations: Invitation[] };
+type Structure = { branches: Branch[]; members: Member[]; invitations?: Invitation[] };
 
 export default function OrganizationStructurePanel({ organizationId, organizationName, organizationSlug, onOrganizationRenamed }: { organizationId: string; organizationName: string; organizationSlug: string; onOrganizationRenamed: (name: string, slug: string) => void }) {
   const [data, setData] = useState<Structure>({ branches: [], members: [], invitations: [] });
@@ -152,10 +152,10 @@ export default function OrganizationStructurePanel({ organizationId, organizatio
             </div>
             <h3>Invitaciones pendientes</h3>
             <ul className="structure-list">
-              {data.invitations.map(inv=><li key={inv.id}><span>{inv.email}<small>{inv.role}{inv.note? ` · ${inv.note}`:""}</small></span>
+              {(data.invitations ?? []).map(inv=><li key={inv.id}><span>{inv.email}<small>{inv.role}{inv.note? ` · ${inv.note}`:""}</small></span>
                 <button type="button" className="secondary-button" disabled={saving} onClick={()=>void revokeInvitation(inv)}>Revocar</button></li>)}
             </ul>
-            {data.invitations.length===0&&<p className="structure-empty">No hay invitaciones pendientes.</p>}
+            {(data.invitations ?? []).length===0&&<p className="structure-empty">No hay invitaciones pendientes.</p>}
           </section>
           {data.branches.length === 0 && (
             <div className="structure-onboarding">

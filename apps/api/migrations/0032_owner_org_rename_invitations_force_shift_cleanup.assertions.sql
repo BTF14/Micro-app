@@ -141,6 +141,12 @@ BEGIN
   EXCEPTION WHEN SQLSTATE '42501' THEN failed:=true; END;
   IF NOT failed THEN RAISE EXCEPTION '0032_ADMIN_RENAME_WAS_ALLOWED'; END IF;
 
+  -- NULL member roles must fail with SQLSTATE 22023.
+  failed:=false;
+  BEGIN PERFORM public.set_organization_member_access(org1,owner1,cashier1,NULL,true);
+  EXCEPTION WHEN SQLSTATE '22023' THEN failed:=true; END;
+  IF NOT failed THEN RAISE EXCEPTION '0032_NULL_MEMBER_ROLE_WAS_NOT_REJECTED'; END IF;
+
   -- D7: an existing account without google_sub is never linked or invited.
   failed:=false;
   BEGIN PERFORM * FROM public.invite_organization_member(org1,owner1,'legacy-0032@example.test','cashier',NULL);
@@ -205,6 +211,21 @@ BEGIN
       AND action='register_shift.force_closed' AND entity_type='register_shift'
       AND entity_id IN (shift1::text,shift2::text,shift3::text))<>3 THEN
     RAISE EXCEPTION '0032_FORCED_SHIFT_CLOSE_AUDIT_MISSING';
+  END IF;
+
+  -- An active membership in another tenant preserves shared allowlist and sessions.
+  INSERT INTO public.organization_members(organization_id,user_id,role) VALUES(org2,cashier2,'inventory');
+  INSERT INTO public.auth_allowlist(email,is_active,added_by) VALUES('cashier2-0032@example.test',true,'0032-test');
+  INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES(cashier2,repeat('h',64),pg_catalog.clock_timestamp()+interval '1 day');
+  PERFORM public.set_organization_member_access(org1,owner1,cashier2,'cashier',false);
+  IF NOT EXISTS(SELECT 1 FROM public.auth_allowlist WHERE lower(email)='cashier2-0032@example.test' AND is_active)
+     OR NOT EXISTS(SELECT 1 FROM public.auth_sessions WHERE token_hash=repeat('h',64) AND revoked_at IS NULL) THEN
+    RAISE EXCEPTION '0032_OTHER_TENANT_MEMBERSHIP_DID_NOT_PRESERVE_ACCESS';
+  END IF;
+  PERFORM public.set_organization_member_access(org2,owner2,cashier2,'inventory',false);
+  IF EXISTS(SELECT 1 FROM public.auth_allowlist WHERE lower(email)='cashier2-0032@example.test' AND is_active)
+     OR NOT EXISTS(SELECT 1 FROM public.auth_sessions WHERE token_hash=repeat('h',64) AND revoked_at IS NOT NULL) THEN
+    RAISE EXCEPTION '0032_LAST_TENANT_DEACTIVATION_DID_NOT_REVOKE_ACCESS';
   END IF;
 
   -- A pending invitation in another tenant keeps the shared allowlist active

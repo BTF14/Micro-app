@@ -221,7 +221,7 @@ BEGIN
    WHERE m.organization_id=p_organization_id AND m.user_id=p_actor_user_id
      AND m.role='owner' AND m.is_active AND u.is_active FOR UPDATE OF m,u;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_MANAGEMENT_FORBIDDEN' USING ERRCODE='42501'; END IF;
-  IF p_role NOT IN ('admin','cashier','inventory') THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_ROLE_INVALID' USING ERRCODE='22023'; END IF;
+  IF p_role IS NULL OR p_role NOT IN ('admin','cashier','inventory') THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_ROLE_INVALID' USING ERRCODE='22023'; END IF;
   IF p_target_user_id=p_actor_user_id THEN RAISE EXCEPTION 'ORGANIZATION_MEMBER_SELF_MODIFICATION_FORBIDDEN' USING ERRCODE='42501'; END IF;
   SELECT u.email,m.role,m.is_active INTO v_email,v_old_role,v_old_active
     FROM public.app_users u JOIN public.organization_members m ON m.user_id=u.id
@@ -245,11 +245,11 @@ BEGIN
        AND NOT EXISTS(SELECT 1 FROM public.organization_invitations i
          WHERE lower(i.email)=lower(v_email) AND i.status='pending' AND i.organization_id<>p_organization_id) THEN
       UPDATE public.auth_allowlist SET is_active=false,updated_at=pg_catalog.clock_timestamp()
-       WHERE lower(email)=lower(v_target.email);
+       WHERE lower(email)=lower(v_email);
     END IF;
   ELSE
     UPDATE public.auth_allowlist SET is_active=true,updated_at=pg_catalog.clock_timestamp()
-     WHERE lower(email)=lower(v_target.email);
+     WHERE lower(email)=lower(v_email);
   END IF;
   INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata)
   VALUES(p_organization_id,p_actor_user_id,'organization_member.access_updated','organization_member',p_target_user_id::text,

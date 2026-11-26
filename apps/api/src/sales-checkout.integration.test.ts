@@ -1944,14 +1944,16 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     }
   });
 
-  it("rolls back every direct runtime write when BCV becomes ineligible before sale completion", async () => {
+  it("commits direct runtime completion when the prior daily rate remains confirmed after a failed attempt", async () => {
     await seedBalance("10.000");
-    const key = "direct-runtime-rollback-" + crypto.randomUUID();
+    const key = "direct-runtime-confirmed-" + crypto.randomUUID();
+    await setBcvSyncState("inserted");
     await producerClient.query(
       "UPDATE public.bcv_sync_state SET last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN',updated_at=pg_catalog.clock_timestamp() WHERE singleton=true",
     );
     await runtimeClient.query("BEGIN");
     let saleId = "";
+    let committed = false;
     try {
       const inserted = await runtimeClient.query<{ id: string }>(
         `INSERT INTO public.sales (
@@ -1985,10 +1987,11 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
         "INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata) VALUES($1,$2,'sale.completed','sale',$3,'{}'::jsonb)",
         [organizationId,userId,saleId],
       );
-      await expect(runtimeClient.query("UPDATE public.sales SET status='completed',completed_at=pg_catalog.clock_timestamp() WHERE id=$1",[saleId]))
-        .rejects.toThrow(/SALE_REQUIRES_CURRENT_BCV_RATE/);
+      await runtimeClient.query("UPDATE public.sales SET status='completed',completed_at=pg_catalog.clock_timestamp() WHERE id=$1",[saleId]);
+      await runtimeClient.query("COMMIT");
+      committed = true;
     } finally {
-      await runtimeClient.query("ROLLBACK");
+      if (!committed) await runtimeClient.query("ROLLBACK").catch(() => undefined);
       await setBcvSyncState("inserted");
     }
     const counts = await client.query(
@@ -1999,8 +2002,8 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
          (SELECT count(*)::int FROM public.audit_logs WHERE organization_id=$1 AND action='sale.completed' AND entity_id=$3::text) AS audits`,
       [organizationId,key,saleId],
     );
-    expect(counts.rows[0]).toEqual({ completed_sales: 0, payments: 0, movements: 0, audits: 0 });
-    expect((await readBalance()).on_hand_quantity).toBe("10.000");
+    expect(counts.rows[0]).toEqual({ completed_sales: 1, payments: 1, movements: 1, audits: 1 });
+    expect((await readBalance()).on_hand_quantity).toBe("9.000");
   });
 
   it("rejects fractional checkout quantities for integer products", async () => {

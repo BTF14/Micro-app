@@ -467,15 +467,8 @@ export async function syncBcvOfficialRate(
           // beyond +/-35% is rejected before any rate row is written.
           const previousRate = await tx.query<{ exceeds_limit: boolean }>(
             `SELECT (abs($1::numeric - prior.rate) / prior.rate) > 0.35 AS exceeds_limit
-               FROM public.exchange_rates prior
-              WHERE prior.source = $2
-                AND prior.base_currency = 'USD' AND prior.quote_currency = 'VES'
-                AND prior.validation_status = 'valid' AND prior.rate > 0
-                AND prior.effective_date < $3::date
-                AND prior.effective_date >= ($3::date - 15)
-              ORDER BY prior.effective_date DESC, prior.fetched_at DESC
-              LIMIT 1`,
-            [rate.rate, BCV_SOURCE_ID, rate.effectiveDate],
+               FROM public.get_recent_bcv_rate_baseline($2::date) AS prior(rate)`,
+            [rate.rate, rate.effectiveDate],
           );
           if (previousRate.rows[0]?.exceeds_limit) {
             throw new Error("BCV_RATE_VARIATION_OUT_OF_RANGE");

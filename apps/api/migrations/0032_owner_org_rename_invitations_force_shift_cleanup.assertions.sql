@@ -10,7 +10,8 @@ DECLARE
     'revoke_organization_invitation(uuid,uuid,uuid)',
     'consume_google_login_invitation(text,text,text)',
     'force_close_register_shift(uuid,uuid,uuid,uuid,numeric,numeric,text)',
-    'cleanup_expired_auth_sessions()'
+    'cleanup_expired_auth_sessions()',
+    'consume_auth_bootstrap(text,text,text,text,text)'
   ];
   signature text;
   owner_name text;
@@ -68,7 +69,8 @@ BEGIN
      OR pg_catalog.has_table_privilege('microapp_runtime','public.register_shifts','INSERT')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.register_shifts','UPDATE')
      OR pg_catalog.has_table_privilege('microapp_runtime','public.register_shifts','DELETE')
-     OR pg_catalog.has_table_privilege('microapp_runtime','public.auth_sessions','DELETE') THEN
+     OR pg_catalog.has_table_privilege('microapp_runtime','public.auth_sessions','DELETE')
+     OR pg_catalog.has_table_privilege('microapp_runtime','public.app_users','INSERT') THEN
     RAISE EXCEPTION '0032_RUNTIME_DIRECT_DML_PRIVILEGE_PRESENT';
   END IF;
   IF NOT pg_catalog.has_table_privilege('microapp_runtime','public.organization_invitations','SELECT')

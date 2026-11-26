@@ -759,8 +759,8 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
         findLatestBcvRate(client),
       );
       c.header("Cache-Control", "no-store");
-      if (!row) {
-        return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "No existe una tasa BCV publicada disponible." }, 503);
+      if (!row || row.status === "stale") {
+        return c.json({ error: "BCV_RATE_UNAVAILABLE", message: "No existe una tasa BCV válida y confirmada para la fecha operativa." }, 503);
       }
       return c.json({
         baseCurrency: "USD",

@@ -107,8 +107,9 @@ describe("withDatabaseTransaction", () => {
     ).resolves.toBe("saved");
 
     expect(client.query).toHaveBeenNthCalledWith(1, "BEGIN");
-    expect(client.query).toHaveBeenNthCalledWith(2, "COMMIT");
-    expect(client.query).toHaveBeenCalledTimes(2);
+    expect(client.query).toHaveBeenNthCalledWith(2, "SET LOCAL lock_timeout = '5000ms'");
+    expect(client.query).toHaveBeenNthCalledWith(3, "COMMIT");
+    expect(client.query).toHaveBeenCalledTimes(3);
   });
 
   it("rolls back and preserves the operation error when a statement fails", async () => {
@@ -122,7 +123,8 @@ describe("withDatabaseTransaction", () => {
     ).rejects.toBe(failure);
 
     expect(client.query).toHaveBeenNthCalledWith(1, "BEGIN");
-    expect(client.query).toHaveBeenNthCalledWith(2, "ROLLBACK");
+    expect(client.query).toHaveBeenNthCalledWith(2, "SET LOCAL lock_timeout = '5000ms'");
+    expect(client.query).toHaveBeenNthCalledWith(3, "ROLLBACK");
   });
 
   it("preserves the original operation error if rollback also fails", async () => {
@@ -142,6 +144,22 @@ describe("withDatabaseTransaction", () => {
     expect(client.query).toHaveBeenNthCalledWith(1, "BEGIN");
     expect(client.query).toHaveBeenNthCalledWith(2, "ROLLBACK");
   });
+
+  it("accepts a positive safe integer timeout and applies it transaction-locally", async () => {
+    const client = makeClient();
+    await withDatabaseTransaction(client, async () => "saved", { lockTimeoutMs: 1250 });
+    expect(client.query).toHaveBeenNthCalledWith(2, "SET LOCAL lock_timeout = '1250ms'");
+  });
+
+  it.each([0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, Number.NaN])(
+    "rejects an invalid lock timeout before beginning a transaction (%s)",
+    async (lockTimeoutMs) => {
+      const client = makeClient();
+      await expect(withDatabaseTransaction(client, async () => "unreachable", { lockTimeoutMs }))
+        .rejects.toThrow("positive safe integer");
+      expect(client.query).not.toHaveBeenCalled();
+    },
+  );
 
   it("attempts rollback if commit fails", async () => {
     const client = makeClient();

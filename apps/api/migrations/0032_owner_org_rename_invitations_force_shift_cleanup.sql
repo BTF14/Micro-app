@@ -302,7 +302,7 @@ BEGIN
       'organization_invitation',v_inv.id::text,
       pg_catalog.jsonb_build_object('email',v_email,'user_id',v_user,'role',v_inv.role)
       FROM public.organization_invitations i WHERE i.id=v_inv.id;
-    RETURN NEXT;
+    user_id:=v_user; organization_id:=v_inv.organization_id; RETURN NEXT;
   END LOOP;
 END;
 $consume_google_login_invitation$;

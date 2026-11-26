@@ -405,10 +405,8 @@ describe("BCV synchronization failure and cleanup semantics", () => {
 
   it("rejects a rate jump above 35 percent against a recent valid official row", async () => {
     let attemptId = "";
-    let clientNumber = 0;
     const statements: string[] = [];
     const createClient = vi.fn(() => {
-      clientNumber += 1;
       return {
         connect: vi.fn(async () => undefined),
         query: vi.fn(async (statement: string, values?: unknown[]) => {

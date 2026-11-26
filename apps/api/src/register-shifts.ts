@@ -207,7 +207,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
-        const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.open_own");
+        const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.read_own");
         if (auth.kind !== "ok") return auth;
         const rows = await tx.query<RegisterRow>(
           `SELECT id, name, code FROM public.registers

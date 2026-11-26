@@ -134,9 +134,10 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
     await admin.query("INSERT INTO registers (organization_id, branch_id, name, code) VALUES ($1, $2, $3, $4)", [owner.organizationId, otherBranchId, "Other", "other-" + suffix]);
     const response = await request(owner, "GET", "/api/orgs/" + owner.organizationId + "/branches/" + otherBranchId + "/registers");
     expect(response.status).toBe(200);
-    expect((await response.json() as { items: Array<{ name: string }> }).items).toEqual([{ name: "Other", code: expect.any(String), id: expect.any(String) }]);
+    const otherRegisters = await response.json() as { items: Array<{ id: string; name: string; code: string }> };
+    expect(otherRegisters.items).toEqual([{ name: "Other", code: expect.any(String), id: expect.any(String) }]);
     const unassignedOpen = await request(owner, "POST", "/api/orgs/" + owner.organizationId + "/branches/" + otherBranchId + "/register-shifts", {
-      register_id: (await response.json() as { items: Array<{ id: string }> }).items[0]!.id,
+      register_id: otherRegisters.items[0]!.id,
       opening_cash_usd: "0.0000", opening_cash_ves: "0.00",
     });
     expect(unassignedOpen.status).toBe(403);

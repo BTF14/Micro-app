@@ -44,6 +44,29 @@ ALTER TABLE public.register_shifts
         AND force_close_reason !~ '[[:cntrl:]]')
   );
 
+-- The 0004 table CHECK hard-coded closed_by_user_id = cashier_user_id. Replace
+-- only that lifecycle predicate; the trigger below now distinguishes normal
+-- cashier closure from the audited owner/admin forced-close transition.
+DO $drop_legacy_shift_close_check$
+DECLARE constraint_name text;
+BEGIN
+  FOR constraint_name IN
+    SELECT c.conname FROM pg_catalog.pg_constraint c
+     WHERE c.conrelid='public.register_shifts'::regclass AND c.contype='c'
+       AND pg_catalog.pg_get_constraintdef(c.oid) LIKE '%closed_by_user_id = cashier_user_id%'
+  LOOP
+    EXECUTE pg_catalog.format('ALTER TABLE public.register_shifts DROP CONSTRAINT %I',constraint_name);
+  END LOOP;
+END;
+$drop_legacy_shift_close_check$;
+ALTER TABLE public.register_shifts
+  ADD CONSTRAINT register_shifts_close_state_check CHECK (
+    (closed_at IS NULL AND closing_cash_usd IS NULL AND closing_cash_ves IS NULL AND closed_by_user_id IS NULL)
+    OR (closed_at IS NOT NULL AND closed_at >= opened_at
+        AND closing_cash_usd IS NOT NULL AND closing_cash_ves IS NOT NULL
+        AND closed_by_user_id IS NOT NULL)
+  );
+
 CREATE OR REPLACE FUNCTION public.guard_register_shift_lifecycle() RETURNS trigger
 LANGUAGE plpgsql
 AS $guard_register_shift_lifecycle$

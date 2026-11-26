@@ -727,6 +727,29 @@ describe("BCV latest-rate Caracas midnight boundary", () => {
     await expect(findLatestBcvRate(latestClient("2026-11-07", []), new Date("2026-11-07T04:00:00.000Z"))).resolves.toBeNull();
   });
 
+  it("does not expose a weekday prepublished rate without a same-Caracas-day sync", async () => {
+    let call = 0;
+    const client = {
+      query: async <Row = unknown>() => {
+        call += 1;
+        if (call === 1) return { rows: [{
+          operation_date: "2026-11-09",
+          last_success_at: "2026-11-06T18:00:00.000Z",
+          last_outcome: "inserted",
+          last_effective_date: "2026-11-10",
+          last_error_code: null,
+          has_success_observation: true,
+        }] as Row[] };
+        return { rows: [{
+          id: "tuesday", rate: "896.10000000", effective_date: "2026-11-10",
+          validation_status: "valid", fetched_at: "2026-11-06T18:00:00.000Z",
+        }] as Row[] };
+      },
+    } as unknown as DatabaseClient;
+    await expect(findLatestBcvRate(client, new Date("2026-11-09T12:00:00-04:00")))
+      .resolves.toMatchObject({ status: "stale", effective_date: "2026-11-10" });
+  });
+
   it("marks an exact-day row stale when no durable success observation confirms it", async () => {
     let call = 0;
     const client = {

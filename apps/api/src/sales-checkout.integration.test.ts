@@ -943,7 +943,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await seedBalance("2.000");
     const key = "sync-failed-" + crypto.randomUUID();
     try {
-      await client.query("DELETE FROM public.bcv_sync_success_observations WHERE exchange_rate_id=$1", [rateId]);
+      await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
       await setBcvSyncState("failed");
       const response = await request(checkoutBody("1.000", "23.8500"), key);
       expect(response.status).toBe(409);
@@ -955,6 +955,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       );
       expect(sales.rows[0].count).toBe(0);
     } finally {
+      await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
       await setBcvSyncState("unchanged");
     }
   });
@@ -1022,6 +1023,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
       expect((await readBalance()).on_hand_quantity).toBe("2.000");
     } finally {
+      await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
       await setBcvSyncState("inserted");
     }
   });
@@ -1037,6 +1039,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
       expect((await response.json() as { error: string }).error).toBe("BCV_RATE_NOT_CURRENT");
       expect((await readBalance()).on_hand_quantity).toBe("2.000");
     } finally {
+      await client.query("UPDATE public.exchange_rates SET validation_status='valid' WHERE id=$1", [rateId]);
       await setBcvSyncState("unchanged");
     }
   });

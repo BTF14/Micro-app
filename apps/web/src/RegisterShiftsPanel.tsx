@@ -190,7 +190,7 @@ export default function RegisterShiftsPanel({ organizationId, role, userName, on
                 <button className="register-shifts-primary" type="submit" disabled={saving}>{saving ? "Guardando…" : confirmClose ? "Confirmar cierre" : "Revisar cierre"}</button>
               </form>
             </div>
-          ) : (
+          ) : role === "cashier" ? (
             <div className="register-shift-card"><span className="register-shift-state closed">Sin turno abierto</span><h2>Prepara tu caja</h2>
               {registers.length === 0 ? <p className="register-shifts-empty">No hay cajas activas en esta sucursal. Un administrador debe configurar una caja antes de abrir un turno.</p> : (
                 <form className="register-shift-form" onSubmit={openShift}>
@@ -203,6 +203,8 @@ export default function RegisterShiftsPanel({ organizationId, role, userName, on
                 </form>
               )}
             </div>
+          ) : (
+            <div className="register-shift-card"><h2>Vista administrativa</h2><p>Owner y Admin pueden consultar los turnos abiertos de esta sucursal y ejecutar cierres forzados auditados desde el panel superior.</p></div>
           ))}
         </>
       )}

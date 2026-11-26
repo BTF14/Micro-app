@@ -5,7 +5,6 @@ import type { Bindings } from "./bindings";
 import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
-import { lockInventoryWarehouses } from "./inventory-locks";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;

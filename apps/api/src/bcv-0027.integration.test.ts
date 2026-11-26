@@ -59,6 +59,21 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
   await db.query("UPDATE public.bcv_sync_state SET last_effective_date=$1::date WHERE singleton=true",[tuesday]);
   expect(await select(saturday)).toBeNull();
  });
+ it("preserves a confirmed exact-day rate after later failed, running and errored attempts",async()=>{
+  await prepare([friday],friday,friday+"T16:00:00Z");
+  expect(await select(friday)).toMatchObject({effective_date:friday,priority:"today_exact"});
+  for (const [outcome,error] of [["failed","BCV_SYNC_UNKNOWN"],["running",null],["failed", "BCV_SOURCE_TIMEOUT"]] as const) {
+   await db.query("UPDATE public.bcv_sync_state SET last_outcome=$1,last_error_code=$2,last_attempt_at=clock_timestamp(),updated_at=clock_timestamp() WHERE singleton=true",[outcome,error]);
+   expect(await select(friday)).toMatchObject({effective_date:friday,priority:"today_exact"});
+  }
+ });
+ it("fails closed when there is no confirmed observation or the only rate is stale/outside the window",async()=>{
+  await prepare([friday],friday,friday+"T16:00:00Z");
+  await resetRates();
+  expect(await select(friday)).toBeNull();
+  await prepare([addDays(friday,6)],addDays(friday,6),friday+"T16:00:00Z");
+  expect(await select(friday)).toBeNull();
+ });
  it("rejects failed, running, errored, uncovered, stale and beyond-five-day candidates",async()=>{
   await prepare([monday],monday,friday+"T16:00:00Z","failed");expect(await select(saturday)).toBeNull();
   await resetRates();await prepare([monday],monday,friday+"T16:00:00Z","running");expect(await select(saturday)).toBeNull();

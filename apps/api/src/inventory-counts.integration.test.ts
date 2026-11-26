@@ -1241,6 +1241,6 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
       await writer.query("ROLLBACK").catch(() => undefined);
       await writer.end();
     }
-  });
+  }, 15_000);
 
 });

@@ -53,14 +53,14 @@ describe("Owner organization structure panel", () => {
 
   it("guides an owner to create the first branch when none exist", async () => {
     vi.mocked(apiRequest).mockImplementation(async () => ({ branches: [], members: [], invitations: [] }) as never);
-    await act(async () => { root.render(<OrganizationStructurePanel organizationId="aaaaaaaa-2222-4333-8444-555555555555" />); });
+    await act(async () => { root.render(<OrganizationStructurePanel organizationId="aaaaaaaa-2222-4333-8444-555555555555" organizationName="Test Store" organizationSlug="test-store" onOrganizationRenamed={vi.fn()} />); });
     expect(container.textContent).toContain("Comienza creando tu primera sucursal");
     expect(container.textContent).toContain("Después podrás agregar sus almacenes y cajas");
   });
 
   it("sends assignment changes through the owner administration endpoint and refreshes", async () => {
     vi.mocked(apiRequest).mockImplementation(async () => structure as never);
-    await act(async () => { root.render(<OrganizationStructurePanel organizationId="aaaaaaaa-2222-4333-8444-555555555555" />); });
+    await act(async () => { root.render(<OrganizationStructurePanel organizationId="aaaaaaaa-2222-4333-8444-555555555555" organizationName="Test Store" organizationSlug="test-store" onOrganizationRenamed={vi.fn()} />); });
     const button = [...container.querySelectorAll("button")].find((item) => item.textContent === "Quitar de sucursal");
     expect(button).toBeTruthy();
     await act(async () => { button!.click(); });

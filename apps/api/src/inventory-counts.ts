@@ -475,8 +475,12 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
             return { kind: "forbidden" as const };
           }
           const branch = authorization.context;
-          const lockedWarehouses = await lockInventoryWarehouses(tx, branch.organizationId, [{ warehouseId, branchId: branch.branchId }]);
-          if (!lockedWarehouses) return { kind: "not_found" as const };
+          const warehouse = await tx.query<{ id: string }>(
+            `SELECT id FROM public.warehouses
+              WHERE organization_id = $1 AND branch_id = $2 AND id = $3 AND is_active = true`,
+            [branch.organizationId, branch.branchId, warehouseId],
+          );
+          if (!warehouse.rows[0]) return { kind: "not_found" as const };
           const counts = await tx.query<{
             id: string; count_type: string; status: string; reason: string;
             created_by: string; confirmed_by: string | null; created_at: string; confirmed_at: string | null;

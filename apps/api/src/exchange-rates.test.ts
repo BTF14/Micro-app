@@ -408,7 +408,7 @@ describe("BCV synchronization failure and cleanup semantics", () => {
     let clientNumber = 0;
     const statements: string[] = [];
     const createClient = vi.fn(() => {
-      const number = ++clientNumber;
+      clientNumber += 1;
       return {
         connect: vi.fn(async () => undefined),
         query: vi.fn(async (statement: string, values?: unknown[]) => {

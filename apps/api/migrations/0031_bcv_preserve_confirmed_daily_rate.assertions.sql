@@ -28,6 +28,7 @@ BEGIN
      OR pg_catalog.strpos(fn_def,'obs.last_effective_date >= selected_date')=0
      OR pg_catalog.strpos(fn_def,'weekday_same_day_sync')=0
      OR pg_catalog.strpos(fn_def,'America/Caracas')=0
+     OR pg_catalog.strpos(fn_def,'sync_success_at < (p_operation_date::timestamp AT TIME ZONE')=0
      OR pg_catalog.strpos(fn_def,'clock_timestamp()')=0
      OR pg_catalog.strpos(fn_def,'sync_state.last_outcome')>0
      OR pg_catalog.strpos(fn_def,'sync_state.last_error_code')>0 THEN

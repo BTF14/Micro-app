@@ -189,7 +189,7 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
   --file "apps/api/migrations/0031_bcv_preserve_confirmed_daily_rate.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
-  --file "apps/api/migrations/0032_owner_org_rename_invitations_force_shift_session_cleanup.assertions.sql"
+  --file "apps/api/migrations/0032_owner_org_rename_invitations_force_shift_cleanup.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$main_admin_url" \
   --file "scripts/db/restore_role_assertions_main.sql"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \

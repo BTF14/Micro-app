@@ -215,7 +215,7 @@ else
     psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0031_bcv_preserve_confirmed_daily_rate.assertions.sql"
   fi
   if [[ "$ledger_profile" == "bcv-0032" ]]; then
-    psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0032_owner_org_rename_invitations_force_shift_session_cleanup.assertions.sql"
+    psql "$RESTORE_MIGRATOR_URL" -X -v ON_ERROR_STOP=1 -f "$source_migrations_dir/0032_owner_org_rename_invitations_force_shift_cleanup.assertions.sql"
   fi
 fi
 

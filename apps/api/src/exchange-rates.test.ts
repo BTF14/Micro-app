@@ -434,7 +434,7 @@ describe("BCV synchronization failure and cleanup semantics", () => {
         "postgresql://user:password@db.example/neondb?sslmode=require",
         createClient,
       )).rejects.toThrow("BCV_RATE_VARIATION_OUT_OF_RANGE");
-      expect(statements.some((sql) => sql.includes("effective_date >= ($3::date - 15)"))).toBe(true);
+      expect(statements.some((sql) => sql.includes("get_recent_bcv_rate_baseline"))).toBe(true);
       expect(statements.some((sql) => sql.includes("INSERT INTO public.exchange_rates"))).toBe(false);
     } finally {
       vi.unstubAllGlobals();

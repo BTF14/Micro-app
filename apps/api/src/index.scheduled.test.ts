@@ -174,6 +174,7 @@ describe("hourly BCV stale-running watchdog and auth retention isolation", () =>
     mocks.cleanupExpiredAuthRecords.mockResolvedValue({
       rateLimitBucketsDeleted: 0,
       bootstrapAttemptsDeleted: 0,
+      sessionsDeleted: 0,
     });
 
     await app.scheduled(hourlyCron, productionEnv);

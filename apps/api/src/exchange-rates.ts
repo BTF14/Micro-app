@@ -203,9 +203,8 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
   // The official BCV homepage pairs the USD label with the following value
   // paragraph. This excludes USD amounts in the later commercial-bank table.
   const usdBlocks = html.matchAll(
-    /<p\\b[^>]*>(?:(?!<\\/p>)[\\s\\S])*?\\bUSD\\b(?:(?!<\\/p>)[\\s\\S])*<\\/p>\\s*<p\\b[^>]*>\\s*(?:<strong\\b[^>]*>)?\\s*([\\d.,]+)\\s*(?:<\\/strong>)?\\s*<\\/p>/gi,
-  );
-  for (const match of usdBlocks) {
+    /<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bUSD\b(?:(?!<\/p>)[\s\S])*<\/p>\s*<p\b[^>]*>\s*(?:<strong\b[^>]*>)?\s*([\d.,]+)\s*(?:<\/strong>)?\s*<\/p>/gi,
+  );  for (const match of usdBlocks) {
     try {
       rate = parseLocalizedRate(match[1]!);
       break;

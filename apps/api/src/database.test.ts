@@ -142,7 +142,8 @@ describe("withDatabaseTransaction", () => {
     ).rejects.toBe(failure);
 
     expect(client.query).toHaveBeenNthCalledWith(1, "BEGIN");
-    expect(client.query).toHaveBeenNthCalledWith(2, "ROLLBACK");
+    expect(client.query).toHaveBeenNthCalledWith(2, "SET LOCAL lock_timeout = '5000ms'");
+    expect(client.query).toHaveBeenNthCalledWith(3, "ROLLBACK");
   });
 
   it("accepts a positive safe integer timeout and applies it transaction-locally", async () => {

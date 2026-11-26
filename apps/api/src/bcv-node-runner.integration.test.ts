@@ -142,7 +142,7 @@ describe.skipIf(!disposable)("BCV Node runner PostgreSQL 18 least-privilege pref
       [today],
     );
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(
-      `<html><body><p>USD 895,10000000</p><p>Fecha Valor: ${dateLabel}</p></body></html>`,
+      `<html><body><div id="dolar"><div class="col-sm-6"><span>USD</span></div><div class="col-sm-6"><strong>895,10000000</strong></div></div><p>Fecha Valor: ${dateLabel}</p></body></html>`,
       { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
     )));
     try {

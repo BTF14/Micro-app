@@ -167,6 +167,10 @@ describe("inventory panel", () => {
       .mockResolvedValueOnce(jsonResponse({ id: "count-1" }))
       .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
       .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockResolvedValueOnce(jsonResponse({ id: "count-next" }))
+      .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
       .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
     await renderPanel(true);
 
@@ -365,6 +369,14 @@ describe("inventory panel", () => {
     await flush();
     expect(key(6)).toBe(firstKey);
     expect(String(vi.mocked(fetch).mock.calls[7]?.[0])).toContain("/counts/count-stable/confirm");
+
+    await act(async () => {
+      setValue(inputs[0]!, "18");
+      setValue(inputs[1]!, "Segundo conteo");
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flush();
+    expect(key(10)).not.toBe(firstKey);
   });
 
 });

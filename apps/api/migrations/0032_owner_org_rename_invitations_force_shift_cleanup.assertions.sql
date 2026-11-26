@@ -257,7 +257,7 @@ BEGIN
   INSERT INTO public.auth_bootstrap_attempts(handle_hash,state_hash,organization_name,organization_slug,expires_at)
     VALUES(repeat('f',64),repeat('b',64),'Second Bootstrap Store','second-bootstrap-0032',pg_catalog.clock_timestamp()+interval '1 hour');
   SELECT status INTO result_status FROM public.consume_auth_bootstrap(
-    repeat('f',64),repeat('e',64),'bootstrap-0032@example.test','google-bootstrap-0032','Bootstrap Owner');
+    repeat('f',64),repeat('b',64),'bootstrap-0032@example.test','google-bootstrap-0032','Bootstrap Owner');
   IF result_status<>'bootstrap_consumed' THEN RAISE EXCEPTION '0032_BOOTSTRAP_REUSE_WAS_ALLOWED'; END IF;
 
   -- Bounded cleanup deletes only sessions expired/revoked for more than 48h.

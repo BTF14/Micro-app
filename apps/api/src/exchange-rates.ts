@@ -201,7 +201,11 @@ export async function fetchBcvOfficialRate(now = new Date()): Promise<BcvOfficia
     // Keep transport details as a cause for safe classification only; never log them.
     throw new Error("BCV_SOURCE_FETCH_FAILED", { cause: error });
   }
-  if (!response.ok) throw new Error("BCV_SOURCE_HTTP_ERROR");
+  if (!response.ok) {
+    throw new Error(response.status >= 500 && response.status <= 599
+      ? "BCV_SOURCE_HTTP_5XX"
+      : "BCV_SOURCE_HTTP_ERROR");
+  }
   const finalUrl = new URL(response.url || BCV_SOURCE_URL);
   if (finalUrl.protocol !== "https:" || finalUrl.hostname !== "www.bcv.org.ve") {
     throw new Error("BCV_SOURCE_REDIRECT_REJECTED");
@@ -277,6 +281,7 @@ const SAFE_BCV_SYNC_ERROR_CODES = new Set([
   "BCV_EFFECTIVE_DATE_INVALID",
   "BCV_EFFECTIVE_DATE_OUT_OF_RANGE",
   "BCV_SOURCE_HTTP_ERROR",
+  "BCV_SOURCE_HTTP_5XX",
   "BCV_SOURCE_TIMEOUT",
   "BCV_SOURCE_TLS_OR_NETWORK_ERROR",
   "BCV_SYNC_DATABASE_URL_MISSING",

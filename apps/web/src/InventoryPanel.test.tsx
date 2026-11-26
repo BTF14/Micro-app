@@ -314,7 +314,7 @@ describe("inventory panel", () => {
       form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     });
     await flush();
-    const key = (index: number) => (vi.mocked(fetch).mock.calls[index]?.[1]?.headers as Record<string, string>)["Idempotency-Key"];
+    const key = (index: number) => new Headers(vi.mocked(fetch).mock.calls[index]?.[1]?.headers).get("Idempotency-Key");
     const firstKey = key(4);
     expect(firstKey).toBeTruthy();
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("network");

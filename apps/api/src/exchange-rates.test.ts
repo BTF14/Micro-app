@@ -61,16 +61,6 @@ describe("BCV HTML parser — synthetic regression fixtures", () => {
     });
   });
 
-  it("rejects a corrupted rate jump greater than 35 percent against a recent valid row", async () => {
-    const client = createMockDatabaseClient({
-      query: vi.fn()
-        .mockResolvedValueOnce({ rows: [{ attempt_id: "attempt-1" }] })
-        .mockResolvedValueOnce({ rows: [{ attempt_id: "attempt-1" }] })
-    });
-    // Variation guard is exercised by the PostgreSQL integration contract.
-    expect(client).toBeDefined();
-  });
-
   it("normalizes Spanish thousands and decimal separators", () => {
     const html = SYNTHETIC_BCV_HTML_FIXTURE.replace("894,88760000", "1.234,56789012");
     expect(parseBcvOfficialRate(html, NOW).rate).toBe("1234.56789012");
@@ -411,6 +401,46 @@ describe("BCV synchronization failure and cleanup semantics", () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("rejects a rate jump above 35 percent against a recent valid official row", async () => {
+    let attemptId = "";
+    let clientNumber = 0;
+    const statements: string[] = [];
+    const createClient = vi.fn(() => {
+      const number = ++clientNumber;
+      return {
+        connect: vi.fn(async () => undefined),
+        query: vi.fn(async (statement: string, values?: unknown[]) => {
+          const sql = statement.trim();
+          statements.push(sql);
+          if (sql.includes("SET attempt_id =")) {
+            attemptId = String(values?.[0]);
+            return { rows: [{ attempt_id: attemptId }] };
+          }
+          if (sql.includes("FOR UPDATE")) return { rows: [{ attempt_id: attemptId }] };
+          if (sql.includes("abs($1::numeric - prior.rate)")) return { rows: [{ exceeds_limit: true }] };
+          if (sql === "ROLLBACK" || sql === "COMMIT") return { rows: [] };
+          if (sql.includes("SET last_outcome = 'failed'")) return { rows: [{ attempt_id: attemptId }] };
+          return { rows: [] };
+        }),
+        end: vi.fn(async () => undefined),
+      } as unknown as DatabaseClient;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(officialBcvHomepageHtml, {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    })));
+    try {
+      await expect(syncBcvOfficialRate(
+        "postgresql://user:password@db.example/neondb?sslmode=require",
+        createClient,
+      )).rejects.toThrow("BCV_RATE_VARIATION_OUT_OF_RANGE");
+      expect(statements.some((sql) => sql.includes("effective_date >= ($3::date - 15)"))).toBe(true);
+      expect(statements.some((sql) => sql.includes("INSERT INTO public.exchange_rates"))).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("records a fetch failure with a separate short-lived DB connection", async () => {

@@ -29,8 +29,8 @@ BEGIN
      OR pg_catalog.strpos(fn_def,'weekday_same_day_sync')=0
      OR pg_catalog.strpos(fn_def,'America/Caracas')=0
      OR pg_catalog.strpos(fn_def,'clock_timestamp()')=0
-     OR pg_catalog.strpos(fn_def,'last_outcome')>0
-     OR pg_catalog.strpos(fn_def,'last_error_code')>0 THEN
+     OR pg_catalog.strpos(fn_def,'sync_state.last_outcome')>0
+     OR pg_catalog.strpos(fn_def,'sync_state.last_error_code')>0 THEN
     RAISE EXCEPTION 'BCV_0031_DURABLE_OBSERVATION_POLICY_INVALID';
   END IF;
   IF pg_catalog.strpos(fn_def,'obs.exchange_rate_id=selected_id')>0

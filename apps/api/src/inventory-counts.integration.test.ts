@@ -1203,4 +1203,44 @@ describe.skipIf(!databaseUrl)("warehouse inventory count transactions against Po
     expect(accepted.status).toBe(201);
   });
 
+  it("allows all four inventory GET routes while an exclusive writer warehouse lock is held, and maps real 55P03 contention to 409", async () => {
+    const version = await client.query<{ server_version_num: string }>("SHOW server_version_num");
+    expect(Number(version.rows[0]?.server_version_num)).toBeGreaterThanOrEqual(180000);
+
+    const writer = new Client({ connectionString: databaseUrl });
+    await writer.connect();
+    try {
+      await writer.query("BEGIN");
+      const locked = await lockInventoryWarehouses(
+        writer as unknown as DatabaseClient,
+        organizationId,
+        [{ warehouseId, branchId }],
+      );
+      expect(locked).toEqual([warehouseId]);
+
+      const reads = await Promise.all([
+        get(root() + "/inventory?limit=25&sort=name"),
+        get(root() + "/inventory/movements?limit=25"),
+        get(root() + "/counts"),
+        get(root() + "/receipts"),
+      ]);
+      expect(reads.map((response) => response.status)).toEqual([200, 200, 200, 200]);
+
+      const startedAt = Date.now();
+      const contendedWrite = await request(root() + "/counts/physical", {
+        reason: "Real PostgreSQL warehouse lock contention",
+        lines: [{ product_id: productId, counted_quantity: "1.000" }],
+      }, { "Idempotency-Key": "lock-timeout-" + crypto.randomUUID() });
+      expect(Date.now() - startedAt).toBeGreaterThanOrEqual(4_000);
+      expect(contendedWrite.status).toBe(409);
+      expect(await contendedWrite.json()).toMatchObject({
+        error: "INVENTORY_LOCK_TIMEOUT",
+        message: "El inventario está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo.",
+      });
+    } finally {
+      await writer.query("ROLLBACK").catch(() => undefined);
+      await writer.end();
+    }
+  });
+
 });

@@ -44,7 +44,13 @@ BEGIN
      OR NOT (SELECT proconfig @> ARRAY['search_path=pg_catalog'] FROM pg_catalog.pg_proc WHERE oid=baseline_fn)
      OR pg_catalog.strpos(baseline_def,'effective_date >= p_effective_date - 15')=0
      OR pg_catalog.strpos(baseline_def,'validation_status=''valid''')=0
-     OR pg_catalog.has_function_privilege('public',baseline_fn,'EXECUTE')
+     OR EXISTS (
+       SELECT 1 FROM pg_catalog.aclexplode(COALESCE(
+         (SELECT proacl FROM pg_catalog.pg_proc WHERE oid=baseline_fn),
+         pg_catalog.acldefault('f',(SELECT proowner FROM pg_catalog.pg_proc WHERE oid=baseline_fn))
+       )) baseline_acl
+       WHERE baseline_acl.grantee=0 AND baseline_acl.privilege_type='EXECUTE'
+     )
      OR pg_catalog.has_function_privilege('microapp_runtime',baseline_fn,'EXECUTE')
      OR NOT pg_catalog.has_function_privilege('microapp_bcv_sync',baseline_fn,'EXECUTE') THEN
     RAISE EXCEPTION 'BCV_0031_BASELINE_HELPER_SECURITY_CONTRACT_INVALID';

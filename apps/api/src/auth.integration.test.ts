@@ -314,7 +314,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     try {
       await cleanupClient.query("DELETE FROM public.audit_logs WHERE organization_id IN (SELECT id FROM public.organizations WHERE name = $1)", [bootstrapOrgName]);
       await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
-      await cleanupClient.query("DELETE FROM organization_invitations WHERE organization_id IN (SELECT id FROM organizations WHERE name = $1)");
+      await cleanupClient.query("DELETE FROM organization_invitations WHERE organization_id IN (SELECT id FROM organizations WHERE name = $1)", [bootstrapOrgName]);
       await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
       await cleanupClient.query("DELETE FROM app_users WHERE email = $1", [googleEmail]);
       await cleanupClient.query("DELETE FROM auth_bootstrap_attempts WHERE organization_name = $1", [bootstrapOrgName]);
@@ -565,7 +565,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
           await cleanupClient.query("DELETE FROM organization_members WHERE organization_id=$1", [organizationId]);
           await cleanupClient.query("DELETE FROM organizations WHERE id=$1", [organizationId]);
         }
-        if (invitedUserId) await cleanupClient.query("DELETE FROM app_users WHERE id=$1", [invitedUserId]);
+        await cleanupClient.query("DELETE FROM app_users WHERE lower(email)=lower($1)", [invitedEmail]);
         if (ownerId) await cleanupClient.query("DELETE FROM app_users WHERE id=$1", [ownerId]);
         await cleanupClient.query("DELETE FROM auth_allowlist WHERE lower(email)=lower($1)", [invitedEmail]);
       } finally {

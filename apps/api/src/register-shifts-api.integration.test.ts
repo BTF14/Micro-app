@@ -133,9 +133,15 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
     const otherBranchId = unassigned.rows[0]!.id;
     await admin.query("INSERT INTO registers (organization_id, branch_id, name, code) VALUES ($1, $2, $3, $4)", [owner.organizationId, otherBranchId, "Other", "other-" + suffix]);
     const response = await request(owner, "GET", "/api/orgs/" + owner.organizationId + "/branches/" + otherBranchId + "/registers");
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
+    expect((await response.json() as { items: Array<{ name: string }> }).items).toEqual([{ name: "Other", code: expect.any(String), id: expect.any(String) }]);
+    const unassignedOpen = await request(owner, "POST", "/api/orgs/" + owner.organizationId + "/branches/" + otherBranchId + "/register-shifts", {
+      register_id: (await response.json() as { items: Array<{ id: string }> }).items[0]!.id,
+      opening_cash_usd: "0.0000", opening_cash_ves: "0.00",
+    });
+    expect(unassignedOpen.status).toBe(403);
     const listedBranches = await request(owner, "GET", "/api/orgs/" + owner.organizationId + "/register-shifts/branches");
-    expect((await listedBranches.json() as { items: Array<{ id: string }> }).items.map((x) => x.id)).toEqual([owner.branchId]);
+    expect((await listedBranches.json() as { items: Array<{ id: string }> }).items.map((x) => x.id)).toEqual([owner.branchId, otherBranchId]);
     const ownerInventoryBranches = await request(owner, "GET", "/api/orgs/" + owner.organizationId + "/branches");
     expect((await ownerInventoryBranches.json() as { branches: Array<{ id: string }> }).branches.map((x) => x.id)).toEqual([owner.branchId, otherBranchId]);
   });

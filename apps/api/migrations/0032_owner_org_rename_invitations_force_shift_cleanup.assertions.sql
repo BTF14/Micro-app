@@ -107,9 +107,10 @@ DECLARE
   branch1 uuid; reg1 uuid; reg2 uuid; reg3 uuid;
   shift1 uuid; shift2 uuid; shift3 uuid; invitation1 uuid; invitation2 uuid;
   bootstrap_user uuid; bootstrap_org uuid; result_status text;
-  failed boolean; deleted_count integer; token_a text:=repeat('a',64);
+  failed boolean; deleted_count integer; audit_seq_last bigint; audit_seq_called boolean; token_a text:=repeat('a',64);
   token_b text:=repeat('b',64); token_c text:=repeat('c',64);
 BEGIN
+  SELECT last_value,is_called INTO audit_seq_last,audit_seq_called FROM public.audit_logs_id_seq;
   INSERT INTO public.organizations(name,slug) VALUES('0032 Test Store','test-store-0032') RETURNING id INTO org1;
   INSERT INTO public.organizations(name,slug) VALUES('0032 Other Store','other-store-0032') RETURNING id INTO org2;
   INSERT INTO public.app_users(email,display_name,google_sub) VALUES
@@ -274,6 +275,8 @@ BEGIN
      OR NOT EXISTS(SELECT 1 FROM public.auth_sessions WHERE token_hash=token_c) THEN
     RAISE EXCEPTION '0032_SESSION_RETENTION_BOUND_INVALID: deleted=%',deleted_count;
   END IF;
+  -- Sequence increments are not rolled back by PostgreSQL; restore the pre-assertion state for exact DR manifests.
+  PERFORM pg_catalog.setval('public.audit_logs_id_seq'::regclass,audit_seq_last,audit_seq_called);
 END;
 $owner_team_0032_integration$;
 

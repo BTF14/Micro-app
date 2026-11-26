@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DatabaseClientFactory } from "./database";
-import { caracasHour, isCaracasWeekend, runBcvNodeSync, shouldSkipBcvNodeSync } from "./bcv-node-runner";
+import { caracasHour, isCaracasWeekend, runBcvNodeSync, runWithBcvSyncRetries, shouldSkipBcvNodeSync } from "./bcv-node-runner";
 import { safeBcvSyncErrorCode } from "./exchange-rates";
 
 describe("BCV Node runner safety contract", () => {
@@ -111,5 +111,46 @@ describe("BCV Node runner Caracas schedule preflight", () => {
       "postgres://mock:mock@localhost:5432/microapp_test", false, new Date("2026-11-21T11:17:00.000Z"), mock.createClient,
     )).resolves.toBe(true);
     expect(mock.statements[1]).toContain("effective_date > $2::date");
+  });
+});
+
+
+describe("BCV bounded transient retries", () => {
+  it("retries only transient network and upstream 5xx failures, then succeeds", async () => {
+    const operation = vi.fn()
+      .mockRejectedValueOnce(new Error("BCV_SOURCE_TIMEOUT"))
+      .mockRejectedValueOnce(new Error("BCV_SOURCE_HTTP_5XX"))
+      .mockResolvedValue("inserted");
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(runWithBcvSyncRetries(operation, wait)).resolves.toBe("inserted");
+    expect(operation).toHaveBeenCalledTimes(3);
+    expect(wait.mock.calls).toEqual([[150], [350]]);
+  });
+
+  it("stops after three attempts when transient failures persist", async () => {
+    const operation = vi.fn().mockRejectedValue(new Error("BCV_SOURCE_TLS_OR_NETWORK_ERROR"));
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(runWithBcvSyncRetries(operation, wait))
+      .rejects.toThrow("BCV_SOURCE_TLS_OR_NETWORK_ERROR");
+    expect(operation).toHaveBeenCalledTimes(3);
+    expect(wait.mock.calls).toEqual([[150], [350]]);
+  });
+
+  it.each([
+    "BCV_SYNC_DATABASE_ROLE_INVALID",
+    "BCV_RATE_FORMAT_INVALID",
+    "BCV_RATE_VALUE_INVALID",
+    "BCV_EFFECTIVE_DATE_INVALID",
+    "BCV_SOURCE_HTTP_ERROR",
+    "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE",
+  ])("does not retry non-transient failure %s", async (code) => {
+    const operation = vi.fn().mockRejectedValue(new Error(code));
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(runWithBcvSyncRetries(operation, wait)).rejects.toThrow(code);
+    expect(operation).toHaveBeenCalledTimes(1);
+    expect(wait).not.toHaveBeenCalled();
   });
 });

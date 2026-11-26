@@ -714,6 +714,9 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
   });
 
   app.get("/api/exchange-rates/history", async (c) => {
+    c.header("Cache-Control", "no-store");
+    const blocked = applyPublicExchangeRateGuard(c);
+    if (blocked) return blocked;
     const rawLimit = c.req.query("limit") ?? "30";
     if (!/^\d{1,3}$/.test(rawLimit)) {
       return c.json({ error: "INVALID_LIMIT", message: "El límite debe estar entre 1 y 365." }, 400);
@@ -754,6 +757,9 @@ export function registerExchangeRateRoutes(app: Hono<{ Bindings: Bindings }>): v
   });
 
   app.get("/api/exchange-rates/latest", async (c) => {
+    c.header("Cache-Control", "no-store");
+    const blocked = applyPublicExchangeRateGuard(c);
+    if (blocked) return blocked;
     try {
       const row = await withDatabaseClient(c.env.DATABASE_URL, (client) =>
         findLatestBcvRate(client),

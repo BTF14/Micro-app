@@ -243,6 +243,8 @@ BEGIN
 
   -- Bootstrap is still single-use but now performs all privileged inserts
   -- inside a SECURITY DEFINER function rather than runtime direct DML.
+  -- Restore fixtures intentionally seal the singleton; reset it only inside this rollback-only assertion transaction.
+  UPDATE public.auth_bootstrap SET consumed_at=NULL,consumed_by_email=NULL,created_organization_id=NULL WHERE id=true;
   INSERT INTO public.auth_allowlist(email,is_active,added_by) VALUES('bootstrap-0032@example.test',true,'0032-test');
   INSERT INTO public.auth_bootstrap_attempts(handle_hash,state_hash,organization_name,organization_slug,expires_at)
     VALUES(repeat('d',64),repeat('e',64),'Bootstrap Test Store','bootstrap-test-0032',pg_catalog.clock_timestamp()+interval '1 hour');
@@ -253,7 +255,7 @@ BEGIN
     RAISE EXCEPTION '0032_BOOTSTRAP_DEFINER_FLOW_FAILED';
   END IF;
   INSERT INTO public.auth_bootstrap_attempts(handle_hash,state_hash,organization_name,organization_slug,expires_at)
-    VALUES(repeat('f',64),repeat('e',64),'Second Bootstrap Store','second-bootstrap-0032',pg_catalog.clock_timestamp()+interval '1 hour');
+    VALUES(repeat('f',64),repeat('b',64),'Second Bootstrap Store','second-bootstrap-0032',pg_catalog.clock_timestamp()+interval '1 hour');
   SELECT status INTO result_status FROM public.consume_auth_bootstrap(
     repeat('f',64),repeat('e',64),'bootstrap-0032@example.test','google-bootstrap-0032','Bootstrap Owner');
   IF result_status<>'bootstrap_consumed' THEN RAISE EXCEPTION '0032_BOOTSTRAP_REUSE_WAS_ALLOWED'; END IF;

@@ -338,7 +338,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
         return new Response(JSON.stringify({ access_token: "mock-access-token" }), { status: 200 });
       }
       if (url.startsWith("https://openidconnect.googleapis.com/v1/userinfo")) {
-        return new Response(JSON.stringify({ sub, email: googleEmail, email_verified: emailVerified, name: "Google Test User" }), { status: 200 });
+        return new Response(JSON.stringify({ sub, email: identityEmail, email_verified: emailVerified, name: "Google Test User" }), { status: 200 });
       }
       throw new Error(`Unexpected fetch in test: ${url}`);
     });

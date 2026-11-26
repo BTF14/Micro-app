@@ -107,4 +107,28 @@ $select_bcv_rate_for_operation$;
 ALTER FUNCTION public.select_bcv_rate_for_operation(date) OWNER TO microapp_migrator;
 REVOKE ALL ON FUNCTION public.select_bcv_rate_for_operation(date) FROM PUBLIC,microapp_runtime,microapp_bcv_sync;
 
+-- The dedicated producer role intentionally has no direct SELECT privilege on
+-- exchange_rates. Expose only the single recent valid baseline needed by the
+-- anti-corruption guard through a narrowly scoped SECURITY DEFINER helper.
+CREATE OR REPLACE FUNCTION public.get_recent_bcv_rate_baseline(p_effective_date date)
+RETURNS numeric
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $get_recent_bcv_rate_baseline$
+  SELECT er.rate
+    FROM public.exchange_rates er
+   WHERE er.source='BCV_OFFICIAL_HTML_V1'
+     AND er.validation_status='valid'
+     AND er.base_currency='USD' AND er.quote_currency='VES'
+     AND er.rate > 0
+     AND er.effective_date < p_effective_date
+     AND er.effective_date >= p_effective_date - 15
+   ORDER BY er.effective_date DESC,er.fetched_at DESC
+   LIMIT 1
+$get_recent_bcv_rate_baseline$;
+ALTER FUNCTION public.get_recent_bcv_rate_baseline(date) OWNER TO microapp_migrator;
+REVOKE ALL ON FUNCTION public.get_recent_bcv_rate_baseline(date) FROM PUBLIC,microapp_runtime,microapp_bcv_sync;
+GRANT EXECUTE ON FUNCTION public.get_recent_bcv_rate_baseline(date) TO microapp_bcv_sync;
+
 COMMIT;

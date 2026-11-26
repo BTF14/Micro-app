@@ -167,8 +167,7 @@ describe("inventory panel", () => {
       .mockResolvedValueOnce(jsonResponse({ id: "count-1" }))
       .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
       .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
-      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
-.mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
     await renderPanel(true);
 
     const search = container.querySelector<HTMLInputElement>("#inventory-quick-search")!;

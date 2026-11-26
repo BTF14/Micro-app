@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import officialBcvHomepageHtml from "./fixtures/bcv-homepage-dom-2026-11-09.html?raw";
 import { fetchBcvOfficialRate, findApplicableBcvRate, findLatestBcvRate, parseBcvOfficialRate, persistBcvOfficialRate, syncBcvOfficialRate, type BcvOfficialRate } from "./exchange-rates";
 import type { DatabaseClient } from "./database";
+import app from "./index";
 
 const NOW = new Date("2026-11-05T12:00:00-04:00");
 
@@ -669,5 +670,33 @@ describe("BCV latest-rate Caracas midnight boundary", () => {
     await expect(findLatestBcvRate(latestClient("2026-11-07", [mondayRate]), new Date("2026-11-07T04:00:00.000Z")))
       .resolves.toMatchObject({ status: "current", priority: "weekend_prepublished", operation_date: "2026-11-07", effective_date: "2026-11-09" });
     await expect(findLatestBcvRate(latestClient("2026-11-07", []), new Date("2026-11-07T04:00:00.000Z"))).resolves.toBeNull();
+  });
+});
+
+
+describe("public BCV read route guard", () => {
+  it("sets no-store on history validation responses and rate-limits by trusted CF-Connecting-IP", async () => {
+    const ip = "203.0.113.44";
+    let lastResponse: Response | undefined;
+    for (let request = 0; request < 120; request += 1) {
+      lastResponse = await app.fetch(
+        new Request("https://api.example/api/exchange-rates/history?limit=0", {
+          headers: { "CF-Connecting-IP": ip },
+        }),
+        { APP_ENV: "production" },
+      );
+      expect(lastResponse.status).toBe(400);
+      expect(lastResponse.headers.get("Cache-Control")).toBe("no-store");
+    }
+
+    const limited = await app.fetch(
+      new Request("https://api.example/api/exchange-rates/latest", {
+        headers: { "CF-Connecting-IP": ip },
+      }),
+      { APP_ENV: "production" },
+    );
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("Cache-Control")).toBe("no-store");
+    expect(Number(limited.headers.get("Retry-After"))).toBeGreaterThan(0);
   });
 });

@@ -431,7 +431,18 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
         // No existing user: require the opaque, expiring handoff that was
         // created only after the bootstrap secret was validated on POST.
         if (!bootstrapHandleHash) {
-          return { kind: "not_provisioned" as const };
+          // A first login may provision only a pending organization invitation.
+          // The database function rechecks the active allowlist row, locks all
+          // matching invitations and atomically creates the Google-linked user
+          // plus memberships. Existing unlinked users were rejected above (D7).
+          const invitations = await client.query<{ user_id: string; organization_id: string }>(
+            "SELECT * FROM public.consume_google_login_invitation($1::text,$2::text,$3::text)",
+            [email, sub, displayName],
+          );
+          const invitedUserId = invitations.rows[0]?.user_id;
+          if (!invitedUserId) return { kind: "not_provisioned" as const };
+          const token = await createSession(client, invitedUserId);
+          return { kind: "ok" as const, token };
         }
 
         return withDatabaseTransaction(client, async (tx) => {

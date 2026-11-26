@@ -20,6 +20,24 @@ export function isRetryableBcvSyncFailure(error: unknown): boolean {
     code === "BCV_SOURCE_HTTP_5XX";
 }
 
+export async function runWithBcvSyncRetries<T>(
+  operation: () => Promise<T>,
+  wait: (milliseconds: number) => Promise<void> = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
+): Promise<T> {
+  for (let attempt = 1; attempt <= BCV_SYNC_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= BCV_SYNC_MAX_ATTEMPTS || !isRetryableBcvSyncFailure(error)) {
+        throw new Error(safeBcvSyncErrorCode(error));
+      }
+      await wait(BCV_SYNC_RETRY_BACKOFF_MS[attempt - 1]!);
+    }
+  }
+  throw new Error("BCV_SYNC_UNKNOWN");
+}
+
 export type BcvNodeSyncResult =
   | { status: "skipped"; outcome: "inserted" | "unchanged" }
   | { status: "synced"; outcome: "inserted" | "unchanged" | "older" | "superseded" };
@@ -147,16 +165,11 @@ export async function runBcvNodeSync(
       return { status: "skipped", outcome };
     }
   }
-  for (let attempt = 1; attempt <= BCV_SYNC_MAX_ATTEMPTS; attempt += 1) {
-    try {
-      return { status: "synced", outcome: await syncBcvOfficialRate(databaseUrl, verifiedFactory) };
-    } catch (error) {
-      const code = safeBcvSyncErrorCode(error);
-      if (attempt >= BCV_SYNC_MAX_ATTEMPTS || !isRetryableBcvSyncFailure(error)) {
-        throw new Error(code);
-      }
-      await wait(BCV_SYNC_RETRY_BACKOFF_MS[attempt - 1]!);
-    }
-  }
-  throw new Error("BCV_SYNC_UNKNOWN");
+  return {
+    status: "synced",
+    outcome: await runWithBcvSyncRetries(
+      () => syncBcvOfficialRate(databaseUrl, verifiedFactory),
+      wait,
+    ),
+  };
 }

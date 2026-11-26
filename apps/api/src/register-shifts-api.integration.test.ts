@@ -52,6 +52,20 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
     return { organizationId, branchId, userId, token, registerId: register.rows[0]!.id };
   }
 
+  async function addMember(f: Fixture, role: Role): Promise<Fixture> {
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    const user = await admin.query<{ id: string }>(
+      "INSERT INTO app_users (email,display_name) VALUES ($1,$2) RETURNING id",
+      [role + "-" + suffix + "@example.invalid", role + " integration"],
+    );
+    const userId = user.rows[0]!.id;
+    await admin.query("INSERT INTO organization_members (organization_id,user_id,role) VALUES ($1,$2,$3)", [f.organizationId,userId,role]);
+    await admin.query("INSERT INTO branch_memberships (organization_id,branch_id,user_id) VALUES ($1,$2,$3)", [f.organizationId,f.branchId,userId]);
+    const token = "shift-api-session-" + crypto.randomUUID();
+    await admin.query("INSERT INTO auth_sessions (user_id,token_hash,expires_at) VALUES ($1,$2,now()+interval '1 day')", [userId,await sha256Hex(token)]);
+    return { ...f, userId, token };
+  }
+
   function root(f: Fixture) { return "/api/orgs/" + f.organizationId + "/branches/" + f.branchId; }
   async function request(f: Fixture, method: string, path: string, body?: unknown): Promise<Response> {
     return app.fetch(new Request("https://api.example" + path, {
@@ -141,6 +155,53 @@ describe.skipIf(!adminUrl || !runtimeUrl)("own register-shift API against Postgr
     expect(opened.status).toBe(201);
     const shiftId = (await opened.json() as { shift: { id: string } }).shift.id;
     expect((await close(first, shiftId)).status).toBe(409);
+  });
+
+  it("lets Owner and Admin list and force-close branch shifts while Cashier is denied", async () => {
+    const cashier = await seed("cashier");
+    const owner = await addMember(cashier, "owner");
+    const adminMember = await addMember(cashier, "admin");
+    const opened = await open(cashier);
+    expect(opened.status).toBe(201);
+    const shiftId = (await opened.json() as { shift: { id: string } }).shift.id;
+    const openPath = root(cashier) + "/register-shifts/open";
+
+    const ownerList = await request(owner, "GET", openPath);
+    const adminList = await request(adminMember, "GET", openPath);
+    expect(ownerList.status).toBe(200);
+    expect(adminList.status).toBe(200);
+    expect((await ownerList.json() as { items: Array<{ id: string; cashier_name: string; register_name: string }> }).items)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ id: shiftId, cashier_name: "cashier", register_name: "Front" })]));
+    expect((await request(cashier, "GET", openPath)).status).toBe(403);
+
+    const forcePath = openPath.replace("/register-shifts/open", "/register-shifts/" + shiftId + "/force-close");
+    const forceBody = { closing_cash_usd: "12.0000", closing_cash_ves: "120.00", reason: "Cierre de emergencia" };
+    expect((await request(cashier, "POST", forcePath, forceBody)).status).toBe(403);
+    const forcedByOwner = await request(owner, "POST", forcePath, forceBody);
+    expect(forcedByOwner.status).toBe(200);
+    expect(await forcedByOwner.json()).toMatchObject({ force_closed: true });
+    const ownerClosed = await admin.query<{ force_closed: boolean; force_close_reason: string; closed_by_user_id: string }>(
+      "SELECT force_closed,force_close_reason,closed_by_user_id FROM register_shifts WHERE id=$1", [shiftId],
+    );
+    expect(ownerClosed.rows).toEqual([{ force_closed: true, force_close_reason: forceBody.reason, closed_by_user_id: owner.userId }]);
+    const ownerAudit = await admin.query(
+      "SELECT 1 FROM audit_logs WHERE organization_id=$1 AND actor_user_id=$2 AND action='register_shift.force_closed' AND entity_id=$3",
+      [cashier.organizationId, owner.userId, shiftId],
+    );
+    expect(ownerAudit.rows).toHaveLength(1);
+
+    const secondOpened = await open(cashier);
+    expect(secondOpened.status).toBe(201);
+    const secondShiftId = (await secondOpened.json() as { shift: { id: string } }).shift.id;
+    const secondForcePath = root(cashier) + "/register-shifts/" + secondShiftId + "/force-close";
+    const forcedByAdmin = await request(adminMember, "POST", secondForcePath, {
+      closing_cash_usd: "15.0000", closing_cash_ves: "150.00", reason: "Admin de guardia",
+    });
+    expect(forcedByAdmin.status).toBe(200);
+    const adminClosed = await admin.query<{ force_closed: boolean; closed_by_user_id: string }>(
+      "SELECT force_closed,closed_by_user_id FROM register_shifts WHERE id=$1", [secondShiftId],
+    );
+    expect(adminClosed.rows).toEqual([{ force_closed: true, closed_by_user_id: adminMember.userId }]);
   });
 
   it("serializes concurrent opens and keeps direct runtime table writes denied", async () => {

@@ -113,7 +113,7 @@ export async function consumeAuthRateLimit(
  */
 export async function cleanupExpiredAuthRecords(
   client: DatabaseClient,
-): Promise<{ rateLimitBucketsDeleted: number; bootstrapAttemptsDeleted: number }> {
+): Promise<{ rateLimitBucketsDeleted: number; bootstrapAttemptsDeleted: number; sessionsDeleted: number }> {
   // Bound each invocation so a backlog cannot hold an unbounded number of
   // row locks or create a long-running DELETE. The hourly Cron drains older
   // records over successive runs; SKIP LOCKED permits safe overlap.
@@ -146,8 +146,12 @@ export async function cleanupExpiredAuthRecords(
       RETURNING target.handle_hash`,
   );
 
+  const sessions = await client.query<{ deleted: number | string }>(
+    "SELECT public.cleanup_expired_auth_sessions() AS deleted",
+  );
   return {
     rateLimitBucketsDeleted: rateLimits.rows.length,
     bootstrapAttemptsDeleted: bootstrapAttempts.rows.length,
+    sessionsDeleted: Number(sessions.rows[0]?.deleted ?? 0),
   };
 }

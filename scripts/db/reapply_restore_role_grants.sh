@@ -4,7 +4,7 @@ set -euo pipefail
 : "${MIGRATION_DATABASE_URL:?Set MIGRATION_DATABASE_URL to a direct microapp_migrator connection string}"
 : "${MIGRATIONS_DIR:?Set MIGRATIONS_DIR to the exact migration bundle used for this restore}"
 profile="${RESTORE_GRANTS_PROFILE:-}"
-case "$profile" in main|bcv|bcv-0024|bcv-0025|bcv-0026|bcv-0027|bcv-0028|bcv-0029|bcv-0030|bcv-0031) ;; *) echo "RESTORE_GRANTS_PROFILE must be main, bcv (0023), bcv-0024, bcv-0025, bcv-0026, or bcv-0027, or bcv-0028, bcv-0029, or bcv-0030, or bcv-0031." >&2; exit 2;; esac
+case "$profile" in main|bcv|bcv-0024|bcv-0025|bcv-0026|bcv-0027|bcv-0028|bcv-0029|bcv-0030|bcv-0031|bcv-0032) ;; *) echo "RESTORE_GRANTS_PROFILE must be main, bcv (0023), bcv-0024, bcv-0025, bcv-0026, or bcv-0027, or bcv-0028, bcv-0029, or bcv-0030, or bcv-0031." >&2; exit 2;; esac
 command -v psql >/dev/null 2>&1 || { echo "psql is required." >&2; exit 2; }
 command -v awk >/dev/null 2>&1 || { echo "awk is required." >&2; exit 2; }
 command -v sha256sum >/dev/null 2>&1 || { echo "sha256sum is required." >&2; exit 2; }
@@ -31,6 +31,7 @@ expected=16
 [[ "$profile" == "bcv-0029" ]] && expected=29
 [[ "$profile" == "bcv-0030" ]] && expected=30
 [[ "$profile" == "bcv-0031" ]] && expected=31
+[[ "$profile" == "bcv-0032" ]] && expected=32
 [[ "${#migration_files[@]}" -eq "$expected" ]] || {
   echo "Refusing ACL replay: profile $profile requires exactly $expected numbered migrations; found ${#migration_files[@]}." >&2
   exit 2
@@ -98,7 +99,7 @@ trap 'rm -f "$tmp_sql"' EXIT
         next
       }
     ' "$file" | {
-      if [[ "$profile" == "bcv" || "$profile" == "bcv-0024" || "$profile" == "bcv-0025" || "$profile" == "bcv-0026" || "$profile" == "bcv-0027" || "$profile" == "bcv-0028" || "$profile" == "bcv-0029" || "$profile" == "bcv-0030" || "$profile" == "bcv-0031" ]]; then
+      if [[ "$profile" == "bcv" || "$profile" == "bcv-0024" || "$profile" == "bcv-0025" || "$profile" == "bcv-0026" || "$profile" == "bcv-0027" || "$profile" == "bcv-0028" || "$profile" == "bcv-0029" || "$profile" == "bcv-0030" || "$profile" == "bcv-0031" || "$profile" == "bcv-0032" ]]; then
         # Projection migration 0019 removes these paired-intent objects. Skip
         # only their now-inapplicable historical ACL statements.
         grep -Ev 'inventory_balance_ledger_intents|record_inventory_balance_ledger_intent|consume_inventory_balance_ledger_intent|assert_inventory_balance_ledger_intent_consumed' || true

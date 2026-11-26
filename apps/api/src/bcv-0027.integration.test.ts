@@ -54,10 +54,10 @@ describe.skipIf(!enabled)("BCV 0027 PostgreSQL 18 effective-date matrix",()=>{
 
  it("Saturday and Sunday use nearest future published row with healthy prior sync",async()=>{await prepare([monday],monday,friday+"T16:00:00Z");expect(await select(saturday)).toMatchObject({effective_date:monday,priority:"weekend_prepublished"});await prepare([monday],monday,friday+"T16:00:00Z","unchanged");expect(await select(sunday)).toMatchObject({effective_date:monday,priority:"weekend_prepublished"})});
  it("weekday holiday requires a successful sync on that Caracas day",async()=>{await prepare([tuesday],tuesday,monday+"T05:00:00Z","unchanged");expect(await select(monday)).toMatchObject({effective_date:tuesday,priority:"weekday_same_day_sync"});await prepare([tuesday],tuesday,friday+"T16:00:00Z");expect(await select(monday)).toBeNull()});
- it("requires an append-only observation matching the current sync snapshot",async()=>{
-  await prepare([monday,tuesday],monday,friday+"T16:00:00Z");
-  await db.query("UPDATE public.bcv_sync_state SET last_effective_date=$1::date WHERE singleton=true",[tuesday]);
-  expect(await select(saturday)).toBeNull();
+ it("uses append-only success evidence covering the operation date even when mutable sync state advances or fails",async()=>{
+  await prepare([friday,monday],monday,friday+"T16:00:00Z");
+  await db.query("UPDATE public.bcv_sync_state SET last_effective_date=$1::date,last_outcome='failed',last_error_code='BCV_SYNC_UNKNOWN' WHERE singleton=true",[tuesday]);
+  expect(await select(friday)).toMatchObject({effective_date:friday,priority:"today_exact"});
  });
  it("preserves a confirmed exact-day rate after later failed, running and errored attempts",async()=>{
   await prepare([friday],friday,friday+"T16:00:00Z");

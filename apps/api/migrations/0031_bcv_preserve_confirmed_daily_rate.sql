@@ -11,8 +11,6 @@ SET search_path = pg_catalog
 AS $select_bcv_rate_for_operation$
 DECLARE
   sync_success_at timestamptz;
-  sync_outcome text;
-  sync_effective_date date;
   sync_error_code text;
   selected_id uuid;
   selected_rate numeric;
@@ -73,8 +71,8 @@ BEGIN
   -- do not require the observation row ID/date to equal the selected Friday row.
   -- The observation's own row is still integrity-checked by ID, rate, date,
   -- fetched_at and valid status. It is independent of later mutable sync state.
-  SELECT obs.last_success_at,obs.last_outcome,obs.last_effective_date,obs.last_error_code
-    INTO sync_success_at,sync_outcome,sync_effective_date,sync_error_code
+  SELECT obs.last_success_at,obs.last_error_code
+    INTO sync_success_at,sync_error_code
     FROM public.bcv_sync_success_observations obs
     JOIN public.exchange_rates er
       ON er.id=obs.exchange_rate_id

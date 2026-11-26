@@ -1032,7 +1032,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await seedBalance("2.000");
     const key = "sync-date-mismatch-" + crypto.randomUUID();
     try {
-      await client.query("DELETE FROM public.bcv_sync_success_observations WHERE exchange_rate_id=$1", [rateId]);
+      await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
       await setBcvSyncState("unchanged", "1900-01-01");
       const response = await request(checkoutBody("1.000", "23.8500"), key);
       expect(response.status).toBe(409);

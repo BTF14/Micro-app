@@ -4,7 +4,6 @@ import type { Bindings } from "./bindings";
 import { clearSessionCookie } from "./auth";
 import { authorizeBranchOperation, authorizeCommercialOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
-import { lockInventoryWarehouses } from "./inventory-locks";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type NameCursor = { id: string; name: string; rank?: 0 | 1 | 2 };
@@ -224,8 +223,12 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
             return { kind: "forbidden" as const };
           }
           const branch = authorization.context;
-          const locked = await lockInventoryWarehouses(tx, branch.organizationId, [{ warehouseId, branchId: branch.branchId }]);
-          if (!locked) return { kind: "warehouse_not_found" as const };
+          const warehouse = await tx.query<{ id: string }>(
+            `SELECT id FROM public.warehouses
+              WHERE organization_id = $1 AND branch_id = $2 AND id = $3 AND is_active = true`,
+            [branch.organizationId, branch.branchId, warehouseId],
+          );
+          if (!warehouse.rows[0]) return { kind: "warehouse_not_found" as const };
 
           let cursorName: string | undefined;
           let cursorRank: number | undefined;
@@ -324,8 +327,12 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
             return { kind: "forbidden" as const };
           }
           const branch = authorization.context;
-          const locked = await lockInventoryWarehouses(tx, branch.organizationId, [{ warehouseId, branchId: branch.branchId }]);
-          if (!locked) return { kind: "warehouse_not_found" as const };
+          const warehouse = await tx.query<{ id: string }>(
+            `SELECT id FROM public.warehouses
+              WHERE organization_id = $1 AND branch_id = $2 AND id = $3 AND is_active = true`,
+            [branch.organizationId, branch.branchId, warehouseId],
+          );
+          if (!warehouse.rows[0]) return { kind: "warehouse_not_found" as const };
 
           let cursorCreatedAt: string | null = null;
           if (cursor) {

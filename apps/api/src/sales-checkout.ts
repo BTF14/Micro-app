@@ -831,6 +831,7 @@ export function registerSalesCheckoutRoutes(app: Hono<{ Bindings: Bindings }>): 
       }
     } catch (error) {
       const code = postgresCode(error);
+      if (code === "55P03") return c.json({ error: "CHECKOUT_LOCK_TIMEOUT", message: "El inventario o la caja están siendo actualizados por otra operación. Espera unos segundos e inténtalo de nuevo." }, 409);
       if (code === "23514" && postgresMessage(error).includes("MANUAL_FX_CONTINGENCY_BCV_RESTORED")) {
         // The checkout transaction has rolled back. Recheck in a separate
         // transaction using the required BCV -> FX lock order and durable

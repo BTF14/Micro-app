@@ -70,6 +70,22 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const activeSearchRef = useRef(activeSearch);
   activeSearchRef.current = activeSearch;
   const sequence = useRef(0);
+  const receiptIdempotencyKey = useRef("");
+  const countIdempotencyKey = useRef("");
+  if (!receiptIdempotencyKey.current) receiptIdempotencyKey.current = crypto.randomUUID();
+  if (!countIdempotencyKey.current) countIdempotencyKey.current = crypto.randomUUID();
+  const receiptFingerprint = JSON.stringify([organizationId, branchId, warehouseId, receiptProductId || items.find((item) => item.is_active)?.product_id || "", receiptQuantity, receiptCost, receiptReason]);
+  const countFingerprint = JSON.stringify([organizationId, branchId, warehouseId, countProductId || items.find((item) => item.is_active)?.product_id || "", countQuantity, countReason]);
+  const receiptFingerprintRef = useRef(receiptFingerprint);
+  const countFingerprintRef = useRef(countFingerprint);
+  if (receiptFingerprintRef.current !== receiptFingerprint) {
+    receiptFingerprintRef.current = receiptFingerprint;
+    receiptIdempotencyKey.current = crypto.randomUUID();
+  }
+  if (countFingerprintRef.current !== countFingerprint) {
+    countFingerprintRef.current = countFingerprint;
+    countIdempotencyKey.current = crypto.randomUUID();
+  }
 
   const base = `/api/orgs/${encodeURIComponent(organizationId)}`;
   const manageableProducts = items.filter((item) => item.is_active);
@@ -189,9 +205,10 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       const path = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}/receipts`;
       const result = await apiRequest<{ id: string; replayed: boolean }>(path, {
         method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID() },
+        headers: { "Idempotency-Key": receiptIdempotencyKey.current },
         body: JSON.stringify({ reason: receiptReason, lines: [{ product_id: selectedProductId, quantity, unit_cost_usd: unitCost }] }),
       });
+      receiptIdempotencyKey.current = crypto.randomUUID();
       setNotice(result.replayed ? "La recepción ya estaba registrada." : "Recepción registrada y existencias actualizadas.");
       setReceiptReason("");
       await Promise.all([fetchBalances(undefined, activeSearchRef.current), fetchReceipts()]);
@@ -222,10 +239,11 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       const prefix = `${base}/branches/${encodeURIComponent(branchId)}/warehouses/${encodeURIComponent(warehouseId)}`;
       const created = await apiRequest<{ id: string }>(`${prefix}/counts/physical`, {
         method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID() },
+        headers: { "Idempotency-Key": countIdempotencyKey.current },
         body: JSON.stringify({ reason: countReason, lines: [{ product_id: selectedProductId, counted_quantity: countedQuantity }] }),
       });
       await apiRequest(`${prefix}/counts/${encodeURIComponent(created.id)}/confirm`, { method: "POST" });
+      countIdempotencyKey.current = crypto.randomUUID();
       setNotice("Conteo físico confirmado y existencias actualizadas.");
       setCountReason("");
       await Promise.all([fetchBalances(undefined, activeSearchRef.current), fetchReceipts()]);

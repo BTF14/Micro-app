@@ -529,6 +529,7 @@ export function registerCatalogImportRoutes(app: Hono<{ Bindings: Bindings }>): 
           audit_log_id: result.audit_log_id, summary: result.summary, created_at: result.created_at,
         }, 200);
       } catch (error) {
+        if (postgresCode(error) === "55P03") return c.json({ error: "CATALOG_IMPORT_LOCK_TIMEOUT", message: "El catálogo está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo; puedes reintentar la misma importación." }, 409);
         if (postgresCode(error) === "23505") return c.json({ error: "PRODUCT_CONFLICT", message: "Existe un SKU o código de barras duplicado." }, 409);
         if (postgresCode(error) === "23514") return c.json({ error: "FRACTIONAL_INVENTORY_BALANCE_CONFLICT", message: "El cambio viola una guarda de cantidades enteras; no se aplicó ninguna fila." }, 409);
         return c.json({ error: "CATALOG_IMPORT_FAILED", message: "No se pudo aplicar la importación; no se aplicó ninguna fila." }, 500);

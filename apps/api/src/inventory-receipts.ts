@@ -5,7 +5,6 @@ import type { Bindings } from "./bindings";
 import { clearSessionCookie, isTrustedOrigin } from "./auth";
 import { authorizeBranchOperation } from "./authorization";
 import { withDatabaseClient, withDatabaseTransaction } from "./database";
-import { lockInventoryWarehouses } from "./inventory-locks";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -123,8 +122,12 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
           return { kind: "forbidden" as const };
         }
         const branch = auth.context;
-        const locked = await lockInventoryWarehouses(tx, branch.organizationId, [{ warehouseId, branchId: branch.branchId }]);
-        if (!locked) return { kind: "not_found" as const };
+        const warehouse = await tx.query<{ id: string }>(
+          `SELECT id FROM public.warehouses
+            WHERE organization_id = $1 AND branch_id = $2 AND id = $3 AND is_active = true`,
+          [branch.organizationId, branch.branchId, warehouseId],
+        );
+        if (!warehouse.rows[0]) return { kind: "not_found" as const };
         const rows = await tx.query<{ id: string; reason: string; created_by: string; created_at: string; line_count: string }>(
           `SELECT r.id,r.reason,r.created_by,r.created_at::text AS created_at,
              count(l.product_id)::text AS line_count
@@ -218,6 +221,7 @@ export function registerInventoryReceiptRoutes(app: Hono<{ Bindings: Bindings }>
       return c.json({ id: result.id, status: "recorded", replayed: result.replayed }, result.replayed ? 200 : 201);
     } catch (error) {
       const code = postgresCode(error);
+      if (code === "55P03") return c.json({ error: "INVENTORY_LOCK_TIMEOUT", message: "El inventario está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo." }, 409);
       const message = error instanceof Error ? error.message : "";
       if (code === "23505" && message.includes("INVENTORY_RECEIPT_IDEMPOTENCY_CONFLICT")) {
         return c.json({ error: "IDEMPOTENCY_KEY_REUSED", message: "La clave de idempotencia ya fue utilizada con una solicitud diferente." }, 409);

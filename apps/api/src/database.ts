@@ -62,13 +62,24 @@ export async function withDatabaseClient<Result>(
  * Runs statements that must succeed or fail together (e.g. sale, payments,
  * stock changes and inventory ledger entries) on one interactive transaction.
  */
+export interface DatabaseTransactionOptions {
+  lockTimeoutMs?: number;
+}
+
 export async function withDatabaseTransaction<Result>(
   client: DatabaseClient,
   operation: (transaction: DatabaseClient) => Promise<Result>,
+  options: DatabaseTransactionOptions = {},
 ): Promise<Result> {
+  const lockTimeoutMs = options.lockTimeoutMs ?? 5_000;
+  if (!Number.isSafeInteger(lockTimeoutMs) || lockTimeoutMs <= 0) {
+    throw new Error("Database transaction lock timeout must be a positive safe integer.");
+  }
+
   await client.query("BEGIN");
 
   try {
+    await client.query(`SET LOCAL lock_timeout = '${lockTimeoutMs}ms'`);
     const result = await operation(client);
     await client.query("COMMIT");
     return result;

@@ -375,6 +375,8 @@ ALTER FUNCTION public.cleanup_expired_auth_sessions() OWNER TO microapp_migrator
 -- Remove runtime table writes that have moved behind the narrow definer APIs.
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.organizations FROM microapp_runtime;
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.organization_members FROM microapp_runtime;
+-- Preserve only the three column-level INSERT privileges used by the legacy owner bootstrap contract.
+GRANT INSERT (organization_id,user_id,role) ON TABLE public.organization_members TO microapp_runtime;
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.auth_allowlist FROM microapp_runtime;
 REVOKE INSERT,UPDATE,DELETE ON TABLE public.register_shifts FROM microapp_runtime;
 REVOKE DELETE ON TABLE public.auth_sessions FROM microapp_runtime;

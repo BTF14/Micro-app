@@ -113,10 +113,11 @@ async function findActiveManualFxAuthorization(
 
 /**
  * A new sale requires the BCV row selected by the 0027 Caracas-date priority
- * policy and a healthy sync state. lock_bcv_sync_state_with_error() takes FOR SHARE
- * against the producer's UPDATE and holds
- * it until the checkout transaction commits or rolls back; it is not held
- * while the BCV HTTP fetch runs.
+ * policy and a durable successful observation covering that effective date.
+ * lock_bcv_sync_state_with_error() retains the producer/checkout FOR SHARE lock
+ * order, but its mutable last_outcome/last_error_code are not success evidence.
+ * The append-only observation and its exact exchange_rates row remain usable
+ * after a later attempt is failed or running. The lock is never held during HTTP.
  */
 export async function findApplicableCheckoutRate(tx: import("./database").DatabaseClient, now = new Date()): Promise<RateRow | null> {
   const fallbackToday = bcvCaracasDate(now);

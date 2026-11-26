@@ -287,4 +287,84 @@ describe("inventory panel", () => {
     expect(String(vi.mocked(fetch).mock.calls[4]?.[0])).toContain("q=750123");
   });
 
+  it("reuses a receipt Idempotency-Key after a transient failure and rotates it after success or draft edits", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
+      .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockRejectedValueOnce(new TypeError("network unavailable"))
+      .mockResolvedValueOnce(jsonResponse({ id: "receipt-1", replayed: false }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockResolvedValueOnce(jsonResponse({ id: "receipt-2", replayed: false }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+    await renderPanel(true);
+    const form = container.querySelectorAll<HTMLFormElement>(".inventory-operation-form")[0]!;
+    const inputs = form.querySelectorAll<HTMLInputElement>("input");
+    const setValue = (input: HTMLInputElement, value: string) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    await act(async () => {
+      setValue(inputs[0]!, "2");
+      setValue(inputs[1]!, "4.25");
+      setValue(inputs[2]!, "Reposición");
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flush();
+    const key = (index: number) => (vi.mocked(fetch).mock.calls[index]?.[1]?.headers as Record<string, string>)["Idempotency-Key"];
+    const firstKey = key(4);
+    expect(firstKey).toBeTruthy();
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("network");
+
+    await act(async () => { form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await flush();
+    expect(key(5)).toBe(firstKey);
+
+    await act(async () => {
+      setValue(inputs[2]!, "Reposición posterior");
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flush();
+    expect(key(8)).not.toBe(firstKey);
+  });
+
+  it("reuses the physical-count key when confirmation fails so retry recovers the same count", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ branches: [{ id: BRANCH_A, name: "Central", slug: "central" }] }))
+      .mockResolvedValueOnce(jsonResponse({ warehouses: [{ id: WAREHOUSE, code: "main", name: "Principal", is_active: true }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockResolvedValueOnce(jsonResponse({ id: "count-stable" }))
+      .mockRejectedValueOnce(new TypeError("temporary confirm failure"))
+      .mockResolvedValueOnce(jsonResponse({ id: "count-stable", replayed: true }))
+      .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+    await renderPanel(true);
+    const form = container.querySelectorAll<HTMLFormElement>(".inventory-operation-form")[1]!;
+    const inputs = form.querySelectorAll<HTMLInputElement>("input");
+    const setValue = (input: HTMLInputElement, value: string) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    await act(async () => {
+      setValue(inputs[0]!, "17");
+      setValue(inputs[1]!, "Conteo de verificación");
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await flush();
+    const key = (index: number) => (vi.mocked(fetch).mock.calls[index]?.[1]?.headers as Record<string, string>)["Idempotency-Key"];
+    const firstKey = key(4);
+    expect(firstKey).toBeTruthy();
+    expect(String(vi.mocked(fetch).mock.calls[5]?.[0])).toContain("/counts/count-stable/confirm");
+
+    await act(async () => { form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await flush();
+    expect(key(6)).toBe(firstKey);
+    expect(String(vi.mocked(fetch).mock.calls[7]?.[0])).toContain("/counts/count-stable/confirm");
+  });
+
 });

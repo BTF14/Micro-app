@@ -621,7 +621,15 @@ export async function findLatestBcvRate(
   const nearestFutureDate = futureCandidates[0]?.effective_date;
   const nearestFutureRows = nearestFutureDate ? futureCandidates.filter((row) => row.effective_date === nearestFutureDate) : [];
   const future = nearestFutureRows.length === 1 ? nearestFutureRows[0] : undefined;
-  if (!hasValidExact && future && state?.has_success_observation && state.last_success_at !== null &&
+  const operationWeekday = new Date(Date.parse(`${operationDate}T00:00:00.000Z`)).getUTCDay();
+  const weekendOperation = operationWeekday === 0 || operationWeekday === 6;
+  const observationSuccessAt = state?.last_success_at instanceof Date
+    ? state.last_success_at.getTime()
+    : state?.last_success_at ? Date.parse(state.last_success_at) : Number.NaN;
+  const weekdaySyncConfirmed = Number.isFinite(observationSuccessAt) &&
+    observationSuccessAt >= Date.parse(`${operationDate}T04:00:00.000Z`);
+  if (!hasValidExact && future && state?.has_success_observation &&
+      (weekendOperation || weekdaySyncConfirmed) &&
       (state.last_outcome === "inserted" || state.last_outcome === "unchanged") &&
       state.last_error_code === null && state.last_effective_date !== null &&
       state.last_effective_date >= future.effective_date) {

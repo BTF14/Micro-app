@@ -6,7 +6,7 @@ CREATE TABLE public.organization_invitations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE RESTRICT,
   email text NOT NULL CHECK (
-    length(btrim(email)) BETWEEN 3 AND 320
+    length(btrim(email)) >= 3 AND length(btrim(email)) <= 320
     AND email = lower(btrim(email))
     AND email !~ '[[:cntrl:]]'
   ),

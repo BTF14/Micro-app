@@ -327,11 +327,6 @@ SELECT 'constraints|' || COALESCE(string_agg(
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public';
 
-SELECT 'organization_invitations_email_check|' || pg_catalog.pg_get_constraintdef(con.oid)
-  FROM pg_catalog.pg_constraint con
- WHERE con.conrelid='public.organization_invitations'::regclass
-   AND con.conname='organization_invitations_email_check';
-
 SELECT 'indexes|' || COALESCE(string_agg(
      tbl.relname || ':' || idx.relname || ':' || pg_catalog.md5(pg_catalog.pg_get_indexdef(idx.oid))
      || ':' || ix.indisvalid::text || ':' || ix.indisready::text || ':' || ix.indislive::text

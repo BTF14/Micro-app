@@ -13,6 +13,38 @@ const MAX_EFFECTIVE_DATE_FUTURE_DAYS = 7;
 
 export const BCV_STALE_RUNNING_THRESHOLD_SECONDS = 300;
 
+// Per-isolate fallback guard keyed only by Cloudflare's trusted edge IP header.
+// The deliberately generous ceiling protects public read endpoints without
+// penalizing ordinary users behind shared carrier/NAT addresses.
+const PUBLIC_RATE_LIMIT_WINDOW_MS = 60_000;
+const PUBLIC_RATE_LIMIT_MAX_REQUESTS = 120;
+const publicRateLimitBuckets = new Map<string, { startedAt: number; count: number }>();
+
+function applyPublicExchangeRateGuard(c: { req: { header(name: string): string | undefined }; header(name: string, value: string): void; json(body: unknown, status?: number): Response }): Response | null {
+  const ip = c.req.header("CF-Connecting-IP")?.trim();
+  // Local tests and non-Cloudflare deployments without a trusted edge IP keep
+  // their existing contract; never trust X-Forwarded-For supplied by clients.
+  if (!ip || ip.length > 64 || !/^[0-9a-fA-F:.]+$/.test(ip)) return null;
+  const now = Date.now();
+  const current = publicRateLimitBuckets.get(ip);
+  const bucket = !current || now - current.startedAt >= PUBLIC_RATE_LIMIT_WINDOW_MS
+    ? { startedAt: now, count: 0 }
+    : current;
+  bucket.count += 1;
+  publicRateLimitBuckets.set(ip, bucket);
+  if (publicRateLimitBuckets.size > 10_000) {
+    for (const [key, value] of publicRateLimitBuckets) {
+      if (now - value.startedAt >= PUBLIC_RATE_LIMIT_WINDOW_MS) publicRateLimitBuckets.delete(key);
+    }
+  }
+  if (bucket.count <= PUBLIC_RATE_LIMIT_MAX_REQUESTS) return null;
+  const retryAfter = Math.max(1, Math.ceil((bucket.startedAt + PUBLIC_RATE_LIMIT_WINDOW_MS - now) / 1000));
+  c.header("Cache-Control", "no-store");
+  c.header("Retry-After", String(retryAfter));
+  return c.json({ error: "RATE_LIMITED", message: "Demasiadas consultas. Inténtalo de nuevo en unos segundos." }, 429);
+}
+
+
 export function isBcvSyncStateStaleRunning(
   lastOutcome: string | null,
   attemptAgeSeconds: number | null,

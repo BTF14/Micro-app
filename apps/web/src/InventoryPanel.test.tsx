@@ -168,10 +168,7 @@ describe("inventory panel", () => {
       .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
       .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
       .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
-      .mockResolvedValueOnce(jsonResponse({ id: "count-next" }))
-      .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
-      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
-      .mockResolvedValueOnce(jsonResponse({ receipts: [] }));
+.mockResolvedValueOnce(jsonResponse({ receipts: [] }));
     await renderPanel(true);
 
     const search = container.querySelector<HTMLInputElement>("#inventory-quick-search")!;
@@ -344,6 +341,10 @@ describe("inventory panel", () => {
       .mockResolvedValueOnce(jsonResponse({ id: "count-stable" }))
       .mockRejectedValueOnce(new TypeError("temporary confirm failure"))
       .mockResolvedValueOnce(jsonResponse({ id: "count-stable", replayed: true }))
+      .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
+      .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
+      .mockResolvedValueOnce(jsonResponse({ receipts: [] }))
+      .mockResolvedValueOnce(jsonResponse({ id: "count-next" }))
       .mockResolvedValueOnce(jsonResponse({ confirmed: true }))
       .mockResolvedValueOnce(jsonResponse({ items: [balance()], nextCursor: null, limit: 25 }))
       .mockResolvedValueOnce(jsonResponse({ receipts: [] }));

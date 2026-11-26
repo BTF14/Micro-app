@@ -227,7 +227,7 @@ psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0028_
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0029_catalog_import_batches.assertions.sql
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0031_bcv_preserve_confirmed_daily_rate.assertions.sql
-psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0032_owner_org_rename_invitations_force_shift_cleanup.assertions.sql
+psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0032_owner_org_rename_invitations_force_shift_session_cleanup.assertions.sql
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'

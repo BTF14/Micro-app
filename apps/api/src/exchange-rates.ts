@@ -200,16 +200,45 @@ export function parseBcvOfficialRate(html: string, now = new Date()): BcvOfficia
   const text = normalizeHtmlText(html);
   let rate: string | null = null;
   let candidateError: Error | null = null;
-  // The official BCV homepage pairs the USD label with the following value
-  // paragraph. This excludes USD amounts in the later commercial-bank table.
-  const usdBlocks = html.matchAll(
-    /<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bUSD\b(?:(?!<\/p>)[\s\S])*<\/p>\s*<p\b[^>]*>\s*(?:<strong\b[^>]*>)?\s*([\d.,]+)\s*(?:<\/strong>)?\s*<\/p>/gi,
-  );  for (const match of usdBlocks) {
-    try {
-      rate = parseLocalizedRate(match[1]!);
-      break;
-    } catch (error) {
-      if (error instanceof Error) candidateError = error;
+
+  // The live BCV Drupal homepage exposes the official USD quote in its
+  // dedicated #dolar container. Walk balanced DIV tags so nested layout DIVs
+  // stay inside that container and the later commercial-bank table is excluded.
+  const dolarOpen = [...html.matchAll(/<div\b(?=[^>]*\bid\s*=\s*["']dolar["'])[^>]*>/gi)][0];
+  if (dolarOpen && dolarOpen.index !== undefined) {
+    const openEnd = dolarOpen.index + dolarOpen[0].length;
+    let depth = 1;
+    let cursor = openEnd;
+    const divTokens = /<\/?div\b[^>]*>/gi;
+    divTokens.lastIndex = openEnd;
+    let closeEnd = -1;
+    for (let token = divTokens.exec(html); token; token = divTokens.exec(html)) {
+      if (/^<\/div/i.test(token[0])) depth -= 1;
+      else if (!/\/>$/.test(token[0])) depth += 1;
+      if (depth === 0) { closeEnd = token.index; break; }
+    }
+    if (closeEnd > openEnd) {
+      const dolarBlock = html.slice(openEnd, closeEnd);
+      const usdIndex = dolarBlock.search(/\bUSD\b/i);
+      if (usdIndex >= 0) {
+        const valueMatch = dolarBlock.slice(usdIndex).match(/<strong\b[^>]*>\s*([\d.,]+)\s*<\/strong>/i);
+        if (valueMatch) {
+          try { rate = parseLocalizedRate(valueMatch[1]!); }
+          catch (error) { if (error instanceof Error) candidateError = error; }
+        }
+      }
+    }
+  }
+
+  // Retain fixture/legacy markup support, but only accept the adjacent official
+  // USD label/value paragraph pair; never scan arbitrary USD values in tables.
+  if (!rate) {
+    const usdBlocks = html.matchAll(
+      /<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bUSD\b(?:(?!<\/p>)[\s\S])*<\/p>\s*<p\b[^>]*>\s*(?:<strong\b[^>]*>)?\s*([\d.,]+)\s*(?:<\/strong>)?\s*<\/p>/gi,
+    );
+    for (const match of usdBlocks) {
+      try { rate = parseLocalizedRate(match[1]!); break; }
+      catch (error) { if (error instanceof Error) candidateError = error; }
     }
   }
   if (!rate) {

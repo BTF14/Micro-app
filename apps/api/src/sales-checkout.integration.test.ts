@@ -939,7 +939,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await setBcvSyncState("unchanged");
   });
 
-  it("fails closed when a same-day row has no append-only successful observation", async () => {
+  it("fails closed when the same-day rate row is stale despite historical observation", async () => {
     await seedBalance("2.000");
     const key = "sync-failed-" + crypto.randomUUID();
     try {
@@ -1015,7 +1015,7 @@ describe.skipIf(!isDisposableCheckoutDatabase || !isDisposableBcvProducerDatabas
     await seedBalance("2.000");
     const key = "sync-stale-running-" + crypto.randomUUID();
     try {
-      await client.query("DELETE FROM public.bcv_sync_success_observations WHERE exchange_rate_id=$1", [rateId]);
+      await client.query("UPDATE public.exchange_rates SET validation_status='stale' WHERE id=$1", [rateId]);
       await setBcvSyncState("running");
       await client.query("UPDATE public.bcv_sync_state SET last_attempt_at=pg_catalog.clock_timestamp()-interval '2 hours' WHERE singleton=true");
       const response = await request(checkoutBody("1.000", "23.8500"), key);

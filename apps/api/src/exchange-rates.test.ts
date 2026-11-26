@@ -38,7 +38,7 @@ describe("BCV HTML parser — synthetic regression fixtures", () => {
 
   it("does not mistake commercial-bank USD quotes for the official BCV rate", () => {
     const withoutOfficialBlock = officialBcvHomepageHtml.replace(
-      /<p><img[^>]*>\\s*USD<\\/p>\\s*<p><strong>897,53830000<\\/strong><\\/p>/i,
+      /<p><img[^>]*>\s*USD<\/p>\s*<p><strong>897,53830000<\/strong><\/p>/i,
       "<p>USD rate unavailable</p>",
     );
     expect(() => parseBcvOfficialRate(withoutOfficialBlock, new Date("2026-11-09T12:00:00-04:00")))

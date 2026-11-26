@@ -355,6 +355,7 @@ const SAFE_BCV_SYNC_ERROR_CODES = new Set([
   "BCV_SOURCE_CONTENT_TYPE_INVALID",
   "BCV_USD_RATE_MISSING",
   "BCV_RATE_CHANGED_FOR_EXISTING_EFFECTIVE_DATE",
+  "BCV_RATE_VARIATION_OUT_OF_RANGE",
   "BCV_SYNC_STATE_ROW_MISSING",
 ]);
 
@@ -459,6 +460,25 @@ export async function syncBcvOfficialRate(
         }
 
         try {
+          // Anti-corruption guard: compare only with the latest valid official
+          // observation from the preceding 15 effective-date days. A first
+          // historical observation has no baseline and is accepted; a jump
+          // beyond +/-35% is rejected before any rate row is written.
+          const previousRate = await tx.query<{ exceeds_limit: boolean }>(
+            `SELECT (abs($1::numeric - prior.rate) / prior.rate) > 0.35 AS exceeds_limit
+               FROM public.exchange_rates prior
+              WHERE prior.source = $2
+                AND prior.base_currency = 'USD' AND prior.quote_currency = 'VES'
+                AND prior.validation_status = 'valid' AND prior.rate > 0
+                AND prior.effective_date < $3::date
+                AND prior.effective_date >= ($3::date - 15)
+              ORDER BY prior.effective_date DESC, prior.fetched_at DESC
+              LIMIT 1`,
+            [rate.rate, BCV_SOURCE_ID, rate.effectiveDate],
+          );
+          if (previousRate.rows[0]?.exceeds_limit) {
+            throw new Error("BCV_RATE_VARIATION_OUT_OF_RANGE");
+          }
           const outcome = await persistBcvOfficialRate(tx, rate);
           await tx.query(
             `UPDATE public.bcv_sync_state

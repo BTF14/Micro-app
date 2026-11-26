@@ -249,6 +249,7 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       return c.json({ id: result.countId, status: "draft", count_type: countType, line_count: result.lineCount }, 201);
     } catch (error) {
       const code = error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : undefined;
+      if (code === "55P03") return c.json({ error: "INVENTORY_LOCK_TIMEOUT", message: "El inventario está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo." }, 409);
       const message = error instanceof Error ? error.message : "";
       if (code === "23514" && message.includes("INTEGER_PRODUCT_COUNT_QUANTITY_MUST_BE_WHOLE")) {
         return c.json({ error: "INTEGER_PRODUCT_QUANTITY_MUST_BE_WHOLE", message: "Los productos de unidad entera solo admiten cantidades enteras en el conteo." }, 400);
@@ -403,7 +404,9 @@ export function registerInventoryCountRoutes(app: Hono<{ Bindings: Bindings }>):
       if (result.kind === "below_reserved") return c.json({ error: "COUNT_BELOW_RESERVED_STOCK", message: "La cantidad contada no puede ser inferior a las existencias reservadas.", product_id: result.productId, reserved_quantity: result.reservedQuantity }, 409);
       if (result.kind === "replayed") return c.json({ id: result.countId, status: "confirmed", replayed: true }, 200);
       return c.json({ id: result.countId, status: "confirmed", count_type: result.countType, changes: result.changes }, 200);
-    } catch {
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : undefined;
+      if (code === "55P03") return c.json({ error: "INVENTORY_LOCK_TIMEOUT", message: "El inventario está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo." }, 409);
       return c.json({ error: "INVENTORY_COUNT_CONFIRM_FAILED", message: "No se pudo confirmar el conteo." }, 500);
     }
   });

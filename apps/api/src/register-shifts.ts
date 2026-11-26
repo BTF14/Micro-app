@@ -76,14 +76,13 @@ async function authorizeOwnShift(
   // Owner/Admin have organization-wide branch scope, but owning a shift always
   // requires an explicit active branch assignment just like Cashier. This is a
   // read-only preflight; opening/closing SQL revalidates under its own locks.
-  const assignment = await tx.query<{ active: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM public.branch_memberships
-        WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3 AND is_active
-     ) AS active`,
-    [branch.organizationId, branch.branchId, branch.userId],
-  );
-  if (!assignment.rows[0]?.active) return { kind: "branch_denied" };
+  if (branch.organizationRole !== "owner" && branch.organizationRole !== "admin") {
+    const assignment = await tx.query<{ active: boolean }>(
+      `SELECT EXISTS (SELECT 1 FROM public.branch_memberships WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3 AND is_active) AS active`,
+      [branch.organizationId, branch.branchId, branch.userId],
+    );
+    if (!assignment.rows[0]?.active) return { kind: "branch_denied" };
+  }
   return { kind: "ok", branch };
 }
 
@@ -102,6 +101,7 @@ function readFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
     return c.json({ error: "REGISTER_SHIFT_NOT_ENABLED", message: "La operación de turnos todavía no está habilitada en esta base de datos." }, 503);
   }
   if (code === "55P03") return c.json({ error: "SHIFT_LOCK_TIMEOUT", message: "El turno está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo." }, 409);
+  if (code === "P0002") return c.json({ error: "SHIFT_NOT_OPEN", message: "El turno ya no está abierto o no pertenece a esta sucursal." }, 409);
   if (code === "22023") return c.json({ error: "INVALID_SHIFT_INPUT", message: "Los importes del turno no son válidos." }, 400);
   if (code === "23505") return c.json({ error: "SHIFT_ALREADY_OPEN", message: "Ya existe un turno abierto para esta caja o usuario." }, 409);
   if (code === "23514" || code === "23503") return c.json({ error: "SHIFT_SCOPE_CONFLICT", message: "No se pudo completar la operación de turno con el alcance actual." }, 409);

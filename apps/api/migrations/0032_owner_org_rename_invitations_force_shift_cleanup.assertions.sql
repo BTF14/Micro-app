@@ -254,10 +254,12 @@ BEGIN
      OR NOT EXISTS(SELECT 1 FROM public.organization_members WHERE organization_id=bootstrap_org AND user_id=bootstrap_user AND role='owner') THEN
     RAISE EXCEPTION '0032_BOOTSTRAP_DEFINER_FLOW_FAILED';
   END IF;
+  INSERT INTO public.auth_allowlist(email,is_active,added_by)
+    VALUES('bootstrap-second-0032@example.test',true,'0032-test');
   INSERT INTO public.auth_bootstrap_attempts(handle_hash,state_hash,organization_name,organization_slug,expires_at)
     VALUES(repeat('f',64),repeat('b',64),'Second Bootstrap Store','second-bootstrap-0032',pg_catalog.clock_timestamp()+interval '1 hour');
   SELECT status INTO result_status FROM public.consume_auth_bootstrap(
-    repeat('f',64),repeat('b',64),'bootstrap-0032@example.test','google-bootstrap-0032','Bootstrap Owner');
+    repeat('f',64),repeat('b',64),'bootstrap-second-0032@example.test','google-bootstrap-second-0032','Second Bootstrap Owner');
   IF result_status<>'bootstrap_consumed' THEN RAISE EXCEPTION '0032_BOOTSTRAP_REUSE_WAS_ALLOWED'; END IF;
 
   -- Bounded cleanup deletes only sessions expired/revoked for more than 48h.

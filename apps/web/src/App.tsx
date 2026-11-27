@@ -651,7 +651,7 @@ export default function App() {
       </aside>
       <section className="main-panel" id="inicio">
         <header className="topbar">
-          <div className="breadcrumb">{organization?.name ?? "Mi negocio"} <span>/</span> {renderedView === "catalog" ? "Productos" : renderedView === "inventory" ? "Inventario" : renderedView === "quick-lookup" ? "Consultar precio" : renderedView === "register-shifts" ? "Caja y turnos" : renderedView === "sales" ? "Ventas" : renderedView === "organization-structure" ? "Estructura organizacional" : renderedView === "fx-contingency" ? "Gestión cambiaria" : renderedView === "reports" ? "Reportes" : "Resumen"}</div>
+          <div className="breadcrumb">{organization?.name ?? (session.is_platform_admin ? "Administración de plataforma" : "Mi negocio")} <span>/</span> {renderedView === "platform-admin" ? "Plataforma" : renderedView === "catalog" ? "Productos" : renderedView === "inventory" ? "Inventario" : renderedView === "quick-lookup" ? "Consultar precio" : renderedView === "register-shifts" ? "Caja y turnos" : renderedView === "sales" ? "Ventas" : renderedView === "organization-structure" ? "Estructura organizacional" : renderedView === "fx-contingency" ? "Gestión cambiaria" : renderedView === "reports" ? "Reportes" : "Resumen"}</div>
           <div className="topbar-end">
             <div className="account-chip"><span>{user.display_name.slice(0, 1).toUpperCase()}</span><div><strong>{user.display_name}</strong><small>{user.email}</small></div></div>
             {/* The sidebar's own logout button (.sidebar-bottom) is hidden on narrow screens

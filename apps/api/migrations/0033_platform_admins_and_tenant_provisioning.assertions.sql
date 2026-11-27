@@ -1,3 +1,4 @@
+BEGIN;
 DO $assertions$
 DECLARE f regprocedure;v_public boolean;
 BEGIN
@@ -12,3 +13,4 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='public.organization_invitations'::regclass AND conname='organization_invitations_role_check' AND pg_get_constraintdef(oid) LIKE '%owner%') THEN RAISE EXCEPTION 'FAIL owner role check';END IF;
  IF pg_get_functiondef('public.invite_organization_member(uuid,uuid,text,text,text)'::regprocedure) NOT LIKE '%p_role NOT IN (''admin'',''cashier'',''inventory'')%' THEN RAISE EXCEPTION 'FAIL tenant invite owner restriction';END IF;
 END;$assertions$;
+ROLLBACK;

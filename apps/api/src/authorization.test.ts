@@ -13,6 +13,17 @@ describe("commercial role authorization", () => {
     expect(authorizeCommercialOperation("inventory", "bcv.sync_state.read")).toBe(false);
   });
 
+  it("restricts organization rename to Owner and forced shift closure to Owner/Admin", () => {
+    expect(authorizeCommercialOperation("owner", "organization.rename")).toBe(true);
+    expect(authorizeCommercialOperation("admin", "organization.rename")).toBe(false);
+    expect(authorizeCommercialOperation("cashier", "organization.rename")).toBe(false);
+    expect(authorizeCommercialOperation("inventory", "organization.rename")).toBe(false);
+    expect(authorizeCommercialOperation("owner", "register.shift.force_close")).toBe(true);
+    expect(authorizeCommercialOperation("admin", "register.shift.force_close")).toBe(true);
+    expect(authorizeCommercialOperation("cashier", "register.shift.force_close")).toBe(false);
+    expect(authorizeCommercialOperation("inventory", "register.shift.force_close")).toBe(false);
+  });
+
   it("allows catalog reads for every role and cost reads for owner/admin/inventory", () => {
     for (const role of roles) {
       expect(isCommercialOperationAllowed(role, "catalog.read")).toBe(true);

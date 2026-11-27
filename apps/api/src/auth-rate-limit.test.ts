@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DatabaseClient } from "./database";
-import { consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
+import { cleanupExpiredAuthRecords, consumeAuthRateLimit, hashAuthRateLimitKey } from "./auth-rate-limit";
 import app from "./index";
 
 describe("authentication rate-limit key handling", () => {
@@ -32,6 +32,16 @@ describe("authentication rate-limit key handling", () => {
 
     expect(decision).toMatchObject({ allowed: true, attempts: 1, retryAfterSeconds: 0 });
     expect(query).toHaveBeenCalledTimes(2);
+  });
+
+  it("cleans expired sessions through the bounded SECURITY DEFINER function", async () => {
+    const query = vi.fn()
+      .mockResolvedValueOnce({ rows: [{ key_hash: "a" }, { key_hash: "b" }] })
+      .mockResolvedValueOnce({ rows: [{ handle_hash: "c" }] })
+      .mockResolvedValueOnce({ rows: [{ deleted: 4 }] });
+    const result = await cleanupExpiredAuthRecords({ query } as unknown as DatabaseClient);
+    expect(result).toEqual({ rateLimitBucketsDeleted: 2, bootstrapAttemptsDeleted: 1, sessionsDeleted: 4 });
+    expect(query).toHaveBeenNthCalledWith(3, "SELECT public.cleanup_expired_auth_sessions() AS deleted");
   });
 
   it("fails closed when Cloudflare does not provide a client IP", async () => {

@@ -701,9 +701,9 @@ export default function App() {
           ) : renderedView === "fx-contingency" && (organization?.role === "owner" || organization?.role === "admin") ? (
             <FxContingencyPanel organizationId={organization.id} role={organization.role} />
           ) : renderedView === "organization-structure" && organization?.role === "owner" ? (
-            <OrganizationStructurePanel organizationId={organization.id} />
+            <OrganizationStructurePanel organizationId={organization.id} organizationName={organization.name} organizationSlug={organization.slug} onOrganizationRenamed={(name, slug) => setSession(current => current ? { ...current, organizations: current.organizations.map(item => item.id === organization.id ? { ...item, name, slug } : item) } : current)} />
           ) : renderedView === "register-shifts" && (organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (
-            <RegisterShiftsPanel organizationId={organization.id} userName={user.display_name} onOpenShiftClosure={(branchId, shiftId) => { setSelectedReportShift({ branchId, shiftId }); selectView("reports"); }} />
+            <RegisterShiftsPanel organizationId={organization.id} role={organization.role} userName={user.display_name} onOpenShiftClosure={(branchId, shiftId) => { setSelectedReportShift({ branchId, shiftId }); selectView("reports"); }} />
           ) : (
             <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {greetingName}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo.</p></div></section>
           )}

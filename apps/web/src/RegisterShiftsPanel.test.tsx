@@ -53,7 +53,7 @@ afterEach(async () => {
 
 describe("Register shifts workspace", () => {
   it("loads assigned branches and registers, opens a shift, then closes it", async () => {
-    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); });
     await settle();
     expect(container.textContent).toContain("Prepara tu caja");
     expect(container.textContent).toContain("Principal");
@@ -102,7 +102,7 @@ describe("Register shifts workspace", () => {
       if (url.pathname.endsWith("/registers")) return jsonResponse({ items: [register] });
       return jsonResponse({}, 200);
     });
-    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); });
     await settle();
     const input = container.querySelector<HTMLInputElement>(".register-shift-form input");
     const button = [...container.querySelectorAll("button")].find((item) => item.textContent === "Abrir turno");
@@ -131,7 +131,7 @@ describe("Register shifts workspace", () => {
       if (url.pathname.endsWith("/registers")) return jsonResponse({ items: [register] });
       return jsonResponse({}, 200);
     });
-    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); });
     await settle();
     const inputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-form input")];
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
@@ -149,7 +149,7 @@ describe("Register shifts workspace", () => {
   });
 
   it("starts opening cash inputs empty with zero placeholders", async () => {
-    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); }); await settle();
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); }); await settle();
     const inputs=[...container.querySelectorAll<HTMLInputElement>(".register-shift-form-grid input")];
     expect(inputs).toHaveLength(2); expect(inputs[0]!.value).toBe(""); expect(inputs[1]!.value).toBe("");
     expect(inputs[0]!.placeholder).toBe("0.00"); expect(inputs[1]!.placeholder).toBe("0.00");
@@ -163,13 +163,52 @@ describe("Register shifts workspace", () => {
     expect(payload.opening_cash_usd).toBe("0.00"); expect(payload.opening_cash_ves).toBe("0.00");
   });
 
-  it("keeps the opening action available in the shift workspace", async () => { await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); }); await settle(); const open=[...container.querySelectorAll("button")].find(x=>x.textContent==="Abrir turno"); expect(open).toBeTruthy(); expect(open?.className).toContain("register-shifts-primary"); });
+  it("keeps the opening action available in the shift workspace", async () => { await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); }); await settle(); const open=[...container.querySelectorAll("button")].find(x=>x.textContent==="Abrir turno"); expect(open).toBeTruthy(); expect(open?.className).toContain("register-shifts-primary"); });
 
   it("shows a safe message when the API denies branch access", async () => {
     vi.mocked(fetch).mockImplementationOnce(async () => jsonResponse({ message: "Forbidden" }, 403));
-    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} userName="Ana Pérez" />); });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); });
     await settle();
     expect(container.textContent).toContain("no tiene una sucursal habilitada");
     expect(container.querySelector('[role="alert"]')).toBeTruthy();
   });
+
+  it("allows owner and admin to force-close an open branch shift with audited reason", async () => {
+    const open = { id: shiftId, cashier_user_id: openedShift.cashier_user_id, cashier_name: "Ana Pérez", register_name: "Caja 1", opened_at: openedShift.opened_at, opening_cash_usd: "20.0000", opening_cash_ves: "500.00" };
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), "https://micro-app.test");
+      if (url.pathname.endsWith("/register-shifts/branches")) return jsonResponse({ items: [branch] });
+      if (url.pathname.endsWith("/register-shifts/open")) return jsonResponse({ items: [open] });
+      if (url.pathname.endsWith("/register-shifts/current")) return jsonResponse({ shift: null });
+      if (url.pathname.endsWith("/registers")) return jsonResponse({ items: [register] });
+      if (url.pathname.endsWith("/force-close") && init?.method === "POST") return jsonResponse({ shift: {}, force_closed: true });
+      return jsonResponse({}, 200);
+    });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="admin" userName="Admin" />); });
+    await settle();
+    expect(container.textContent).toContain("Turnos abiertos de la sucursal");
+    expect(container.textContent).toContain("Ana Pérez");
+    expect(container.textContent).toContain("Cierre forzado");
+    const inputs = [...container.querySelectorAll<HTMLInputElement>(".register-shift-values .register-shift-form input")];
+    const reason = container.querySelector<HTMLTextAreaElement>(".register-shift-values .register-shift-form textarea");
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (inputs.length !== 2 || !reason || !setter) throw new Error("Forced-close inputs not found");
+    await act(async () => {
+      setter.call(inputs[0]!, "25.50"); inputs[0]!.dispatchEvent(new Event("input", { bubbles: true }));
+      setter.call(inputs[1]!, "600.00"); inputs[1]!.dispatchEvent(new Event("input", { bubbles: true }));
+      const textSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+      textSetter?.call(reason, "Cajero no disponible para cierre");
+      reason.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const button = [...container.querySelectorAll("button")].find(item => item.textContent === "Cerrar turno y auditar");
+    if (!button) throw new Error("Forced-close action not found");
+    await act(async () => { button.click(); });
+    await settle();
+    const post = vi.mocked(fetch).mock.calls.find(([input, init]) => new URL(String(input), "https://micro-app.test").pathname.endsWith("/force-close") && init?.method === "POST");
+    expect(post).toBeTruthy();
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({
+      closing_cash_usd: "25.50", closing_cash_ves: "600.00", reason: "Cajero no disponible para cierre",
+    });
+  });
+
 });

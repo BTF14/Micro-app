@@ -53,6 +53,9 @@ test("owner can open and explicitly close their own register shift from the work
         body: JSON.stringify({ items: [{ id: branchId, name: "Sucursal Centro", slug: "centro" }] }),
       });
     }
+    if (method === "GET" && path.endsWith("/register-shifts/open")) {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
+    }
     if (method === "GET" && path.endsWith("/register-shifts/current")) {
       return route.fulfill({
         status: 200,
@@ -88,7 +91,7 @@ test("owner can open and explicitly close their own register shift from the work
   await page.getByRole("button", { name: /caja y turnos/i }).click();
 
   await expect(page.getByRole("heading", { name: "Turnos de caja" })).toBeVisible();
-  await expect(page.getByLabel("Sucursal")).toHaveValue(branchId);
+  await expect(page.locator(".register-shifts-panel select").first()).toHaveValue(branchId);
   await page.getByLabel("Fondo inicial USD").fill("50.0000");
   await page.getByLabel("Fondo inicial VES").fill("1000.00");
   await page.getByRole("button", { name: "Abrir turno" }).click();
@@ -97,7 +100,7 @@ test("owner can open and explicitly close their own register shift from the work
   await expect(page.getByText("Turno abierto", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Conteo final USD")).toHaveValue("");
   await expect(page.getByLabel("Conteo final VES")).toHaveValue("");
-  await expect(page.getByLabel("Sucursal")).toBeDisabled();
+  await expect(page.locator(".register-shifts-panel select").first()).toBeDisabled();
 
   expect(openingPayload).toEqual({
     register_id: registerId,

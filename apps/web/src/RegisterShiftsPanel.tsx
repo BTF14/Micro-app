@@ -6,7 +6,8 @@ import "./register-shifts.css";
 type Branch = { id: string; name: string; slug: string };
 type Register = { id: string; name: string; code: string };
 type Shift = { id: string; organizationId: string; branchId: string; registerId: string; cashierUserId: string; openedAt: string; openingCashUsd: string; openingCashVes: string };
-type RegisterShiftsPanelProps = { organizationId: string; userName: string; onOpenShiftClosure?: (branchId: string, shiftId: string) => void };
+type OpenShift = { id: string; cashier_user_id: string; cashier_name: string; register_name: string; opened_at: string; opening_cash_usd: string; opening_cash_ves: string };
+type RegisterShiftsPanelProps = { organizationId: string; role: string; userName: string; onOpenShiftClosure?: (branchId: string, shiftId: string) => void };
 
 function money(value: string): string {
   try { return formatLocalizedDecimal(value, 18, 4, 2); }
@@ -25,13 +26,15 @@ function normalizeOpenedShift(value: Record<string, unknown>): Shift {
   };
 }
 
-export default function RegisterShiftsPanel({ organizationId, userName, onOpenShiftClosure }: RegisterShiftsPanelProps) {
+export default function RegisterShiftsPanel({ organizationId, role, userName, onOpenShiftClosure }: RegisterShiftsPanelProps) {
   const [lastClosedShift, setLastClosedShift] = useState<{ branchId: string; id: string } | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState("");
   const [registers, setRegisters] = useState<Register[]>([]);
   const [registerId, setRegisterId] = useState("");
   const [shift, setShift] = useState<Shift | null>(null);
+  const [openShifts, setOpenShifts] = useState<OpenShift[]>([]);
+  const [forceDrafts, setForceDrafts] = useState<Record<string,{usd:string;ves:string;reason:string}>>({});
   const [openingUsd, setOpeningUsd] = useState("");
   const [openingVes, setOpeningVes] = useState("");
   const [closingUsd, setClosingUsd] = useState("");
@@ -46,16 +49,18 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
   const loadBranchState = useCallback(async (selectedBranchId: string) => {
     if (!selectedBranchId) return;
     const root = `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(selectedBranchId)}`;
-    const [registerResult, shiftResult] = await Promise.all([
+    const [registerResult, shiftResult, openResult] = await Promise.all([
       apiRequest<{ items: Register[] }>(root + "/registers"),
       apiRequest<{ shift: Shift | null }>(root + "/register-shifts/current"),
+      role === "owner" || role === "admin" ? apiRequest<{ items: OpenShift[] }>(root + "/register-shifts/open") : Promise.resolve({ items: [] as OpenShift[] }),
     ]);
     setRegisters(registerResult.items);
     setShift(shiftResult.shift);
+    setOpenShifts(openResult.items);
     setRegisterId(registerResult.items[0]?.id ?? "");
     setClosingUsd("");
     setClosingVes("");
-  }, [organizationId]);
+  }, [organizationId, role]);
 
   const load = useCallback(async () => {
     setLoading(true); setError(""); setLoadError("");
@@ -102,6 +107,29 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
     finally { setSaving(false); }
   }
 
+
+  function updateForceDraft(shiftId: string, field: "usd" | "ves" | "reason", value: string) {
+    setForceDrafts(current => {
+      const previous = current[shiftId] ?? { usd: "", ves: "", reason: "" };
+      return { ...current, [shiftId]: { ...previous, [field]: value } };
+    });
+  }
+  async function forceCloseShift(openShift: OpenShift, event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const draft = forceDrafts[openShift.id] ?? { usd: "", ves: "", reason: "" };
+    setSaving(true); setError(""); setNotice("");
+    try {
+      await apiRequest(
+        `/api/orgs/${encodeURIComponent(organizationId)}/branches/${encodeURIComponent(branchId)}/register-shifts/${encodeURIComponent(openShift.id)}/force-close`,
+        { method: "POST", body: JSON.stringify({ closing_cash_usd: normalizeDecimalInput(draft.usd), closing_cash_ves: normalizeDecimalInput(draft.ves), reason: draft.reason.trim() }) },
+      );
+      setNotice(`Turno de ${openShift.cashier_name} cerrado de forma forzada y auditada.`);
+      setForceDrafts(current => { const next = { ...current }; delete next[openShift.id]; return next; });
+      await loadBranchState(branchId);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo cerrar el turno de forma forzada."); }
+    finally { setSaving(false); }
+  }
+
   async function closeShift(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!confirmClose) { setConfirmClose(true); return; }
@@ -132,6 +160,27 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
         <>
           {branches.length > 0 && <label className="register-shifts-field"><span>Sucursal</span><select value={branchId} onChange={(event) => void changeBranch(event.target.value)} disabled={saving || Boolean(shift)}>{branches.map((branch) => <option value={branch.id} key={branch.id}>{branch.name}</option>)}</select></label>}
           {branches.length === 0 && !loadError && <p className="register-shifts-empty">No hay sucursales activas asignadas a tu usuario.</p>}
+          {branchId && !loadError && (role === "owner" || role === "admin") && (
+            <section className="register-shift-card" aria-labelledby="open-shifts-title">
+              <h2 id="open-shifts-title">Turnos abiertos de la sucursal</h2>
+              {openShifts.length === 0 && <p className="register-shifts-empty">No hay turnos abiertos en esta sucursal.</p>}
+              {openShifts.map(openShift => {
+                const draft = forceDrafts[openShift.id] ?? { usd: "", ves: "", reason: "" };
+                return <article className="register-shift-values" key={openShift.id}>
+                  <div><dt>Cajero</dt><dd>{openShift.cashier_name}</dd></div>
+                  <div><dt>Caja</dt><dd>{openShift.register_name}</dd></div>
+                  <div><dt>Abierto</dt><dd>{dateTime(openShift.opened_at)}</dd></div>
+                  <form className="register-shift-form" onSubmit={event => void forceCloseShift(openShift,event)}>
+                    <h3>Cierre forzado</h3>
+                    <label className="register-shifts-field"><span>Efectivo físico USD</span><input inputMode="decimal" required value={draft.usd} onChange={e=>updateForceDraft(openShift.id,"usd",e.target.value)} /></label>
+                    <label className="register-shifts-field"><span>Efectivo físico VES</span><input inputMode="decimal" required value={draft.ves} onChange={e=>updateForceDraft(openShift.id,"ves",e.target.value)} /></label>
+                    <label className="register-shifts-field"><span>Motivo obligatorio</span><textarea required minLength={3} maxLength={300} value={draft.reason} onChange={e=>updateForceDraft(openShift.id,"reason",e.target.value)} /></label>
+                    <button type="submit" className="primary-button" disabled={saving}>Cerrar turno y auditar</button>
+                  </form>
+                </article>;
+              })}
+            </section>
+          )}
           {branchId && !loadError && (shift ? (
             <div className="register-shift-card">
               <div className="register-shift-card-head"><div><span className="register-shift-state open">Turno abierto</span><h2>Tu caja está en operación</h2></div><span className="register-shift-time">Desde {dateTime(shift.openedAt)}</span></div>
@@ -144,7 +193,7 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
                 <button className="register-shifts-primary" type="submit" disabled={saving}>{saving ? "Guardando…" : confirmClose ? "Confirmar cierre" : "Revisar cierre"}</button>
               </form>
             </div>
-          ) : (
+          ) : (role === "cashier" || role === "owner" || role === "admin") ? (
             <div className="register-shift-card"><span className="register-shift-state closed">Sin turno abierto</span><h2>Prepara tu caja</h2>
               {registers.length === 0 ? <p className="register-shifts-empty">No hay cajas activas en esta sucursal. Un administrador debe configurar una caja antes de abrir un turno.</p> : (
                 <form className="register-shift-form" onSubmit={openShift}>
@@ -157,6 +206,8 @@ export default function RegisterShiftsPanel({ organizationId, userName, onOpenSh
                 </form>
               )}
             </div>
+          ) : (
+            <div className="register-shift-card"><h2>Vista administrativa</h2><p>Owner y Admin pueden consultar los turnos abiertos de esta sucursal y ejecutar cierres forzados auditados desde el panel superior.</p></div>
           ))}
         </>
       )}

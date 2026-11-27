@@ -76,14 +76,13 @@ async function authorizeOwnShift(
   // Owner/Admin have organization-wide branch scope, but owning a shift always
   // requires an explicit active branch assignment just like Cashier. This is a
   // read-only preflight; opening/closing SQL revalidates under its own locks.
-  const assignment = await tx.query<{ active: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM public.branch_memberships
-        WHERE organization_id = $1 AND branch_id = $2 AND user_id = $3 AND is_active
-     ) AS active`,
-    [branch.organizationId, branch.branchId, branch.userId],
-  );
-  if (!assignment.rows[0]?.active) return { kind: "branch_denied" };
+  if ((branch.organizationRole !== "owner" && branch.organizationRole !== "admin") || operation !== "register.shift.read_own") {
+    const assignment = await tx.query<{ active: boolean }>(
+      `SELECT EXISTS (SELECT 1 FROM public.branch_memberships WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3 AND is_active) AS active`,
+      [branch.organizationId, branch.branchId, branch.userId],
+    );
+    if (!assignment.rows[0]?.active) return { kind: "branch_denied" };
+  }
   return { kind: "ok", branch };
 }
 
@@ -95,12 +94,14 @@ function authFailure(c: Context<{ Bindings: Bindings }>, kind: AuthKind) {
 
 function readFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
   const code = postgresErrorCode(error);
-  if (!code || !["22023", "23503", "23505", "23514"].includes(code)) {
+  if (!code || !["22023", "23503", "23505", "23514", "55P03"].includes(code)) {
     console.error({ event: "REGISTER_SHIFT_DATABASE_FAILURE", code: code ?? "UNKNOWN" });
   }
   if (code && ["42P01", "42883", "42703", "42501"].includes(code)) {
     return c.json({ error: "REGISTER_SHIFT_NOT_ENABLED", message: "La operación de turnos todavía no está habilitada en esta base de datos." }, 503);
   }
+  if (code === "55P03") return c.json({ error: "SHIFT_LOCK_TIMEOUT", message: "El turno está siendo actualizado por otra operación. Espera unos segundos e inténtalo de nuevo." }, 409);
+  if (code === "P0002") return c.json({ error: "SHIFT_NOT_OPEN", message: "El turno ya no está abierto o no pertenece a esta sucursal." }, 409);
   if (code === "22023") return c.json({ error: "INVALID_SHIFT_INPUT", message: "Los importes del turno no son válidos." }, 400);
   if (code === "23505") return c.json({ error: "SHIFT_ALREADY_OPEN", message: "Ya existe un turno abierto para esta caja o usuario." }, 409);
   if (code === "23514" || code === "23503") return c.json({ error: "SHIFT_SCOPE_CONFLICT", message: "No se pudo completar la operación de turno con el alcance actual." }, 409);
@@ -184,12 +185,12 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
         const rows = await tx.query<BranchRow>(
           `SELECT b.id, b.name, b.slug
              FROM public.branches b
-             JOIN public.branch_memberships bm
-               ON bm.organization_id = b.organization_id AND bm.branch_id = b.id
-            WHERE b.organization_id = $1 AND bm.user_id = $2
-              AND b.is_active = true AND bm.is_active = true
-            ORDER BY lower(b.name), b.id`,
-          [authorization.context.organizationId, authorization.context.userId],
+             LEFT JOIN public.branch_memberships bm
+               ON bm.organization_id=b.organization_id AND bm.branch_id=b.id AND bm.user_id=$2
+            WHERE b.organization_id=$1 AND b.is_active=true
+              AND ($3 IN ('owner','admin') OR bm.is_active=true)
+            ORDER BY lower(b.name),b.id`,
+          [authorization.context.organizationId, authorization.context.userId, authorization.context.role],
         );
         return { kind: "ok" as const, items: rows.rows };
       }));
@@ -206,7 +207,7 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
     if (!token) { clearSessionCookie(c); return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401); }
     try {
       const result = await withDatabaseClient(c.env.DATABASE_URL, (client) => withDatabaseTransaction(client, async (tx) => {
-        const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.open_own");
+        const auth = await authorizeOwnShift(tx, token, organizationId, branchId, "register.shift.read_own");
         if (auth.kind !== "ok") return auth;
         const rows = await tx.query<RegisterRow>(
           `SELECT id, name, code FROM public.registers
@@ -321,4 +322,67 @@ export function registerRegisterShiftRoutes(app: Hono<{ Bindings: Bindings }>): 
       return c.json({ shift: result.shift, replayed: result.replayed }, 200);
     } catch (error) { return readFailure(c, error); }
   });
+
+  app.get("/api/orgs/:organizationId/branches/:branchId/register-shifts/open",async c=>{
+    c.header("Cache-Control","private, no-store");
+    const {organizationId,branchId}=c.req.param();
+    if(!UUID_PATTERN.test(organizationId)||!UUID_PATTERN.test(branchId))return c.json({error:"INVALID_RESOURCE",message:"Los identificadores no son válidos."},400);
+    const token=sessionToken(c);if(!token){clearSessionCookie(c);return c.json({error:"UNAUTHENTICATED",message:"Inicia sesión para continuar."},401);}
+    try{
+      const result=await withDatabaseClient(c.env.DATABASE_URL,client=>withDatabaseTransaction(client,async tx=>{
+        const auth=await authorizeBranchOperation(tx,token,organizationId,branchId,"register.shift.read_all",false);
+        if(!auth.allowed)return {kind:auth.reason==="unauthenticated_or_out_of_scope"?"unauthenticated" as const:auth.reason==="branch_out_of_scope"?"branch_denied" as const:"forbidden" as const};
+        const rows=await tx.query(
+          `SELECT s.id,s.organization_id,s.branch_id,s.register_id,r.name AS register_name,
+                  s.cashier_user_id,u.display_name AS cashier_name,s.opened_at,
+                  s.opening_cash_usd::text AS opening_cash_usd,s.opening_cash_ves::text AS opening_cash_ves
+             FROM public.register_shifts s
+             JOIN public.registers r ON r.organization_id=s.organization_id AND r.branch_id=s.branch_id AND r.id=s.register_id
+             JOIN public.app_users u ON u.id=s.cashier_user_id
+            WHERE s.organization_id=$1 AND s.branch_id=$2 AND s.closed_at IS NULL
+            ORDER BY s.opened_at,s.id`,
+          [auth.context.organizationId,auth.context.branchId],
+        );
+        return {kind:"ok" as const,items:rows.rows};
+      }));
+      if(result.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);
+      if(result.kind==="branch_denied")return c.json({error:"BRANCH_FORBIDDEN"},403);
+      if(result.kind==="forbidden")return c.json({error:"FORBIDDEN",message:"Solo Owner y Admin pueden consultar todos los turnos."},403);
+      return c.json({items:result.items},200);
+    }catch(error){return readFailure(c,error);}
+  });
+
+  app.post("/api/orgs/:organizationId/branches/:branchId/register-shifts/:shiftId/force-close",async c=>{
+    c.header("Cache-Control","private, no-store");
+    const mutationError=checkMutationRequest(c);if(mutationError)return mutationError;
+    const {organizationId,branchId,shiftId}=c.req.param();
+    if(![organizationId,branchId,shiftId].every(id=>UUID_PATTERN.test(id)))return c.json({error:"INVALID_RESOURCE",message:"Los identificadores no son válidos."},400);
+    const token=sessionToken(c);if(!token){clearSessionCookie(c);return c.json({error:"UNAUTHENTICATED",message:"Inicia sesión para continuar."},401);}
+    const parsed=await parseJsonBody(c.req.raw);
+    if(parsed.kind==="too_large")return c.json({error:"PAYLOAD_TOO_LARGE"},413);
+    if(parsed.kind==="invalid")return c.json({error:"INVALID_JSON"},400);
+    const body=parsed.value&&typeof parsed.value==="object"&&!Array.isArray(parsed.value)?parsed.value as Record<string,unknown>:null;
+    if(!body||Object.keys(body).some(key=>!["closing_cash_usd","closing_cash_ves","reason"].includes(key)))return c.json({error:"INVALID_FORCE_CLOSE_INPUT"},400);
+    const amounts=parseShiftClosingInput({closing_cash_usd:body.closing_cash_usd,closing_cash_ves:body.closing_cash_ves});
+    const reason=typeof body.reason==="string"?body.reason.trim():"";
+    if(!amounts||reason.length<3||reason.length>300||/[\u0000-\u001f\u007f]/.test(reason))return c.json({error:"INVALID_FORCE_CLOSE_INPUT",message:"Indica importes no negativos y un motivo de 3 a 300 caracteres."},400);
+    const limited=await enforceRuntimeWriteRateLimit(c,"register-shift:force-close",5);if(limited)return limited;
+    try{
+      const result=await withDatabaseClient(c.env.DATABASE_URL,client=>withDatabaseTransaction(client,async tx=>{
+        const auth=await authorizeBranchOperation(tx,token,organizationId,branchId,"register.shift.force_close",false);
+        if(!auth.allowed)return {kind:auth.reason==="unauthenticated_or_out_of_scope"?"unauthenticated" as const:auth.reason==="branch_out_of_scope"?"branch_denied" as const:"forbidden" as const};
+        const closed=await tx.query(
+          "SELECT * FROM public.force_close_register_shift($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::numeric,$6::numeric,$7::text)",
+          [auth.context.organizationId,auth.context.branchId,shiftId,auth.context.userId,amounts.cashUsd,amounts.cashVes,reason],
+        );
+        return {kind:"ok" as const,shift:closed.rows[0]};
+      }));
+      if(result.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);
+      if(result.kind==="branch_denied")return c.json({error:"BRANCH_FORBIDDEN"},403);
+      if(result.kind==="forbidden")return c.json({error:"FORBIDDEN",message:"Solo Owner y Admin pueden cerrar turnos de forma forzada."},403);
+      if(!result.shift)return c.json({error:"SHIFT_NOT_OPEN",message:"El turno ya no está abierto o no pertenece a esta sucursal."},409);
+      return c.json({shift:result.shift,force_closed:true},200);
+    }catch(error){return readFailure(c,error);}
+  });
+
 }

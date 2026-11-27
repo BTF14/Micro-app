@@ -30,6 +30,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
   let runtime: Client;
   const organizations: string[] = [];
   const userIds: string[] = [];
+  const allowlistEmails: string[] = [];
 
   beforeAll(async () => {
     admin = new Client({ connectionString: adminUrl });
@@ -47,6 +48,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
           await admin.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT user_id FROM organization_members WHERE organization_id=$1)", [organizationId]);
           await admin.query("DELETE FROM register_shifts WHERE organization_id=$1", [organizationId]);
           await admin.query("DELETE FROM audit_logs WHERE organization_id=$1", [organizationId]);
+          await admin.query("DELETE FROM organization_invitations WHERE organization_id=$1", [organizationId]);
           await admin.query("DELETE FROM warehouses WHERE organization_id=$1", [organizationId]);
           await admin.query("DELETE FROM registers WHERE organization_id=$1", [organizationId]);
           await admin.query("DELETE FROM branch_memberships WHERE organization_id=$1", [organizationId]);
@@ -58,6 +60,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
         await admin.query("ALTER TABLE public.audit_logs ENABLE TRIGGER USER");
         await admin.query("ALTER TABLE public.register_shifts ENABLE TRIGGER USER");
       }
+      if (allowlistEmails.length) await admin.query("DELETE FROM auth_allowlist WHERE lower(email)=ANY($1::text[])", [allowlistEmails.map((email) => email.toLowerCase())]);
       if (userIds.length) await admin.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [userIds]);
       await admin.end();
     }
@@ -240,6 +243,142 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
         branch_memberships: { [northBranch]: true, [southBranch]: false },
       })]),
     });
+  });
+
+  it("renames the organization and manages invitations and linked member access as Owner only", async () => {
+    const f = await seed();
+    const root = "/api/orgs/" + f.organizationId;
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    const renamedName = "Renamed Structure " + suffix;
+    const renamedSlug = "renamed-structure-" + suffix;
+    const rename = await request(f, "owner", "PATCH", root, { name: renamedName, slug: renamedSlug });
+    expect(rename.status).toBe(200);
+    expect(await rename.json()).toMatchObject({ organization: { name: renamedName, slug: renamedSlug, is_active: true } });
+    const deniedRename = await request(f, "admin", "PATCH", root, { name: "Forbidden", slug: "forbidden-" + suffix });
+    expect(deniedRename.status).toBe(403);
+
+    const pendingEmail = "pending-" + suffix + "@example.test";
+    allowlistEmails.push(pendingEmail);
+    const invite = await request(f, "owner", "POST", root + "/members/invite", {
+      email: pendingEmail.toUpperCase(), role: "cashier", note: "Invitación de integración",
+    });
+    expect(invite.status).toBe(201);
+    const invitation = await invite.json() as { invitation_id: string; user_id: string | null; status: string };
+    expect(invitation).toMatchObject({ invitation_id: expect.any(String), user_id: null, status: "pending" });
+    const structure = await request(f, "owner", "GET", root + "/structure");
+    expect(structure.status).toBe(200);
+    expect(structure.headers.get("Cache-Control")).toContain("no-store");
+    expect(await structure.json()).toMatchObject({
+      invitations: expect.arrayContaining([expect.objectContaining({ id: invitation.invitation_id, email: pendingEmail, role: "cashier" })]),
+    });
+    expect((await request(f, "owner", "POST", root + "/members/invite", {
+      email: pendingEmail, role: "cashier",
+    })).status).toBe(409);
+    expect((await request(f, "admin", "POST", root + "/members/invite", {
+      email: "denied-" + suffix + "@example.test", role: "cashier",
+    })).status).toBe(403);
+    const revoke = await request(f, "owner", "POST", root + "/invitations/" + invitation.invitation_id + "/revoke", {});
+    expect(revoke.status).toBe(200);
+    const revokedAllowlist = await admin.query<{ is_active: boolean }>(
+      "SELECT is_active FROM auth_allowlist WHERE lower(email)=lower($1)", [pendingEmail],
+    );
+    expect(revokedAllowlist.rows).toEqual([{ is_active: false }]);
+
+    const linkedEmail = "linked-" + suffix + "@example.test";
+    allowlistEmails.push(linkedEmail);
+    const linked = await admin.query<{ id: string }>(
+      "INSERT INTO app_users (email,display_name,google_sub,email_verified_at) VALUES ($1,$2,$3,now()) RETURNING id",
+      [linkedEmail, "Linked User", "google-sub-" + suffix],
+    );
+    userIds.push(linked.rows[0]!.id);
+    const added = await request(f, "owner", "POST", root + "/members/invite", {
+      email: linkedEmail, role: "inventory",
+    });
+    expect(added.status).toBe(201);
+    const addedMember = await admin.query<{ role: string; is_active: boolean }>(
+      "SELECT role,is_active FROM organization_members WHERE organization_id=$1 AND user_id=$2",
+      [f.organizationId, linked.rows[0]!.id],
+    );
+    expect(addedMember.rows).toEqual([{ role: "inventory", is_active: true }]);
+    const disabled = await request(f, "owner", "PATCH", root + "/members/" + linked.rows[0]!.id, {
+      role: "admin", is_active: false,
+    });
+    expect(disabled.status).toBe(200);
+    const disabledMember = await admin.query<{ role: string; is_active: boolean }>(
+      "SELECT role,is_active FROM organization_members WHERE organization_id=$1 AND user_id=$2",
+      [f.organizationId, linked.rows[0]!.id],
+    );
+    expect(disabledMember.rows).toEqual([{ role: "admin", is_active: false }]);
+    const disabledAllowlist = await admin.query<{ is_active: boolean }>(
+      "SELECT is_active FROM auth_allowlist WHERE lower(email)=lower($1)", [linkedEmail],
+    );
+    expect(disabledAllowlist.rows).toEqual([{ is_active: false }]);
+
+    const unlinkedEmail = "unlinked-" + suffix + "@example.test";
+    allowlistEmails.push(unlinkedEmail);
+    const unlinked = await admin.query<{ id: string }>(
+      "INSERT INTO app_users (email,display_name) VALUES ($1,$2) RETURNING id",
+      [unlinkedEmail, "Unlinked Legacy User"],
+    );
+    userIds.push(unlinked.rows[0]!.id);
+    const d7 = await request(f, "owner", "POST", root + "/members/invite", {
+      email: unlinkedEmail, role: "cashier",
+    });
+    expect(d7.status).toBe(409);
+    expect(await d7.json()).toMatchObject({ error: "STRUCTURE_CONFLICT" });
+  });
+
+  it("blocks organization-member deactivation while a cashier shift is open, then revokes access", async () => {
+    const f = await seed();
+    const root = "/api/orgs/" + f.organizationId;
+    const branchResponse = await request(f, "owner", "POST", root + "/branches", { name: "Member Branch", slug: "member-branch" });
+    expect(branchResponse.status).toBe(201);
+    const branchId = (await branchResponse.json() as { branch: { id: string } }).branch.id;
+    const registerResponse = await request(f, "owner", "POST", root + "/branches/" + branchId + "/registers", { name: "Member Till", code: "member-till" });
+    expect(registerResponse.status).toBe(201);
+    const registerId = (await registerResponse.json() as { register: { id: string } }).register.id;
+    expect((await request(f, "owner", "PATCH", root + "/branches/" + branchId + "/members/" + f.users.cashier.id, { is_active: true })).status).toBe(200);
+
+    const cashierEmail = await admin.query<{ email: string }>("SELECT email FROM app_users WHERE id=$1", [f.users.cashier.id]);
+    allowlistEmails.push(cashierEmail.rows[0]!.email);
+    await admin.query("INSERT INTO auth_allowlist (email,added_by) VALUES ($1,$2)", [cashierEmail.rows[0]!.email, f.users.owner.id]);
+    const opened = await request(f, "cashier", "POST", root + "/branches/" + branchId + "/register-shifts", {
+      register_id: registerId, opening_cash_usd: "0.0000", opening_cash_ves: "0.00",
+    });
+    expect(opened.status).toBe(201);
+    const shiftId = (await opened.json() as { shift: { id: string } }).shift.id;
+
+    const blocked = await request(f, "owner", "PATCH", root + "/members/" + f.users.cashier.id, {
+      role: "inventory", is_active: false,
+    });
+    expect(blocked.status).toBe(409);
+    expect(await blocked.json()).toMatchObject({ error: "STRUCTURE_CONFLICT" });
+
+    const closed = await request(f, "cashier", "POST", root + "/branches/" + branchId + "/register-shifts/" + shiftId + "/close", {
+      closing_cash_usd: "0.0000", closing_cash_ves: "0.00",
+    });
+    expect(closed.status).toBe(200);
+    const deactivated = await request(f, "owner", "PATCH", root + "/members/" + f.users.cashier.id, {
+      role: "inventory", is_active: false,
+    });
+    expect(deactivated.status).toBe(200);
+    const member = await admin.query<{ role: string; is_active: boolean }>(
+      "SELECT role,is_active FROM organization_members WHERE organization_id=$1 AND user_id=$2",
+      [f.organizationId, f.users.cashier.id],
+    );
+    expect(member.rows).toEqual([{ role: "inventory", is_active: false }]);
+    const branchMember = await admin.query<{ is_active: boolean }>(
+      "SELECT is_active FROM branch_memberships WHERE organization_id=$1 AND branch_id=$2 AND user_id=$3",
+      [f.organizationId, branchId, f.users.cashier.id],
+    );
+    expect(branchMember.rows).toEqual([{ is_active: false }]);
+    const access = await admin.query<{ is_active: boolean; revoked: boolean }>(
+      `SELECT a.is_active,s.revoked_at IS NOT NULL AS revoked
+         FROM auth_allowlist a JOIN auth_sessions s ON s.user_id=$2
+        WHERE lower(a.email)=lower($1) ORDER BY s.created_at DESC LIMIT 1`,
+      [cashierEmail.rows[0]!.email, f.users.cashier.id],
+    );
+    expect(access.rows).toEqual([{ is_active: false, revoked: true }]);
   });
 
   it("keeps runtime direct DML denied on organization structure tables", async () => {

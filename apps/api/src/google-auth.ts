@@ -368,7 +368,7 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
 
     const sub = typeof userInfo.sub === "string" ? userInfo.sub : "";
     const rawEmail = typeof userInfo.email === "string" ? userInfo.email : "";
-    const emailVerified = userInfo.email_verified === true || userInfo.email_verified === "true";
+    const emailVerified = userInfo.email_verified === true;
     const displayName = typeof userInfo.name === "string" && userInfo.name.trim() ? userInfo.name.trim() : rawEmail;
     const email = rawEmail.trim().toLowerCase();
 
@@ -431,65 +431,33 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
         // No existing user: require the opaque, expiring handoff that was
         // created only after the bootstrap secret was validated on POST.
         if (!bootstrapHandleHash) {
-          return { kind: "not_provisioned" as const };
+          // A first login may provision only a pending organization invitation.
+          // The database function rechecks the active allowlist row, locks all
+          // matching invitations and atomically creates the Google-linked user
+          // plus memberships. Existing unlinked users were rejected above (D7).
+          const invitations = await client.query<{ user_id: string; organization_id: string }>(
+            "SELECT * FROM public.consume_google_login_invitation($1::text,$2::text,$3::text)",
+            [email, sub, displayName],
+          );
+          const invitedUserId = invitations.rows[0]?.user_id;
+          if (!invitedUserId) return { kind: "not_provisioned" as const };
+          const token = await createSession(client, invitedUserId);
+          return { kind: "ok" as const, token };
         }
 
         return withDatabaseTransaction(client, async (tx) => {
-          // Handle and OAuth state must match one unexpired, unconsumed row,
-          // consumed in the same transaction that creates the owner.
-          const handoff = await tx.query<{
-            organization_name: string;
-            organization_slug: string;
-          }>(
-            `SELECT organization_name, organization_slug
-               FROM auth_bootstrap_attempts
-              WHERE handle_hash = $1
-                AND state_hash = $2
-                AND expires_at > now()
-                AND consumed_at IS NULL
-              FOR UPDATE`,
-            [bootstrapHandleHash, bootstrapStateHash],
+          const bootstrap = await tx.query<{ status: string; user_id: string | null; organization_id: string | null }>(
+            "SELECT * FROM public.consume_auth_bootstrap($1::text,$2::text,$3::text,$4::text,$5::text)",
+            [bootstrapHandleHash, bootstrapStateHash, email, sub, displayName],
           );
-          if (handoff.rows.length === 0) {
+          const result = bootstrap.rows[0];
+          if (!result || result.status === "not_provisioned" || result.status === "account_exists") {
             return { kind: "not_provisioned" as const };
           }
-          await tx.query(
-            "UPDATE auth_bootstrap_attempts SET consumed_at = now() WHERE handle_hash = $1",
-            [bootstrapHandleHash],
-          );
-
-          // Locks the single sentinel row so two concurrent bootstrap
-          // attempts cannot both pass the consumed_at check.
-          const bootstrapRow = await tx.query<{ consumed_at: string | null }>(
-            "SELECT consumed_at FROM auth_bootstrap WHERE id = true FOR UPDATE",
-          );
-          if (bootstrapRow.rows.length === 0 || bootstrapRow.rows[0]!.consumed_at !== null) {
-            return { kind: "bootstrap_consumed" as const };
-          }
-
-          const orgResult = await tx.query<{ id: string }>(
-            "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-            [handoff.rows[0]!.organization_name, handoff.rows[0]!.organization_slug],
-          );
-          const organizationId = orgResult.rows[0]!.id;
-
-          const userResult = await tx.query<{ id: string }>(
-            `INSERT INTO app_users (email, display_name, google_sub, email_verified_at)
-             VALUES ($1, $2, $3, now()) RETURNING id`,
-            [email, displayName, sub],
-          );
-          const userId = userResult.rows[0]!.id;
-
-          await tx.query(
-            "INSERT INTO organization_members (organization_id, user_id, role) VALUES ($1, $2, 'owner')",
-            [organizationId, userId],
-          );
-          await tx.query(
-            "UPDATE auth_bootstrap SET consumed_at = now(), consumed_by_email = $1, created_organization_id = $2 WHERE id = true",
-            [email, organizationId],
-          );
-
-          const token = await createSession(tx, userId);
+          if (result.status === "not_allowlisted") return { kind: "not_allowlisted" as const };
+          if (result.status === "bootstrap_consumed") return { kind: "bootstrap_consumed" as const };
+          if (result.status !== "created" || !result.user_id) return { kind: "not_provisioned" as const };
+          const token = await createSession(tx, result.user_id);
           return { kind: "ok" as const, token };
         });
       });

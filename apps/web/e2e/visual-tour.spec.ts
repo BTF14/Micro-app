@@ -42,6 +42,7 @@ async function installStubs(page: Page) {
       fetchedAt: "2026-11-21T13:00:00.000Z", source: "BCV", status: "current",
     });
     if (path.endsWith("/register-shifts/branches")) return json({ items: [{ id: branchId, name: "Sucursal Centro", slug: "centro" }] });
+    if (path.endsWith("/register-shifts/open")) return json({ items: [] });
     if (path.endsWith("/register-shifts/current")) return json({ shift: { ...shift, branch_id: branchId } });
     if (path.endsWith("/branches") || path.endsWith("/fx-delegated-branches")) return json({
       branches: [{ id: branchId, name: "Sucursal Centro", slug: "centro" }],

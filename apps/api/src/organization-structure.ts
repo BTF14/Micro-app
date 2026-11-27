@@ -51,7 +51,8 @@ function dbFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
   const messages: Record<string, { status: 400 | 403 | 404 | 409 | 503; error: string; message: string }> = {
     "22023": { status: 400, error: "INVALID_STRUCTURE_INPUT", message: "Los datos de la estructura no son válidos." },
     "23505": { status: 409, error: "STRUCTURE_DUPLICATE", message: "Ya existe un elemento con ese código o identificador." },
-    "23514": { status: 409, error: "STRUCTURE_CONFLICT", message: "No se puede cambiar la asignación mientras exista un turno abierto." },
+    "23514": { status: 409, error: "STRUCTURE_CONFLICT", message: "No se puede completar el cambio: existe un turno abierto o la cuenta requiere una vinculación de Google segura." },
+    "55P03": { status: 409, error: "STRUCTURE_LOCK_TIMEOUT", message: "La organización está siendo actualizada. Espera unos segundos e inténtalo de nuevo." },
     "P0002": { status: 404, error: "BRANCH_MEMBERSHIP_NOT_FOUND", message: "La asignación no existe." },
     "42501": { status: 403, error: "STRUCTURE_FORBIDDEN", message: "No tienes permiso para esta operación." },
     "42P01": { status: 503, error: "STRUCTURE_NOT_ENABLED", message: "La administración de estructura aún no está habilitada." },
@@ -95,11 +96,12 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
             ORDER BY lower(u.display_name),m.user_id`,
           [auth.context.organizationId],
         );
-        return { kind: "ok" as const, branches: branches.rows, members: members.rows };
+        const invitations = await tx.query(`SELECT id,email,role,note,invited_by_user_id,created_at FROM public.organization_invitations WHERE organization_id=$1 AND status='pending' ORDER BY created_at,id`,[auth.context.organizationId]);
+        return { kind: "ok" as const, branches: branches.rows, members: members.rows, invitations: invitations.rows };
       }));
       if (result.kind === "unauthenticated") return c.json({ error: "UNAUTHENTICATED", message: "Inicia sesión para continuar." }, 401);
       if (result.kind === "forbidden") return c.json({ error: "FORBIDDEN", message: "Solo el Owner puede administrar la estructura organizacional." }, 403);
-      return c.json({ branches: result.branches, members: result.members });
+      return c.json({ branches: result.branches, members: result.members, invitations: result.invitations });
     } catch (error) { return dbFailure(c, error); }
   });
 
@@ -197,4 +199,54 @@ export function registerOrganizationStructureRoutes(app: Hono<{ Bindings: Bindin
       return c.json({ membership: result.membership });
     } catch (error) { return dbFailure(c, error); }
   });
+
+  app.patch("/api/orgs/:organizationId",async c=>{
+    c.header("Cache-Control","private, no-store");const organizationId=c.req.param("organizationId");
+    if(!UUID.test(organizationId))return c.json({error:"INVALID_ORGANIZATION_ID"},400);
+    const guard=mutationGuard(c);if(guard)return guard;const session=token(c);
+    if(!session){clearSessionCookie(c);return c.json({error:"UNAUTHENTICATED"},401);}
+    const parsed=await readJson(c.req.raw);if(parsed.kind!=="ok")return c.json({error:parsed.kind==="large"?"PAYLOAD_TOO_LARGE":"INVALID_JSON"},parsed.kind==="large"?413:400);
+    const body=parseObject(parsed.value,["name","slug"]),name=body&&text(body.name,120),slug=body&&text(body.slug,80);
+    if(!body||!name||!slug||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.toLowerCase()))return c.json({error:"INVALID_ORGANIZATION"},400);
+    const limited=await enforceRuntimeWriteRateLimit(c,"organization:rename",5);if(limited)return limited;
+    try{const r=await withDatabaseClient(c.env.DATABASE_URL,client=>withDatabaseTransaction(client,async tx=>{
+      const a=await authorizeTenantOperation(tx,session,organizationId,"organization.rename",false);
+      if(!a.allowed)return {kind:a.reason==="operation_denied"?"forbidden" as const:"unauthenticated" as const};
+      const q=await tx.query("SELECT * FROM public.rename_organization($1::uuid,$2::uuid,$3::text,$4::text)",[a.context.organizationId,a.context.userId,name,slug]);
+      return {kind:"ok" as const,organization:q.rows[0]};
+    }));if(r.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);if(r.kind==="forbidden")return c.json({error:"FORBIDDEN"},403);return c.json({organization:r.organization});}catch(e){return dbFailure(c,e);}
+  });
+  app.post("/api/orgs/:organizationId/members/invite",async c=>{
+    c.header("Cache-Control","private, no-store");const org=c.req.param("organizationId");if(!UUID.test(org))return c.json({error:"INVALID_ORGANIZATION_ID"},400);
+    const guard=mutationGuard(c);if(guard)return guard;const session=token(c);if(!session){clearSessionCookie(c);return c.json({error:"UNAUTHENTICATED"},401);}
+    const p=await readJson(c.req.raw);if(p.kind!=="ok")return c.json({error:p.kind==="large"?"PAYLOAD_TOO_LARGE":"INVALID_JSON"},p.kind==="large"?413:400);
+    const b=parseObject(p.value,["email","role","note"]),email=b&&typeof b.email==="string"?b.email.trim().toLowerCase():"",role=b?.role,note=b?.note==null?null:text(b.note,500);
+    if(!b||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>320||!["admin","cashier","inventory"].includes(String(role))||(b.note!=null&&note===null))return c.json({error:"INVALID_INVITATION"},400);
+    const limited=await enforceRuntimeWriteRateLimit(c,"organization:member:invite",10);if(limited)return limited;
+    try{const r=await withDatabaseClient(c.env.DATABASE_URL,client=>withDatabaseTransaction(client,async tx=>{
+      const a=await authorizeTenantOperation(tx,session,org,"members.manage",false);if(!a.allowed)return {kind:a.reason==="operation_denied"?"forbidden" as const:"unauthenticated" as const};
+      const q=await tx.query("SELECT * FROM public.invite_organization_member($1::uuid,$2::uuid,$3::text,$4::text,$5::text)",[a.context.organizationId,a.context.userId,email,role,note]);return {kind:"ok" as const,row:q.rows[0]};
+    }));if(r.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);if(r.kind==="forbidden")return c.json({error:"FORBIDDEN"},403);return c.json(r.row,201);}catch(e){return dbFailure(c,e);}
+  });
+  app.patch("/api/orgs/:organizationId/members/:userId",async c=>{
+    c.header("Cache-Control","private, no-store");const {organizationId,userId}=c.req.param();if(!UUID.test(organizationId)||!UUID.test(userId))return c.json({error:"INVALID_RESOURCE"},400);
+    const guard=mutationGuard(c);if(guard)return guard;const session=token(c);if(!session){clearSessionCookie(c);return c.json({error:"UNAUTHENTICATED"},401);}
+    const p=await readJson(c.req.raw);if(p.kind!=="ok")return c.json({error:p.kind==="large"?"PAYLOAD_TOO_LARGE":"INVALID_JSON"},p.kind==="large"?413:400);
+    const b=parseObject(p.value,["role","is_active"]);if(!b||!["admin","cashier","inventory"].includes(String(b.role))||typeof b.is_active!=="boolean")return c.json({error:"INVALID_MEMBER_ACCESS"},400);
+    const limited=await enforceRuntimeWriteRateLimit(c,"organization:member:update",10);if(limited)return limited;
+    try{const r=await withDatabaseClient(c.env.DATABASE_URL,client=>withDatabaseTransaction(client,async tx=>{
+      const a=await authorizeTenantOperation(tx,session,organizationId,"members.manage",false);if(!a.allowed)return {kind:a.reason==="operation_denied"?"forbidden" as const:"unauthenticated" as const};
+      await tx.query("SELECT public.set_organization_member_access($1::uuid,$2::uuid,$3::uuid,$4::text,$5::boolean)",[a.context.organizationId,a.context.userId,userId,b.role,b.is_active]);return {kind:"ok" as const};
+    }));if(r.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);if(r.kind==="forbidden")return c.json({error:"FORBIDDEN"},403);return c.json({updated:true});}catch(e){return dbFailure(c,e);}
+  });
+  app.post("/api/orgs/:organizationId/invitations/:invitationId/revoke",async c=>{
+    c.header("Cache-Control","private, no-store");const {organizationId,invitationId}=c.req.param();if(!UUID.test(organizationId)||!UUID.test(invitationId))return c.json({error:"INVALID_RESOURCE"},400);
+    const guard=mutationGuard(c);if(guard)return guard;const session=token(c);if(!session){clearSessionCookie(c);return c.json({error:"UNAUTHENTICATED"},401);}
+    const limited=await enforceRuntimeWriteRateLimit(c,"organization:invitation:revoke",10);if(limited)return limited;
+    try{const r=await withDatabaseClient(c.env.DATABASE_URL,client=>withDatabaseTransaction(client,async tx=>{
+      const a=await authorizeTenantOperation(tx,session,organizationId,"members.manage",false);if(!a.allowed)return {kind:a.reason==="operation_denied"?"forbidden" as const:"unauthenticated" as const};
+      await tx.query("SELECT public.revoke_organization_invitation($1::uuid,$2::uuid,$3::uuid)",[a.context.organizationId,a.context.userId,invitationId]);return {kind:"ok" as const};
+    }));if(r.kind==="unauthenticated")return c.json({error:"UNAUTHENTICATED"},401);if(r.kind==="forbidden")return c.json({error:"FORBIDDEN"},403);return c.json({revoked:true});}catch(e){return dbFailure(c,e);}
+  });
+
 }

@@ -313,6 +313,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
     await cleanupClient.query("ALTER TABLE public.audit_logs DISABLE TRIGGER USER");
     try {
       await cleanupClient.query("DELETE FROM public.audit_logs WHERE organization_id IN (SELECT id FROM public.organizations WHERE name = $1)", [bootstrapOrgName]);
+      await cleanupClient.query("DELETE FROM public.platform_admins WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
       await cleanupClient.query("DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
       await cleanupClient.query("DELETE FROM organization_invitations WHERE organization_id IN (SELECT id FROM organizations WHERE name = $1)", [bootstrapOrgName]);
       await cleanupClient.query("DELETE FROM organization_members WHERE user_id IN (SELECT id FROM app_users WHERE email = $1)", [googleEmail]);
@@ -765,6 +766,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
 
   it("rejects a session when its only organization membership is inactive", async () => {
     const token = await loginGoogleSession();
+    await cleanupClient.query("DELETE FROM public.platform_admins WHERE user_id=(SELECT id FROM app_users WHERE lower(email)=lower($1))", [googleEmail]);
     await cleanupClient.query(
       `UPDATE organization_members SET is_active = false
         WHERE user_id = (SELECT id FROM app_users WHERE lower(email) = lower($1))
@@ -784,11 +786,13 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
             AND organization_id = (SELECT id FROM organizations WHERE name = $2)`,
         [googleEmail, bootstrapOrgName],
       );
+    await cleanupClient.query("INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id) SELECT u.id,true,NULL,u.id FROM public.app_users u WHERE lower(u.email)=lower($1) ON CONFLICT ON CONSTRAINT platform_admins_pkey DO UPDATE SET is_active=true,updated_at=pg_catalog.clock_timestamp()", [googleEmail]);
     }
   });
 
   it("rejects a session when its only organization is inactive", async () => {
     const token = await loginGoogleSession();
+    await cleanupClient.query("DELETE FROM public.platform_admins WHERE user_id=(SELECT id FROM app_users WHERE lower(email)=lower($1))", [googleEmail]);
     await cleanupClient.query("UPDATE organizations SET is_active = false WHERE name = $1", [bootstrapOrgName]);
     try {
       const response = await app.fetch(new Request("https://api.example/auth/me", {
@@ -798,6 +802,7 @@ const suiteGoogle = describe.skipIf(!databaseAvailable)("Google OAuth routes aga
       await expect(response.json()).resolves.toMatchObject({ error: "UNAUTHENTICATED" });
     } finally {
       await cleanupClient.query("UPDATE organizations SET is_active = true WHERE name = $1", [bootstrapOrgName]);
+    await cleanupClient.query("INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id) SELECT u.id,true,NULL,u.id FROM public.app_users u WHERE lower(u.email)=lower($1) ON CONFLICT ON CONSTRAINT platform_admins_pkey DO UPDATE SET is_active=true,updated_at=pg_catalog.clock_timestamp()", [googleEmail]);
     }
   });
 

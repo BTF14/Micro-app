@@ -215,6 +215,10 @@ BEGIN
  IF NOT p_is_active AND v_target.id=p_actor_user_id THEN RAISE EXCEPTION 'PLATFORM_ADMIN_SELF_REVOKE_FORBIDDEN' USING ERRCODE='42501';END IF;
  IF NOT p_is_active AND COALESCE(v_old,false) THEN SELECT count(*) INTO v_count FROM public.platform_admins pa JOIN public.app_users u ON u.id=pa.user_id WHERE pa.is_active AND u.is_active AND u.google_sub IS NOT NULL AND pa.user_id<>v_target.id;IF v_count=0 THEN RAISE EXCEPTION 'PLATFORM_ADMIN_LAST_ADMIN' USING ERRCODE='23514';END IF;END IF;
  INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id) VALUES(v_target.id,p_is_active,p_note,p_actor_user_id) ON CONFLICT ON CONSTRAINT platform_admins_pkey DO UPDATE SET is_active=EXCLUDED.is_active,note=EXCLUDED.note,updated_at=pg_catalog.clock_timestamp();
+  IF p_is_active THEN
+    INSERT INTO public.auth_allowlist(email,is_active,added_by,note) VALUES(v_email,true,p_actor_user_id::text,p_note)
+    ON CONFLICT(lower(email)) DO UPDATE SET is_active=true,updated_at=pg_catalog.clock_timestamp();
+  END IF;
  IF NOT p_is_active AND NOT EXISTS(SELECT 1 FROM public.organization_members m WHERE m.user_id=v_target.id AND m.is_active) AND NOT EXISTS(SELECT 1 FROM public.organization_invitations i WHERE lower(i.email)=v_email AND i.status='pending') THEN UPDATE public.auth_allowlist SET is_active=false,updated_at=pg_catalog.clock_timestamp() WHERE lower(email)=v_email;UPDATE public.auth_sessions SET revoked_at=pg_catalog.clock_timestamp() WHERE user_id=v_target.id AND revoked_at IS NULL;END IF;
  INSERT INTO public.platform_audit_logs(actor_user_id,action,target_user_id,metadata) VALUES(p_actor_user_id,CASE WHEN p_is_active THEN 'platform_admin.granted' ELSE 'platform_admin.revoked' END,v_target.id,jsonb_build_object('email',v_email,'old_is_active',COALESCE(v_old,false),'new_is_active',p_is_active,'note',p_note));
  RETURN QUERY SELECT v_target.id,v_target.email,p_is_active;

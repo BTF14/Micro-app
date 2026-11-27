@@ -69,5 +69,13 @@ describe.skipIf(!adminUrl||!runtimeUrl)("platform administration API",()=>{
   expect(active.rows[0]?.is_active).toBe(false);
   const grant=await request(actorToken,"POST","/api/platform/admins",{email:targetEmail,is_active:true,note:"integration grant"});
   expect(grant.status).toBe(200);await expect(grant.json()).resolves.toMatchObject({admin:{user_id:targetId,email:targetEmail,is_active:true}});
+  const revoke=await request(actorToken,"POST","/api/platform/admins",{email:targetEmail,is_active:false,note:"integration revoke"});
+  expect(revoke.status).toBe(200);
+  const disabledAllowlist=await admin.query<{is_active:boolean}>("SELECT is_active FROM public.auth_allowlist WHERE lower(email)=lower($1)",[targetEmail]);
+  expect(disabledAllowlist.rows[0]?.is_active).toBe(false);
+  const regrant=await request(actorToken,"POST","/api/platform/admins",{email:targetEmail,is_active:true,note:"integration regrant"});
+  expect(regrant.status).toBe(200);
+  const enabledAllowlist=await admin.query<{is_active:boolean}>("SELECT is_active FROM public.auth_allowlist WHERE lower(email)=lower($1)",[targetEmail]);
+  expect(enabledAllowlist.rows[0]?.is_active).toBe(true);
  });
 });

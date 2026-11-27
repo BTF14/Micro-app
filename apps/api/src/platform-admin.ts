@@ -61,7 +61,6 @@ function dbError(c: Ctx, error: unknown) {
     "23514": { status: 409, error: "PLATFORM_CONFLICT", message: "La operación incumple una regla de seguridad." },
   };
   const result = map[code];
-  if (!result) console.error({ event: "PLATFORM_ADMIN_FAILED", code: code || "UNKNOWN" });
   return result ? c.json({ error: result.error, message: result.message }, result.status) : c.json({ error: "PLATFORM_OPERATION_FAILED", message: "No se pudo completar la operación." }, 500);
 }
 

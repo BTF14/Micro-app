@@ -10,6 +10,7 @@ import SalesPanel from "./SalesPanel";
 import OrganizationStructurePanel from "./OrganizationStructurePanel";
 import FxContingencyPanel from "./FxContingencyPanel";
 import ReportsPanel from "./ReportsPanel";
+import PlatformAdminPanel from "./PlatformAdminPanel";
 
 // WhatsApp number format (no "+", no spaces) per https://faq.whatsapp.com/general/chats/how-to-use-click-to-chat.
 function whatsappUrl(message: string): string {
@@ -107,10 +108,10 @@ function readAuthErrorFromUrl(): string {
 }
 
 type HelpModalKind = "faq" | "privacy";
-type WorkspaceView = "overview" | "catalog" | "inventory" | "quick-lookup" | "register-shifts" | "sales" | "reports" | "organization-structure" | "fx-contingency";
-const VIEW_HASHES: Record<WorkspaceView,string> = {overview:"resumen",catalog:"productos",inventory:"inventario","quick-lookup":"consultar-precio","register-shifts":"caja-turnos",sales:"ventas",reports:"reportes","organization-structure":"estructura","fx-contingency":"gestion-cambiaria"};
+type WorkspaceView = "platform-admin" | "overview" | "catalog" | "inventory" | "quick-lookup" | "register-shifts" | "sales" | "reports" | "organization-structure" | "fx-contingency";
+const VIEW_HASHES: Record<WorkspaceView,string> = {"platform-admin":"plataforma",overview:"resumen",catalog:"productos",inventory:"inventario","quick-lookup":"consultar-precio","register-shifts":"caja-turnos",sales:"ventas",reports:"reportes","organization-structure":"estructura","fx-contingency":"gestion-cambiaria"};
 function viewFromHash(hash:string):WorkspaceView { const slug=hash.replace(/^#/,"").toLowerCase(); if(!slug||slug==="inicio"||slug==="resumen")return "overview"; return (Object.entries(VIEW_HASHES) as [WorkspaceView,string][]).find(([,value])=>value===slug)?.[0]??"overview"; }
-function roleCanAccessView(role:string|undefined,view:WorkspaceView):boolean { if(view==="overview"||view==="catalog"||view==="inventory")return true; if(view==="quick-lookup"||view==="reports")return ["owner","admin","inventory","cashier"].includes(role??""); if(view==="register-shifts"||view==="sales")return ["owner","admin","cashier"].includes(role??""); if(view==="organization-structure")return role==="owner"; if(view==="fx-contingency")return role==="owner"||role==="admin"; return false; }
+function roleCanAccessView(role:string|undefined,view:WorkspaceView,isPlatformAdmin=false):boolean { if(view==="platform-admin")return isPlatformAdmin; if(view==="overview"||view==="catalog"||view==="inventory")return true; if(view==="quick-lookup"||view==="reports")return ["owner","admin","inventory","cashier"].includes(role??""); if(view==="register-shifts"||view==="sales")return ["owner","admin","cashier"].includes(role??""); if(view==="organization-structure")return role==="owner"; if(view==="fx-contingency")return role==="owner"||role==="admin"; return false; }
 
 type BcvRateResponse = {
   rate: string;
@@ -389,7 +390,7 @@ export default function App() {
     const restore = (hash: string, initial = false) => {
       const genericHash = hash === "" || hash === "#inicio";
       const requested = initial && genericHash ? (readStoredView() ?? "overview") : viewFromHash(hash);
-      const next = roleCanAccessView(role, requested) ? requested : "overview";
+      const next = platformOnly ? "platform-admin" : roleCanAccessView(role, requested, session.is_platform_admin) ? requested : "overview";
       setActiveView(next);
       writeStoredView(next);
       if ((next !== requested || genericHash) && hash !== `#${VIEW_HASHES[next]}`) {
@@ -400,7 +401,7 @@ export default function App() {
     const onHashChange = () => restore(window.location.hash);
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, [session]);
+  }, [session, selectedOrganizationId]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -576,7 +577,7 @@ export default function App() {
   }
 
   const user = session.user;
-  const organization = session.organizations[0];
+  const organization = session.organizations.find(item => item.id === selectedOrganizationId) ?? session.organizations[0];
   const firstName = user.display_name.trim().split(/\s+/)[0] ?? "";
   const greetingName = firstName.includes("@") ? firstName.split("@")[0] : firstName;
   const role = organization?.role;
@@ -593,7 +594,7 @@ export default function App() {
           ? "Administra el catálogo y consulta precios exactos en USD."
           : "Consulta el catálogo y precios exactos en USD." }
         : item);
-  const renderedView: WorkspaceView = roleCanAccessView(organization?.role, activeView) ? activeView : "overview";
+  const renderedView: WorkspaceView = session.organizations.length === 0 && session.is_platform_admin ? "platform-admin" : roleCanAccessView(organization?.role, activeView, session.is_platform_admin) ? activeView : "overview";
 
   return (
     <>
@@ -609,7 +610,7 @@ export default function App() {
           <span><strong>{organization?.name ?? "Mi negocio"}</strong><small>{organization?.role ?? "Miembro"}</small></span>
         </div>
         <button className="mobile-nav-toggle" type="button" aria-expanded={mobileNavOpen} aria-controls="primary-navigation" onClick={() => setMobileNavOpen((open) => !open)}><span aria-hidden="true">{mobileNavOpen ? "×" : "☰"}</span>{mobileNavOpen ? "Cerrar menú" : "Menú"}</button>
-        <nav id="primary-navigation" className={`side-nav ${mobileNavOpen ? "open" : ""}`} onClick={() => setMobileNavOpen(false)}>
+        <nav id="primary-navigation" className={`side-nav ${mobileNavOpen ? "open" : ""}`} onClick={() => setMobileNavOpen(false)}>\n          {session.is_platform_admin && <button className={`nav-item nav-item-button ${renderedView === "platform-admin" ? "active" : ""}`} type="button" onClick={() => selectView("platform-admin")} aria-current={renderedView === "platform-admin" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">◆</span>Plataforma</button>}
           <a className={`nav-item ${renderedView === "overview" ? "active" : ""}`} href="#resumen" onClick={() => selectView("overview")} aria-current={renderedView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
           <button className={`nav-item nav-item-button ${renderedView === "catalog" ? "active" : ""}`} type="button" onClick={() => selectView("catalog")} aria-current={renderedView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
           <button className={`nav-item nav-item-button ${renderedView === "inventory" ? "active" : ""}`} type="button" onClick={() => selectView("inventory")} aria-current={renderedView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
@@ -643,7 +644,7 @@ export default function App() {
               <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
             </div>
           )}
-          {renderedView === "overview" ? (
+          {renderedView === "platform-admin" && session.is_platform_admin ? (\n            <PlatformAdminPanel />\n          ) : renderedView === "overview" ? (
           <>
           <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {greetingName}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo para operar: administra el catálogo, controla el inventario por sucursal, gestiona la caja, registra ventas y consulta los reportes disponibles.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
           <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Desde aquí puedes gestionar el catálogo, inventario, caja y ventas, y dar seguimiento a la operación mediante los reportes disponibles.</p></div><span className="setup-status">Acceso seguro</span></section>

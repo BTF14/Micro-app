@@ -49,9 +49,9 @@ ADOPT_BASELINE_CONFIRM=adopt-0002 bash scripts/db/adopt-baseline.sh apply | grep
 export MIGRATION_DATABASE_URL="$bcv_migrator_url"
 bash scripts/db/migrate.sh
 
-# BCV profile: all 32 migrations, automatic creator edges, and the full 0022-0032 assertion chain.
+# BCV profile: all 33 migrations, automatic creator edges, and the full 0022-0033 assertion chain.
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
-  "SELECT count(*)=32 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
+  "SELECT count(*)=33 AND bool_and(state='applied') FROM public.schema_migrations")" = "t"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*)=2 FROM pg_catalog.pg_auth_members m
    JOIN pg_catalog.pg_roles granted_role ON granted_role.oid=m.roleid
@@ -74,6 +74,8 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0029_catalog_import_batches.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0031_bcv_preserve_confirmed_daily_rate.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0032_owner_org_rename_invitations_force_shift_cleanup.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" --file "apps/api/migrations/0033_platform_admins_and_tenant_provisioning.assertions.sql"
 
 expect_failure() {
   local label="$1" marker="$2"
@@ -190,10 +192,12 @@ psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
   --file "apps/api/migrations/0031_bcv_preserve_confirmed_daily_rate.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
   --file "apps/api/migrations/0032_owner_org_rename_invitations_force_shift_cleanup.assertions.sql"
+psql -X -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" \
+  --file "apps/api/migrations/0033_platform_admins_and_tenant_provisioning.assertions.sql"
 psql -X -v ON_ERROR_STOP=1 --dbname "$main_admin_url" \
   --file "scripts/db/restore_role_assertions_main.sql"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$bcv_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='bcv-membership-sentinel'")" = "1"
 test "$(psql -X -At -v ON_ERROR_STOP=1 --dbname "$main_admin_url" -c \
   "SELECT count(*) FROM organizations WHERE slug='main-membership-sentinel'")" = "1"
-echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0032; main 0001-0016; positive and fail-closed cases)"
+echo "PASS: PostgreSQL 18 managed-owner role-membership contract (BCV 0001-0033; main 0001-0016; positive and fail-closed cases)"

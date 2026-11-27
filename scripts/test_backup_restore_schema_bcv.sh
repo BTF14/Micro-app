@@ -313,7 +313,7 @@ SELECT 'required_core_objects|' || count(*)::text
     ('warehouses'), ('inventory_counts'), ('inventory_count_lines'),
     ('inventory_balances'), ('warehouse_inventory_movements'), ('inventory_receipts'), ('inventory_receipt_lines'), ('bcv_sync_state'),
     ('fx_user_pin_credentials'), ('fx_contingency_delegations'), ('fx_contingency_authorizations'),
-    ('fx_contingency_events'), ('bcv_sync_success_observations'),
+    ('fx_contingency_events'), ('bcv_sync_success_observations'), ('platform_admins'), ('platform_audit_logs'),
     ('schema_migrations')
   ) AS required(table_name)
  WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL;
@@ -815,8 +815,8 @@ if [[ "$source_fixture_ok" != "t" || "$restored_fixture_ok" != "t" ]]; then
 fi
 
 
-required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('inventory_receipts'),('inventory_receipt_lines'),('bcv_sync_state'),('fx_user_pin_credentials'),('fx_contingency_delegations'),('fx_contingency_authorizations'),('fx_contingency_events'),('bcv_sync_success_observations'),('organization_invitations'),('catalog_import_batches'),('auth_sessions'),('auth_rate_limits'),('auth_bootstrap_attempts'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
-[[ "$required_tables" == "36" ]] || { echo "Expected 32 stable application tables, 3 empty ephemeral auth tables and schema_migrations (36 required objects), got $required_tables." >&2; exit 1; }
+required_tables="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT count(*) FROM (VALUES ('organizations'),('app_users'),('organization_members'),('auth_allowlist'),('auth_bootstrap'),('suppliers'),('products'),('exchange_rates'),('sales'),('sale_items'),('payments'),('inventory_movements'),('audit_logs'),('branches'),('branch_memberships'),('registers'),('register_shifts'),('warehouses'),('inventory_counts'),('inventory_count_lines'),('inventory_balances'),('warehouse_inventory_movements'),('inventory_receipts'),('inventory_receipt_lines'),('bcv_sync_state'),('fx_user_pin_credentials'),('fx_contingency_delegations'),('fx_contingency_authorizations'),('fx_contingency_events'),('bcv_sync_success_observations'),('platform_admins'),('platform_audit_logs'),('organization_invitations'),('catalog_import_batches'),('auth_sessions'),('auth_rate_limits'),('auth_bootstrap_attempts'),('schema_migrations')) AS required(table_name) WHERE pg_catalog.to_regclass('public.' || required.table_name) IS NOT NULL")"
+[[ "$required_tables" == "38" ]] || { echo "Expected 34 stable application tables, 3 empty ephemeral auth tables and schema_migrations (38 required objects), got $required_tables." >&2; exit 1; }
 
 ephemeral="$(psql "$schema_restore_url" -X -v ON_ERROR_STOP=1 -Atqc "SELECT (pg_catalog.to_regclass('public.auth_sessions') IS NOT NULL AND pg_catalog.to_regclass('public.auth_rate_limits') IS NOT NULL AND pg_catalog.to_regclass('public.auth_bootstrap_attempts') IS NOT NULL AND (SELECT count(*) = 0 FROM public.auth_sessions) AND (SELECT count(*) = 0 FROM public.auth_rate_limits) AND (SELECT count(*) = 0 FROM public.auth_bootstrap_attempts))")"
 [[ "$ephemeral" == "t" ]] || { echo "Ephemeral auth table schema missing or ephemeral rows were restored." >&2; exit 1; }
@@ -828,6 +828,6 @@ echo "PASS: all $expected_migrations numbered migrations applied through scripts
 echo "PASS: encrypted restore preserved schema, ownership, ACLs, RLS/policies, role contract and effective search_path."
 echo "PASS: populated PR #287 BCV/checkout and projection-ledger graph and cross-table relationships survived restore."
 echo "PASS: populated 0025 inventory receipts/lines/purchase movements survived restore with quantity, cost and ledger projection assertions."
-echo "PASS: populated 0026 PIN/contingency and 0027 dual-date BCV and 0028 quantity-mode/snapshot and 0029 catalog-import batch and 0030 FX-expiration transition and 0031 confirmed BCV rate preservation and 0032 owner/team/forced-shift/session-cleanup contracts survived restore; no active authorization or manual-contingency sale exists."
+echo "PASS: populated 0026 PIN/contingency and 0027 dual-date BCV and 0028 quantity-mode/snapshot and 0029 catalog-import batch and 0030 FX-expiration transition and 0031 confirmed BCV rate preservation and 0032 owner/team/forced-shift/session-cleanup and 0033 platform-admin/tenant-provisioning contracts survived restore; no active authorization or manual-contingency sale exists."
 echo "PASS: auth_sessions, auth_rate_limits and auth_bootstrap_attempts preserved their schema while all synthetic source rows were excluded from restore."
 echo "Schema/data round-trip elapsed seconds: $((SECONDS - started_at))."

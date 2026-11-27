@@ -30,7 +30,7 @@ INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id)
 SELECT u.id,true,'Initial bootstrap platform admin',u.id
 FROM public.auth_bootstrap b JOIN public.app_users u ON lower(u.email)=lower(b.consumed_by_email)
 WHERE b.id=true AND b.consumed_at IS NOT NULL AND u.is_active AND u.google_sub IS NOT NULL
-ON CONFLICT(user_id) DO NOTHING;
+ON CONFLICT ON CONSTRAINT platform_admins_pkey DO NOTHING;
 CREATE OR REPLACE FUNCTION public.set_organization_member_access(
  p_organization_id uuid,p_actor_user_id uuid,p_target_user_id uuid,p_role text,p_is_active boolean
 ) RETURNS void
@@ -114,6 +114,7 @@ CREATE OR REPLACE FUNCTION public.consume_auth_bootstrap(
 ) RETURNS TABLE(status text,user_id uuid,organization_id uuid)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
 AS $consume_auth_bootstrap$
+#variable_conflict use_column
 DECLARE
  v_email text; v_handoff record; v_user uuid; v_org uuid; v_consumed timestamptz;
 BEGIN
@@ -149,7 +150,7 @@ BEGIN
  VALUES(v_email,btrim(p_display_name),p_google_sub,pg_catalog.clock_timestamp()) RETURNING id INTO v_user;
  INSERT INTO public.organization_members(organization_id,user_id,role,is_active)
  VALUES(v_org,v_user,'owner',true);
- INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id) VALUES(v_user,true,'Initial bootstrap platform admin',v_user) ON CONFLICT(user_id) DO NOTHING;
+ INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id) VALUES(v_user,true,'Initial bootstrap platform admin',v_user) ON CONFLICT ON CONSTRAINT platform_admins_pkey DO NOTHING;
  UPDATE public.auth_bootstrap SET consumed_at=pg_catalog.clock_timestamp(),
    consumed_by_email=v_email,created_organization_id=v_org WHERE id=true;
  INSERT INTO public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,metadata)
@@ -163,6 +164,7 @@ CREATE OR REPLACE FUNCTION public.platform_create_organization(p_actor_user_id u
 RETURNS TABLE(id uuid,name text,slug text,is_active boolean,owner_status text)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
 AS $f$
+#variable_conflict use_column
 DECLARE v_name text:=btrim(p_name);v_slug text:=lower(btrim(p_slug));v_email text:=lower(btrim(p_owner_email));v_org uuid;v_owner public.app_users%ROWTYPE;
 BEGIN
  PERFORM 1 FROM public.platform_admins pa JOIN public.app_users u ON u.id=pa.user_id WHERE pa.user_id=p_actor_user_id AND pa.is_active AND u.is_active AND u.google_sub IS NOT NULL FOR UPDATE OF pa,u;
@@ -211,7 +213,7 @@ BEGIN
  SELECT pa.is_active INTO v_old FROM public.platform_admins pa WHERE pa.user_id=v_target.id FOR UPDATE;
  IF NOT p_is_active AND v_target.id=p_actor_user_id THEN RAISE EXCEPTION 'PLATFORM_ADMIN_SELF_REVOKE_FORBIDDEN' USING ERRCODE='42501';END IF;
  IF NOT p_is_active AND COALESCE(v_old,false) THEN SELECT count(*) INTO v_count FROM public.platform_admins pa JOIN public.app_users u ON u.id=pa.user_id WHERE pa.is_active AND u.is_active AND u.google_sub IS NOT NULL AND pa.user_id<>v_target.id;IF v_count=0 THEN RAISE EXCEPTION 'PLATFORM_ADMIN_LAST_ADMIN' USING ERRCODE='23514';END IF;END IF;
- INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id) VALUES(v_target.id,p_is_active,p_note,p_actor_user_id) ON CONFLICT(user_id) DO UPDATE SET is_active=EXCLUDED.is_active,note=EXCLUDED.note,updated_at=pg_catalog.clock_timestamp();
+ INSERT INTO public.platform_admins(user_id,is_active,note,granted_by_user_id) VALUES(v_target.id,p_is_active,p_note,p_actor_user_id) ON CONFLICT ON CONSTRAINT platform_admins_pkey DO UPDATE SET is_active=EXCLUDED.is_active,note=EXCLUDED.note,updated_at=pg_catalog.clock_timestamp();
  IF NOT p_is_active AND NOT EXISTS(SELECT 1 FROM public.organization_members m WHERE m.user_id=v_target.id AND m.is_active) AND NOT EXISTS(SELECT 1 FROM public.organization_invitations i WHERE lower(i.email)=v_email AND i.status='pending') THEN UPDATE public.auth_allowlist SET is_active=false,updated_at=pg_catalog.clock_timestamp() WHERE lower(email)=v_email;UPDATE public.auth_sessions SET revoked_at=pg_catalog.clock_timestamp() WHERE user_id=v_target.id AND revoked_at IS NULL;END IF;
  INSERT INTO public.platform_audit_logs(actor_user_id,action,target_user_id,metadata) VALUES(p_actor_user_id,CASE WHEN p_is_active THEN 'platform_admin.granted' ELSE 'platform_admin.revoked' END,v_target.id,jsonb_build_object('email',v_email,'old_is_active',COALESCE(v_old,false),'new_is_active',p_is_active,'note',p_note));
  RETURN QUERY SELECT v_target.id,v_target.email,p_is_active;
@@ -222,5 +224,5 @@ REVOKE ALL ON FUNCTION public.platform_set_organization_active(uuid,uuid,boolean
 REVOKE ALL ON FUNCTION public.platform_set_admin_access(uuid,text,boolean,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.platform_create_organization(uuid,text,text,text,text) TO microapp_runtime;
 GRANT EXECUTE ON FUNCTION public.platform_set_organization_active(uuid,uuid,boolean,text) TO microapp_runtime;
-GRANT EXECUTE ON FUNCTION public.platform_set_admin_access(uuid,text,text,boolean,text) TO microapp_runtime;
+GRANT EXECUTE ON FUNCTION public.platform_set_admin_access(uuid,text,boolean,text) TO microapp_runtime;
 COMMIT;

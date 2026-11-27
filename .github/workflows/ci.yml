@@ -127,6 +127,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/smoke-readiness.test.ts
       - name: PostgreSQL auth integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
+      - name: PostgreSQL platform administration API integration tests (runtime LOGIN)
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/platform-admin.integration.test.ts
       - name: PostgreSQL auth rate limit integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth-rate-limit.integration.test.ts
       - name: Runtime write rate-limit unit tests

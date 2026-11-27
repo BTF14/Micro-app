@@ -546,3 +546,30 @@ describe("Resumen shortcuts and greeting", () => {
   });
 
 });
+
+
+describe("platform administration workspace", () => {
+  it("routes a platform admin without tenant memberships directly to #plataforma", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ user, organizations: [], is_platform_admin: true }))
+      .mockResolvedValueOnce(jsonResponse({ organizations: [], admins: [], audit_logs: [] }));
+    window.history.replaceState({}, "", "/");
+    await renderApp();
+    await settle();
+    expect(window.location.hash).toBe("#plataforma");
+    expect(container.textContent).toContain("Administración de plataforma");
+    expect(container.textContent).toContain("Crear organización");
+    expect(container.textContent).not.toContain("Mi negocio");
+  });
+
+  it("does not render platform navigation for a normal tenant member", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ ...authResponse, is_platform_admin: false }))
+      .mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse))
+      .mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();
+    await settle();
+    expect(container.textContent).not.toContain("Administración de plataforma");
+    expect([...container.querySelectorAll("button")].some(button => button.textContent?.trim() === "Plataforma")).toBe(false);
+  });
+});

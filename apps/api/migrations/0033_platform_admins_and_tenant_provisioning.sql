@@ -203,6 +203,7 @@ CREATE OR REPLACE FUNCTION public.platform_set_admin_access(p_actor_user_id uuid
 RETURNS TABLE(user_id uuid,email text,is_active boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public
 AS $f$
+#variable_conflict use_column
 DECLARE v_email text:=lower(btrim(p_target_email));v_target public.app_users%ROWTYPE;v_old boolean;v_count integer;
 BEGIN
  PERFORM 1 FROM public.platform_admins pa JOIN public.app_users u ON u.id=pa.user_id WHERE pa.user_id=p_actor_user_id AND pa.is_active AND u.is_active AND u.google_sub IS NOT NULL FOR UPDATE OF pa,u;

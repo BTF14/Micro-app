@@ -445,7 +445,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || session.organizations.length === 0) return;
     let active = true;
     let requestSequence = 0;
     let observedCaracasDate = caracasCalendarDate();

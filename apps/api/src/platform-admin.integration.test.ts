@@ -32,24 +32,32 @@ describe.skipIf(!adminUrl||!runtimeUrl)("platform administration API",()=>{
   actorToken="platform-session-"+crypto.randomUUID();targetToken="platform-session-"+crypto.randomUUID();
   await admin.query("INSERT INTO public.auth_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 day'),($3,$4,now()+interval '1 day')",[actorId,await hash(actorToken),targetId,await hash(targetToken)]);
  });
- afterAll(async()=>{
-  if(runtime)await runtime.end();
-  if(admin){
-   if(organizationIds.length){
-    await admin.query("DELETE FROM public.platform_audit_logs WHERE target_organization_id=ANY($1::uuid[])",[organizationIds]);
-    await admin.query("DELETE FROM public.audit_logs WHERE organization_id=ANY($1::uuid[])",[organizationIds]);
-    await admin.query("DELETE FROM public.organization_invitations WHERE organization_id=ANY($1::uuid[])",[organizationIds]);
-    await admin.query("DELETE FROM public.organization_members WHERE organization_id=ANY($1::uuid[])",[organizationIds]);
-    await admin.query("DELETE FROM public.organizations WHERE id=ANY($1::uuid[])",[organizationIds]);
+  afterAll(async()=>{
+   if(runtime)await runtime.end();
+   if(admin){
+    await admin.query("ALTER TABLE public.audit_logs DISABLE TRIGGER USER");
+    try {
+     const ids=[actorId,targetId].filter(Boolean);
+     if(organizationIds.length){
+      await admin.query("DELETE FROM public.platform_audit_logs WHERE target_organization_id=ANY($1::uuid[])",[organizationIds]);
+      await admin.query("DELETE FROM public.audit_logs WHERE organization_id=ANY($1::uuid[])",[organizationIds]);
+      await admin.query("DELETE FROM public.organization_invitations WHERE organization_id=ANY($1::uuid[])",[organizationIds]);
+      await admin.query("DELETE FROM public.organization_members WHERE organization_id=ANY($1::uuid[])",[organizationIds]);
+      await admin.query("DELETE FROM public.organizations WHERE id=ANY($1::uuid[])",[organizationIds]);
+     }
+     if(ids.length)await admin.query("DELETE FROM public.platform_audit_logs WHERE actor_user_id=ANY($1::uuid[]) OR target_user_id=ANY($1::uuid[])",[ids]);
+     if(ids.length){
+      await admin.query("DELETE FROM public.platform_admins WHERE user_id=ANY($1::uuid[])",[ids]);
+      await admin.query("DELETE FROM public.auth_sessions WHERE user_id=ANY($1::uuid[])",[ids]);
+      await admin.query("DELETE FROM public.app_users WHERE id=ANY($1::uuid[])",[ids]);
+     }
+     await admin.query("DELETE FROM public.auth_allowlist WHERE lower(email)=ANY($1::text[])",[[actorEmail,targetEmail,ownerEmail].map(x=>x.toLowerCase())]);
+    } finally {
+     await admin.query("ALTER TABLE public.audit_logs ENABLE TRIGGER USER");
+     await admin.end();
+    }
    }
-   if(actorId||targetId)await admin.query("DELETE FROM public.platform_audit_logs WHERE actor_user_id=ANY($1::uuid[]) OR target_user_id=ANY($1::uuid[])",[[actorId,targetId]]);
-   await admin.query("DELETE FROM public.platform_admins WHERE user_id=ANY($1::uuid[])",[[actorId,targetId]]);
-   await admin.query("DELETE FROM public.auth_sessions WHERE user_id=ANY($1::uuid[])",[[actorId,targetId]]);
-   await admin.query("DELETE FROM public.auth_allowlist WHERE lower(email)=ANY($1::text[])",[[actorEmail,targetEmail,ownerEmail].map(x=>x.toLowerCase())]);
-   await admin.query("DELETE FROM public.app_users WHERE id=ANY($1::uuid[])",[[actorId,targetId]]);
-   await admin.end();
-  }
- });
+  });
  function request(token:string,method:string,path:string,body?:unknown){
   return app.fetch(new Request("https://api.example"+path,{method,headers:{Cookie:"microapp_session="+token,"CF-Connecting-IP":`198.51.100.${ip++}`,...(method==="GET"?{}:{Origin:origin,"Content-Type":"application/json"})},...(body===undefined?{}:{body:JSON.stringify(body)})}),{DATABASE_URL:runtimeUrl,FRONTEND_ORIGIN:origin,GOOGLE_CLIENT_SECRET:"platform-test-secret-with-sufficient-length"});
  }

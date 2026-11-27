@@ -1,6 +1,6 @@
 export type AuthUser = { id: string; email: string; display_name: string };
 export type AuthOrganization = { id: string; name: string; slug: string; role: "owner" | "admin" | "cashier" | "inventory" };
-export type AuthResponse = { user: AuthUser; organizations: AuthOrganization[] };
+export type AuthResponse = { user: AuthUser; organizations: AuthOrganization[]; is_platform_admin: boolean };
 
 type ApiErrorPayload = { message?: unknown };
 const API_BASE_URL = __MICRO_APP_API_BASE_URL__;

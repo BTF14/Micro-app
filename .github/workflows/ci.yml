@@ -95,6 +95,12 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0029_catalog_import_batches.assertions.sql
       - name: Verify FX expiration transition migration 0030 contract
         run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql
+      - name: Verify platform migration 0031 BCV daily-rate contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0031_bcv_preserve_confirmed_daily_rate.assertions.sql
+      - name: Verify organization migration 0032 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0032_owner_org_rename_invitations_force_shift_cleanup.assertions.sql
+      - name: Verify platform tenant provisioning migration 0033 contract
+        run: psql -X -v ON_ERROR_STOP=1 --dbname "$ADMIN_DATABASE_URL" -f apps/api/migrations/0033_platform_admins_and_tenant_provisioning.assertions.sql
       - name: PostgreSQL 18 BCV 0027 effective-date matrix
         run: pnpm --filter @micro-app/api test:bcv-0027
       - name: Build and typecheck
@@ -121,6 +127,8 @@ jobs:
         run: pnpm --filter @micro-app/api exec vitest run src/smoke-readiness.test.ts
       - name: PostgreSQL auth integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth.integration.test.ts
+      - name: PostgreSQL platform administration API integration tests (runtime LOGIN)
+        run: DATABASE_URL="$RUNTIME_DATABASE_URL" DATABASE_URL_ADMIN="$ADMIN_DATABASE_URL" pnpm --filter @micro-app/api exec vitest run src/platform-admin.integration.test.ts
       - name: PostgreSQL auth rate limit integration tests
         run: pnpm --filter @micro-app/api exec vitest run src/auth-rate-limit.integration.test.ts
       - name: Runtime write rate-limit unit tests

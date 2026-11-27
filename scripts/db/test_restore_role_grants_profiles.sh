@@ -65,5 +65,6 @@ run_profile bcv-0029 29
 run_profile bcv-0030 30
 run_profile bcv-0031 31
 run_profile bcv-0032 32
+run_profile bcv-0033 33
 
-echo "PASS: historical main 0001–0016 and BCV 0001–0023 through 0001–0032 ACL profiles remain supported."
+echo "PASS: historical main 0001–0016 and BCV 0001–0023 through 0001–0033 ACL profiles remain supported."

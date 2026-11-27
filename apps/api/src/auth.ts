@@ -198,6 +198,10 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
       const result = await withDatabaseClient(c.env.DATABASE_URL, async (client) => {
         const user = await getSessionUser(client, token);
         if (!user) return null;
+        const platformAdmin = await client.query<{ is_active: boolean }>(
+          `SELECT pa.is_active FROM public.platform_admins pa WHERE pa.user_id = $1 AND pa.is_active = true`,
+          [user.id],
+        );
         const memberships = await client.query<OrganizationRow>(
           `SELECT o.id, o.name, o.slug, m.role
              FROM organization_members m
@@ -206,8 +210,8 @@ export function registerAuthRoutes(app: Hono<{ Bindings: Bindings }>): void {
             ORDER BY o.name`,
           [user.id],
         );
-        if (memberships.rows.length === 0) return null;
-        return { user, organizations: memberships.rows };
+        if (memberships.rows.length === 0 && platformAdmin.rows.length === 0) return null;
+        return { user, organizations: memberships.rows, is_platform_admin: platformAdmin.rows.length > 0 };
       });
       if (!result) {
         clearSessionCookie(c);

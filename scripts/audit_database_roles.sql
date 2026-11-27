@@ -281,3 +281,9 @@ END
 $audit$;
 
 \echo 'PASS: database role audit completed. No changes were made.'
+
+DO $platform_acl$
+BEGIN
+ IF to_regclass('public.platform_admins') IS NOT NULL AND (NOT has_table_privilege('microapp_runtime','public.platform_admins','SELECT') OR has_table_privilege('microapp_runtime','public.platform_admins','INSERT') OR has_table_privilege('microapp_runtime','public.platform_admins','UPDATE') OR has_table_privilege('microapp_runtime','public.platform_admins','DELETE')) THEN RAISE EXCEPTION 'platform_admins runtime ACL';END IF;
+ IF to_regclass('public.platform_audit_logs') IS NOT NULL AND (NOT has_table_privilege('microapp_runtime','public.platform_audit_logs','SELECT') OR has_table_privilege('microapp_runtime','public.platform_audit_logs','INSERT') OR has_table_privilege('microapp_runtime','public.platform_audit_logs','UPDATE') OR has_table_privilege('microapp_runtime','public.platform_audit_logs','DELETE')) THEN RAISE EXCEPTION 'platform_audit_logs runtime ACL';END IF;
+END;$platform_acl$;

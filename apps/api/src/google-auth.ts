@@ -422,7 +422,11 @@ export function registerGoogleAuthRoutes(app: Hono<{ Bindings: Bindings }>): voi
               LIMIT 1`,
             [user.id],
           );
-          if (memberships.rows.length === 0) return { kind: "no_membership" as const };
+          const platformAdmin = await client.query<{ allowed: boolean }>(
+            `SELECT EXISTS (SELECT 1 FROM public.platform_admins pa WHERE pa.user_id = $1 AND pa.is_active = true) AS allowed`,
+            [user.id],
+          );
+          if (memberships.rows.length === 0 && !platformAdmin.rows[0]?.allowed) return { kind: "no_membership" as const };
 
           const token = await createSession(client, user.id);
           return { kind: "ok" as const, token };

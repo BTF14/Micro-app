@@ -14,6 +14,7 @@ import { registerRegisterShiftRoutes } from "./register-shifts";
 import { registerReportsRoutes } from "./reports";
 import { registerOrganizationStructureRoutes } from "./organization-structure";
 import { registerFxContingencyRoutes } from "./fx-contingency";
+import { registerPlatformAdminRoutes } from "./platform-admin";
 import { withDatabaseClient } from "./database";
 import { cleanupExpiredAuthRecords } from "./auth-rate-limit";
 import {
@@ -111,6 +112,7 @@ registerRegisterShiftRoutes(app);
 registerReportsRoutes(app);
 registerOrganizationStructureRoutes(app);
 registerFxContingencyRoutes(app);
+registerPlatformAdminRoutes(app);
 registerExchangeRateRoutes(app);
 
 app.get("/health", (c) =>

@@ -562,6 +562,34 @@ describe("platform administration workspace", () => {
     expect(container.textContent).not.toContain("Mi negocio");
   });
 
+
+  it("refreshes /auth/me after a platform administrator creates an organization", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ user, organizations: [], is_platform_admin: true }))
+      .mockResolvedValueOnce(jsonResponse({ organizations: [], admins: [], audit_logs: [] }))
+      .mockResolvedValueOnce(jsonResponse({ id: "org-2" }))
+      .mockResolvedValueOnce(jsonResponse({ organizations: [], admins: [], audit_logs: [] }))
+      .mockResolvedValueOnce(jsonResponse({ user, organizations: [{ id: "org-2", name: "Nueva tienda", slug: "nueva-tienda", role: "owner" }], is_platform_admin: true }));
+    await renderApp();
+    await settle();
+    const fields = [...container.querySelectorAll("label")];
+    const values: Record<string, string> = { "Nombre": "Nueva tienda", "Código": "nueva-tienda", "Correo del Owner": "owner@example.com" };
+    for (const [label, value] of Object.entries(values)) {
+      const input = fields.find((item) => item.textContent?.includes(label))?.querySelector("input");
+      if (!input) throw new Error(`Input ${label} not found`);
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    const form = container.querySelector(".platform-admin-form");
+    if (!form) throw new Error("Organization form not found");
+    await act(async () => { form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await settle();
+    expect(vi.mocked(fetch).mock.calls.filter((call) => call[0] === "/auth/me")).toHaveLength(2);
+    expect(container.textContent).toContain("Nueva tienda");
+    expect(container.textContent).toContain("Administración de plataforma");
+  });
+
   it("does not render platform navigation for a normal tenant member", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({ ...authResponse, is_platform_admin: false }))

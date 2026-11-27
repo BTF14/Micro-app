@@ -111,7 +111,7 @@ type HelpModalKind = "faq" | "privacy";
 type WorkspaceView = "platform-admin" | "overview" | "catalog" | "inventory" | "quick-lookup" | "register-shifts" | "sales" | "reports" | "organization-structure" | "fx-contingency";
 const VIEW_HASHES: Record<WorkspaceView,string> = {"platform-admin":"plataforma",overview:"resumen",catalog:"productos",inventory:"inventario","quick-lookup":"consultar-precio","register-shifts":"caja-turnos",sales:"ventas",reports:"reportes","organization-structure":"estructura","fx-contingency":"gestion-cambiaria"};
 function viewFromHash(hash:string):WorkspaceView { const slug=hash.replace(/^#/,"").toLowerCase(); if(!slug||slug==="inicio"||slug==="resumen")return "overview"; return (Object.entries(VIEW_HASHES) as [WorkspaceView,string][]).find(([,value])=>value===slug)?.[0]??"overview"; }
-function roleCanAccessView(role:string|undefined,view:WorkspaceView,isPlatformAdmin=false):boolean { if(view==="platform-admin")return isPlatformAdmin; if(view==="overview"||view==="catalog"||view==="inventory")return true; if(view==="quick-lookup"||view==="reports")return ["owner","admin","inventory","cashier"].includes(role??""); if(view==="register-shifts"||view==="sales")return ["owner","admin","cashier"].includes(role??""); if(view==="organization-structure")return role==="owner"; if(view==="fx-contingency")return role==="owner"||role==="admin"; return false; }
+function roleCanAccessView(role:string|undefined,view:WorkspaceView,isPlatformAdmin=false):boolean { if(view==="platform-admin")return isPlatformAdmin; if(view==="overview"||view==="catalog"||view==="inventory")return Boolean(role); if(view==="quick-lookup"||view==="reports")return ["owner","admin","inventory","cashier"].includes(role??""); if(view==="register-shifts"||view==="sales")return ["owner","admin","cashier"].includes(role??""); if(view==="organization-structure")return role==="owner"; if(view==="fx-contingency")return role==="owner"||role==="admin"; return false; }
 
 type BcvRateResponse = {
   rate: string;
@@ -501,6 +501,8 @@ export default function App() {
     };
   }, [session]);
 
+  async function refreshSession() { const result = await apiRequest<AuthResponse>("/auth/me"); setSession(result); }
+
   async function handleLogout() {
     setBusy(true);
     setError("");
@@ -667,7 +669,7 @@ export default function App() {
             </div>
           )}
           {renderedView === "platform-admin" && session.is_platform_admin ? (
-            <PlatformAdminPanel />
+            <PlatformAdminPanel onOrganizationsChanged={refreshSession} />
           ) : renderedView === "overview" ? (
           <>
           <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {greetingName}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo para operar: administra el catálogo, controla el inventario por sucursal, gestiona la caja, registra ventas y consulta los reportes disponibles.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
@@ -687,7 +689,7 @@ export default function App() {
             <p className="exchange-rate-source">Fuente: Banco Central de Venezuela (BCV). No se sustituye por tasas de terceros.</p>
           </section>
           {(organization?.role === "owner" || organization?.role === "admin") && (
-            <BcvSyncAdminPanel organizationId={organization.id} />
+            <BcvSyncAdminPanel key={organization.id} organizationId={organization.id} />
           )}
           <section className="modules-section" aria-labelledby="modules-title"><div className="section-heading"><div><p className="eyebrow">MÓDULOS DEL SISTEMA</p><h2 id="modules-title">Herramientas de tu negocio</h2></div><span className="module-count">{visibleShortcuts.length} accesos disponibles</span></div><div className="module-grid">{visibleShortcuts.map((item) => <a className="module-card module-card-button" href={`#${VIEW_HASHES[item.view]}`} aria-label={item.ariaLabel} key={item.view} onClick={(event) => { if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); selectView(item.view); }}><div className="module-card-top"><span className="module-number">{item.number}</span><span className="module-indicator" aria-hidden="true">↗</span></div><h3>{item.title}</h3><p>{item.description}</p><div className="module-card-bottom"><span className="module-status-dot" aria-hidden="true" /><span>Acceso disponible</span></div></a>)}</div></section>
           <footer className="main-footer">
@@ -699,13 +701,13 @@ export default function App() {
           </footer>
           </>
           ) : renderedView === "inventory" ? (
-            <InventoryPanel organizationId={organization?.id ?? ""} canManageInventory={organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory"} />
+            <InventoryPanel key={organization?.id ?? "no-organization"} organizationId={organization?.id ?? ""} canManageInventory={organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory"} />
           ) : renderedView === "quick-lookup" ? (
-            <QuickProductLookup organizationId={organization?.id ?? ""} exchangeRate={bcvRate?.rate ?? null}
+            <QuickProductLookup key={organization?.id ?? "no-organization"} organizationId={organization?.id ?? ""} exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
               exchangeRateEffectiveDate={bcvRate?.effectiveDate ?? null} />
           ) : renderedView === "sales" && (organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (
-            <SalesPanel organizationId={organization.id} exchangeRate={bcvRate?.rate ?? null}
+            <SalesPanel key={organization.id} organizationId={organization.id} exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
               exchangeRateEffectiveDate={bcvRate?.effectiveDate ?? null}
               onGoToRegister={() => selectView("register-shifts")}
@@ -714,9 +716,10 @@ export default function App() {
                 catch (reason) { setBcvError(reason instanceof Error ? reason.message : "No se pudo actualizar la tasa BCV."); }
               }} />
           ) : renderedView === "reports" && organization ? (
-            <ReportsPanel organizationId={organization.id} role={organization.role} initialShift={selectedReportShift} />
+            <ReportsPanel key={organization.id} organizationId={organization.id} role={organization.role} initialShift={selectedReportShift} />
           ) : renderedView === "catalog" ? (
             <CatalogPanel
+              key={organization?.id ?? "no-organization"}
               organizationId={organization?.id ?? ""}
               exchangeRate={bcvRate?.rate ?? null}
               exchangeRateStatus={bcvRate ? (bcvError ? "stale" : bcvRate.status) : "unavailable"}
@@ -724,11 +727,11 @@ export default function App() {
               canManage={organization?.role === "owner" || organization?.role === "admin"}
             />
           ) : renderedView === "fx-contingency" && (organization?.role === "owner" || organization?.role === "admin") ? (
-            <FxContingencyPanel organizationId={organization.id} role={organization.role} />
+            <FxContingencyPanel key={organization.id} organizationId={organization.id} role={organization.role} />
           ) : renderedView === "organization-structure" && organization?.role === "owner" ? (
-            <OrganizationStructurePanel organizationId={organization.id} organizationName={organization.name} organizationSlug={organization.slug} onOrganizationRenamed={(name, slug) => setSession(current => current ? { ...current, organizations: current.organizations.map(item => item.id === organization.id ? { ...item, name, slug } : item) } : current)} />
+            <OrganizationStructurePanel key={organization.id} organizationId={organization.id} organizationName={organization.name} organizationSlug={organization.slug} onOrganizationRenamed={(name, slug) => setSession(current => current ? { ...current, organizations: current.organizations.map(item => item.id === organization.id ? { ...item, name, slug } : item) } : current)} />
           ) : renderedView === "register-shifts" && (organization?.role === "owner" || organization?.role === "admin" || organization?.role === "cashier") ? (
-            <RegisterShiftsPanel organizationId={organization.id} role={organization.role} userName={user.display_name} onOpenShiftClosure={(branchId, shiftId) => { setSelectedReportShift({ branchId, shiftId }); selectView("reports"); }} />
+            <RegisterShiftsPanel key={organization.id} organizationId={organization.id} role={organization.role} userName={user.display_name} onOpenShiftClosure={(branchId, shiftId) => { setSelectedReportShift({ branchId, shiftId }); selectView("reports"); }} />
           ) : (
             <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {greetingName}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo.</p></div></section>
           )}

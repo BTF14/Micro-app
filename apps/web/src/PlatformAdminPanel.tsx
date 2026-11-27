@@ -6,15 +6,15 @@ type Overview = {
   admins: Array<{user_id:string;email:string;display_name:string;is_active:boolean;note:string|null}>;
   audit_logs: Array<{id:number;action:string;actor_email:string;created_at:string;metadata:Record<string,unknown>}>;
 };
-export default function PlatformAdminPanel(){
+export default function PlatformAdminPanel({onOrganizationsChanged}:{onOrganizationsChanged?:()=>Promise<void>|void}={}){
  const [data,setData]=useState<Overview|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false);
  const [name,setName]=useState(""),[slug,setSlug]=useState(""),[ownerEmail,setOwnerEmail]=useState(""),[note,setNote]=useState("");
  const [adminEmail,setAdminEmail]=useState("");
- async function refresh(){try{setData(await apiRequest<Overview>("/api/platform/overview"));setError("");}catch(e){setError(e instanceof Error?e.message:"No se pudo cargar la plataforma.");}}
+ async function refresh(){setError("");try{setData(await apiRequest<Overview>("/api/platform/overview"));setError("");}catch(e){setError(e instanceof Error?e.message:"No se pudo cargar la plataforma.");}}
  useEffect(()=>{void refresh();},[]);
- async function submitOrganization(event:FormEvent){event.preventDefault();setBusy(true);try{await apiRequest("/api/platform/organizations",{method:"POST",body:JSON.stringify({name,slug,owner_email:ownerEmail,note:note||null})});setName("");setSlug("");setOwnerEmail("");setNote("");await refresh();}catch(e){setError(e instanceof Error?e.message:"No se pudo crear la organización.");}finally{setBusy(false);}}
- async function setOrganizationActive(id:string,is_active:boolean){setBusy(true);try{await apiRequest("/api/platform/organizations/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({is_active})});await refresh();}catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar la organización.");}finally{setBusy(false);}}
- async function setAdminActive(email:string,is_active:boolean){setBusy(true);try{await apiRequest("/api/platform/admins",{method:"POST",body:JSON.stringify({email,is_active})});await refresh();}catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el administrador.");}finally{setBusy(false);}}
+ async function submitOrganization(event:FormEvent){event.preventDefault();setError("");setBusy(true);try{await apiRequest("/api/platform/organizations",{method:"POST",body:JSON.stringify({name,slug,owner_email:ownerEmail,note:note||null})});setName("");setSlug("");setOwnerEmail("");setNote("");await refresh();await onOrganizationsChanged?.();}catch(e){setError(e instanceof Error?e.message:"No se pudo crear la organización.");}finally{setBusy(false);}}
+ async function setOrganizationActive(id:string,is_active:boolean){setError("");setBusy(true);try{await apiRequest("/api/platform/organizations/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({is_active})});await refresh();await onOrganizationsChanged?.();}catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar la organización.");}finally{setBusy(false);}}
+ async function setAdminActive(email:string,is_active:boolean){setError("");setBusy(true);try{await apiRequest("/api/platform/admins",{method:"POST",body:JSON.stringify({email,is_active})});await refresh();}catch(e){setError(e instanceof Error?e.message:"No se pudo actualizar el administrador.");}finally{setBusy(false);}}
  return <section className="platform-admin" aria-labelledby="platform-admin-title">
   <header><p className="eyebrow">CONTROL GLOBAL</p><h1 id="platform-admin-title">Administración de plataforma</h1><p className="platform-muted">Gestiona organizaciones y administradores. La vista no expone datos operativos de ventas.</p></header>
   {error&&<p className="platform-alert" role="alert">{error}</p>}

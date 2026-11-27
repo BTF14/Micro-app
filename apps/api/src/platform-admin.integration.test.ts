@@ -42,7 +42,7 @@ describe.skipIf(!adminUrl||!runtimeUrl)("platform administration API",()=>{
     await admin.query("DELETE FROM public.organization_members WHERE organization_id=ANY($1::uuid[])",[organizationIds]);
     await admin.query("DELETE FROM public.organizations WHERE id=ANY($1::uuid[])",[organizationIds]);
    }
-   if(actorId||targetId)await admin.query("DELETE FROM public.platform_audit_logs WHERE actor_user_id=ANY($1::uuid[]) OR target_user_id=ANY($1::uuid[])",[[actorId,targetId],[actorId,targetId]]);
+   if(actorId||targetId)await admin.query("DELETE FROM public.platform_audit_logs WHERE actor_user_id=ANY($1::uuid[]) OR target_user_id=ANY($1::uuid[])",[[actorId,targetId]]);
    await admin.query("DELETE FROM public.platform_admins WHERE user_id=ANY($1::uuid[])",[[actorId,targetId]]);
    await admin.query("DELETE FROM public.auth_sessions WHERE user_id=ANY($1::uuid[])",[[actorId,targetId]]);
    await admin.query("DELETE FROM public.auth_allowlist WHERE lower(email)=ANY($1::text[])",[[actorEmail,targetEmail,ownerEmail].map(x=>x.toLowerCase())]);

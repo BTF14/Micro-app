@@ -218,7 +218,7 @@ MIGRATIONS_DIR="$repo_root/apps/api/migrations" \
 
 pg_restore --exit-on-error --single-transaction --no-owner --no-privileges --dbname="$migration_restore_url" "$tmpdir/schema.restored.dump"
 
-MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv-0032 \
+MIGRATION_DATABASE_URL="$migration_restore_url" MIGRATIONS_DIR="$repo_root/apps/api/migrations" RESTORE_GRANTS_PROFILE=bcv-0033 \
   bash scripts/db/reapply_restore_role_grants.sh
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0025_inventory_receipts.assertions.sql
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0026_fx_contingency_management.assertions.sql
@@ -228,6 +228,7 @@ psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0029_
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0030_fx_expiration_transition_fix.assertions.sql
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0031_bcv_preserve_confirmed_daily_rate.assertions.sql
 psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0032_owner_org_rename_invitations_force_shift_cleanup.assertions.sql
+psql "$migration_restore_url" -X -v ON_ERROR_STOP=1 -f apps/api/migrations/0033_platform_admins_and_tenant_provisioning.assertions.sql
 
 manifest() {
   psql "$1" -X -v ON_ERROR_STOP=1 -Atq <<'SQL'

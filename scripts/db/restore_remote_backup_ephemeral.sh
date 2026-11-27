@@ -141,7 +141,7 @@ case "$ledger_profile" in
   bcv-0031) expected=31 ;;
   bcv-0032) expected=32 ;;
   bcv-0033) expected=33 ;;
-  *) echo "Backup migration ledger is not a complete supported 16-, 23-, 24-, 25-, 26-, 27- or 28-, 29- or 30-, 31- or 32-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
+  *) echo "Backup migration ledger is not a complete supported 16-, 23-, 24-, 25-, 26-, 27- or 28-, 29- or 30-, 31-, 32- or 33-migration profile; refusing ACL reconstruction." >&2; exit 1 ;;
 esac
 
 tmpdir="$(mktemp -d)"

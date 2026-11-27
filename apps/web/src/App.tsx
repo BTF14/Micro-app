@@ -377,7 +377,8 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [helpModal, setHelpModal] = useState<HelpModalKind | null>(null);
   const [activeView, setActiveView] = useState<WorkspaceView>(() => viewFromHash(window.location.hash));
-  function selectView(view: WorkspaceView) { const role = session?.organizations[0]?.role; const safeView = roleCanAccessView(role, view) ? view : "overview"; setActiveView(safeView); writeStoredView(safeView); const hash = `#${VIEW_HASHES[safeView]}`; if (window.location.hash !== hash) window.history.pushState({}, "", `${window.location.pathname}${window.location.search}${hash}`); }
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
+  function selectView(view: WorkspaceView) { const role = session?.organizations.find(item => item.id === selectedOrganizationId)?.role ?? session?.organizations[0]?.role; const safeView = roleCanAccessView(role, view, session?.is_platform_admin === true) ? view : (session?.is_platform_admin && session.organizations.length === 0 ? "platform-admin" : "overview"); setActiveView(safeView); writeStoredView(safeView); const hash = `#${VIEW_HASHES[safeView]}`; if (window.location.hash !== hash) window.history.pushState({}, "", `${window.location.pathname}${window.location.search}${hash}`); }
   const [selectedReportShift, setSelectedReportShift] = useState<{ branchId: string; shiftId: string } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [bcvRate, setBcvRate] = useState<BcvRateResponse | null>(null);
@@ -386,7 +387,9 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return;
-    const role = session.organizations[0]?.role;
+    if (session.organizations.length > 0 && !session.organizations.some(item => item.id === selectedOrganizationId)) setSelectedOrganizationId(session.organizations[0]!.id);
+    const role = session.organizations.find(item => item.id === selectedOrganizationId)?.role ?? session.organizations[0]?.role;
+    const platformOnly = session.organizations.length === 0 && session.is_platform_admin;
     const restore = (hash: string, initial = false) => {
       const genericHash = hash === "" || hash === "#inicio";
       const requested = initial && genericHash ? (readStoredView() ?? "overview") : viewFromHash(hash);
@@ -606,11 +609,29 @@ export default function App() {
         </a>
         <div className="workspace-label">ESPACIO DE TRABAJO</div>
         <div className="workspace">
-          <span className="workspace-avatar" aria-hidden="true">{organization?.name.slice(0, 1).toUpperCase() ?? "M"}</span>
-          <span><strong>{organization?.name ?? "Mi negocio"}</strong><small>{organization?.role ?? "Miembro"}</small></span>
+          {session.organizations.length > 1 ? (
+            <label className="workspace-switcher">
+              <span className="sr-only">Organización activa</span>
+              <select aria-label="Cambiar organización" value={organization?.id ?? ""} onChange={(event) => {
+                setSelectedOrganizationId(event.target.value);
+                setActiveView("overview");
+                writeStoredView("overview");
+                window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}#resumen`);
+              }}>
+                {session.organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+          ) : (
+            <>
+              <span className="workspace-avatar" aria-hidden="true">{organization?.name.slice(0, 1).toUpperCase() ?? "M"}</span>
+              <span><strong>{organization?.name ?? (session.is_platform_admin ? "Administración de plataforma" : "Mi negocio")}</strong><small>{organization?.role ?? (session.is_platform_admin ? "Administrador de plataforma" : "Miembro")}</small></span>
+            </>
+          )}
         </div>
         <button className="mobile-nav-toggle" type="button" aria-expanded={mobileNavOpen} aria-controls="primary-navigation" onClick={() => setMobileNavOpen((open) => !open)}><span aria-hidden="true">{mobileNavOpen ? "×" : "☰"}</span>{mobileNavOpen ? "Cerrar menú" : "Menú"}</button>
-        <nav id="primary-navigation" className={`side-nav ${mobileNavOpen ? "open" : ""}`} onClick={() => setMobileNavOpen(false)}>\n          {session.is_platform_admin && <button className={`nav-item nav-item-button ${renderedView === "platform-admin" ? "active" : ""}`} type="button" onClick={() => selectView("platform-admin")} aria-current={renderedView === "platform-admin" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">◆</span>Plataforma</button>}
+        <nav id="primary-navigation" className={`side-nav ${mobileNavOpen ? "open" : ""}`} onClick={() => setMobileNavOpen(false)}>
+          {session.is_platform_admin && <button className={`nav-item nav-item-button ${renderedView === "platform-admin" ? "active" : ""}`} type="button" onClick={() => selectView("platform-admin")} aria-current={renderedView === "platform-admin" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">◆</span>Plataforma</button>}
+          {session.organizations.length > 0 && <>
           <a className={`nav-item ${renderedView === "overview" ? "active" : ""}`} href="#resumen" onClick={() => selectView("overview")} aria-current={renderedView === "overview" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⌂</span> Resumen</a>
           <button className={`nav-item nav-item-button ${renderedView === "catalog" ? "active" : ""}`} type="button" onClick={() => selectView("catalog")} aria-current={renderedView === "catalog" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Productos</button>
           <button className={`nav-item nav-item-button ${renderedView === "inventory" ? "active" : ""}`} type="button" onClick={() => selectView("inventory")} aria-current={renderedView === "inventory" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▤</span>Inventario</button>
@@ -620,6 +641,7 @@ export default function App() {
           {organization?.role === "owner" && <button className={`nav-item nav-item-button ${renderedView === "organization-structure" ? "active" : ""}`} type="button" onClick={() => selectView("organization-structure")} aria-current={renderedView === "organization-structure" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">⚙</span> Estructura</button>}
           {(organization?.role === "owner" || organization?.role === "admin") && <button className={`nav-item nav-item-button ${renderedView === "fx-contingency" ? "active" : ""}`} type="button" onClick={() => selectView("fx-contingency")} aria-current={renderedView === "fx-contingency" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">₿</span> Gestión cambiaria</button>}
           {(organization?.role === "owner" || organization?.role === "admin" || organization?.role === "inventory" || organization?.role === "cashier") && <button className={`nav-item nav-item-button ${renderedView === "reports" ? "active" : ""}`} type="button" onClick={() => selectView("reports")} aria-current={renderedView === "reports" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true">▦</span>Reportes</button>}
+          </>}
         </nav>
         <div className="sidebar-bottom">
           <div className="connection-indicator"><span className="connection-dot" aria-hidden="true" /><span><strong>Sesión activa</strong><small>{user.email}</small></span></div>
@@ -644,7 +666,9 @@ export default function App() {
               <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>.
             </div>
           )}
-          {renderedView === "platform-admin" && session.is_platform_admin ? (\n            <PlatformAdminPanel />\n          ) : renderedView === "overview" ? (
+          {renderedView === "platform-admin" && session.is_platform_admin ? (
+            <PlatformAdminPanel />
+          ) : renderedView === "overview" ? (
           <>
           <section className="welcome"><div><p className="eyebrow">TU NEGOCIO, EN UN SOLO LUGAR</p><h1>Hola, {greetingName}.</h1><p className="welcome-copy">Tu espacio de trabajo está listo para operar: administra el catálogo, controla el inventario por sucursal, gestiona la caja, registra ventas y consulta los reportes disponibles.</p></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-card"><span className="art-card-label">MICRO APP</span><span className="art-card-line" /><span className="art-card-line short" /><span className="art-card-foot">GESTIÓN · CONTROL · CLARIDAD</span></div></div></section>
           <section className="setup-banner"><div className="setup-icon" aria-hidden="true">↗</div><div className="setup-text"><h2>Cuenta conectada</h2><p>Tu sesión está activa. Desde aquí puedes gestionar el catálogo, inventario, caja y ventas, y dar seguimiento a la operación mediante los reportes disponibles.</p></div><span className="setup-status">Acceso seguro</span></section>

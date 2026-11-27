@@ -16,4 +16,28 @@ describe("PlatformAdminPanel",()=>{
   expect(host.textContent).toContain("Administradores de plataforma");
   expect(host.textContent).toContain("Auditoría reciente");
  });
+
+ it("clears a previous error on organization creation and refreshes the parent session",async()=>{
+  vi.mocked(fetch)
+   .mockResolvedValueOnce(new Response(JSON.stringify({message:"No se pudo cargar"}),{status:503,headers:{"Content-Type":"application/json"}}))
+   .mockResolvedValueOnce(response({id:"org-2"}))
+   .mockResolvedValueOnce(response({organizations:[],admins:[],audit_logs:[]}));
+  const onOrganizationsChanged=vi.fn();
+  await act(async()=>root.render(<PlatformAdminPanel onOrganizationsChanged={onOrganizationsChanged}/>));
+  expect(host.querySelector('[role="alert"]')?.textContent).toBeTruthy();
+  const values:Record<string,string>={"Nombre":"Nueva tienda","Código":"nueva-tienda","Correo del Owner":"owner@example.com"};
+  for(const [label,value] of Object.entries(values)){
+   const input=[...host.querySelectorAll("label")].find(x=>x.textContent?.includes(label))?.querySelector("input");
+   if(!input)throw new Error(`Input ${label} not found`);
+   const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+   setter?.call(input,value);
+   input.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+  const form=host.querySelector("form");
+  if(!form)throw new Error("Organization form not found");
+  await act(async()=>{form.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));});
+  expect(host.querySelector('[role="alert"]')).toBeNull();
+  expect(onOrganizationsChanged).toHaveBeenCalledTimes(1);
+ });
+
 });

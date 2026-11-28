@@ -6,6 +6,17 @@ type Overview = {
   admins: Array<{user_id:string;email:string;display_name:string;is_active:boolean;note:string|null}>;
   audit_logs: Array<{id:number;action:string;actor_email:string;created_at:string;metadata:Record<string,unknown>}>;
 };
+function auditActionLabel(action: string): string {
+ const labels: Record<string, string> = {
+  "organization.created": "Organización creada",
+  "organization.activated": "Organización activada",
+  "organization.suspended": "Organización suspendida",
+  "organization.platform_status_updated": "Estado actualizado",
+  "platform_admin.granted": "Admin concedido",
+  "platform_admin.revoked": "Admin revocado",
+ };
+ return labels[action] ?? action.split(/[._]+/).filter(Boolean).map((part,index)=>index===0?part.charAt(0).toLocaleUpperCase("es-VE")+part.slice(1):part).join(" · ");
+}
 function auditDetail(action:string,metadata:Record<string,unknown>):string {
  const value=(key:string)=>typeof metadata[key]==="string"?String(metadata[key]):"";
  const reason=value("reason");
@@ -41,6 +52,6 @@ export default function PlatformAdminPanel({onOrganizationsChanged}:{onOrganizat
   </form></section>
   <section className="platform-admin-card"><h2>Organizaciones</h2><div className="platform-admin-table-wrap"><table><thead><tr><th>Negocio</th><th>Estado</th><th>Miembros</th><th>Sucursales</th><th>Owner</th><th>Acción</th></tr></thead><tbody>{data?.organizations.map(o=><tr key={o.id}><td>{o.name}<br/><small>{o.slug}</small></td><td>{o.is_active?"Activa":"Suspendida"}</td><td>{o.member_count}</td><td>{o.branch_count}</td><td>{o.owner?.email??o.pending_owner_invitation?.email??"Pendiente"}</td><td><button type="button" disabled={busy} onClick={()=>void setOrganizationActive(o.id,!o.is_active)}>{o.is_active?"Suspender":"Reactivar"}</button></td></tr>)}</tbody></table></div></section>
   <section className="platform-admin-card"><h2>Administradores de plataforma</h2><form className="platform-admin-form" onSubmit={async e=>{e.preventDefault();const email=adminEmail.trim();if(!email)return;const succeeded=await setAdminActive(email,true);if(succeeded)setAdminEmail("");}}><label>Correo Google existente<input type="email" required value={adminEmail} onChange={e=>setAdminEmail(e.target.value)}/></label><button disabled={busy}>Conceder acceso</button></form><div className="platform-admin-table-wrap"><table><thead><tr><th>Cuenta</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{data?.admins.map(a=><tr key={a.user_id}><td>{a.display_name}<br/><small>{a.email}</small></td><td>{a.is_active?"Activo":"Inactivo"}</td><td><button type="button" disabled={busy} onClick={()=>void setAdminActive(a.email,!a.is_active)}>{a.is_active?"Revocar":"Activar"}</button></td></tr>)}</tbody></table></div></section>
-  <section className="platform-admin-card"><h2>Auditoría reciente</h2><div className="platform-admin-table-wrap"><table><thead><tr><th>Fecha</th><th>Actor</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>{data?.audit_logs.map(a=><tr key={a.id}><td><time>{auditDate(a.created_at)}</time></td><td>{a.actor_email}</td><td>{a.action}</td><td>{auditDetail(a.action,a.metadata)}</td></tr>)}</tbody></table></div></section>
+  <section className="platform-admin-card"><h2>Auditoría reciente</h2><div className="platform-admin-table-wrap"><table><thead><tr><th>Fecha</th><th>Actor</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>{data?.audit_logs.map(a=><tr key={a.id}><td><time>{auditDate(a.created_at)}</time></td><td>{a.actor_email}</td><td>{auditActionLabel(a.action)}</td><td>{auditDetail(a.action,a.metadata)}</td></tr>)}</tbody></table></div></section>
  </section>;
 }

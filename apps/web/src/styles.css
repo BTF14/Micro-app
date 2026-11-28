@@ -509,7 +509,7 @@ h1 { margin: 0; font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 550; lette
 .platform-admin-table-wrap { max-width:100%; min-width:0; overflow-x:auto; margin-top:.8rem; }
 .platform-admin table { width:100%; border-collapse:collapse; font-size:.75rem; }
 .platform-admin th,.platform-admin td { padding:.65rem; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
-.platform-admin th,.platform-admin td:nth-child(2),.platform-admin td:last-child { white-space:nowrap; }
+.platform-admin th,.platform-admin td:nth-child(2),.platform-admin td:nth-child(3),.platform-admin td:last-child { white-space:nowrap; }
 .platform-admin td:nth-child(4) { min-width:12rem; white-space:normal; overflow-wrap:anywhere; }
 .platform-admin td time { white-space:nowrap; }
 .platform-admin .platform-muted { color:var(--muted); font-size:.78rem; }

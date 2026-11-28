@@ -200,7 +200,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
       register_id: registerId, opening_cash_usd: "0.0000", opening_cash_ves: "0.00",
     });
     expect(opened.status).toBe(201);
-    const deactivate = await request(f, "owner", "PATCH", root + "/branches/" + branchId + "/members/" + f.users.cashier.id, { is_active: false });
+    const deactivate = await request(f, "owner", "PATCH", root + "/members/" + f.users.cashier.id, { role: "cashier", is_active: false });
     expect(deactivate.status).toBe(409);
     expect(await deactivate.json()).toMatchObject({ error: "STRUCTURE_CONFLICT", message: "No se puede desactivar o cambiar el rol porque este cajero tiene un turno de caja abierto." });
   });

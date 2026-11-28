@@ -48,10 +48,13 @@ function token(c: Context<{ Bindings: Bindings }>): string | null {
 
 function dbFailure(c: Context<{ Bindings: Bindings }>, error: unknown) {
   const code = error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : "";
+  const dbMessage = error && typeof error === "object" && "message" in error ? String(error.message) : "";
+  if (code === "23514" && dbMessage.includes("ORGANIZATION_MEMBER_HAS_OPEN_REGISTER_SHIFT")) return c.json({error:"STRUCTURE_CONFLICT",message:"No se puede desactivar o cambiar el rol porque este cajero tiene un turno de caja abierto."},409);
+  if (code === "23514" && dbMessage.includes("INVITED_USER_REQUIRES_GOOGLE_LINK")) return c.json({error:"STRUCTURE_CONFLICT",message:"Esta cuenta ya existe sin vinculación con Google y requiere recuperación segura."},409);
   const messages: Record<string, { status: 400 | 403 | 404 | 409 | 503; error: string; message: string }> = {
     "22023": { status: 400, error: "INVALID_STRUCTURE_INPUT", message: "Los datos de la estructura no son válidos." },
     "23505": { status: 409, error: "STRUCTURE_DUPLICATE", message: "Ya existe un elemento con ese código o identificador." },
-    "23514": { status: 409, error: "STRUCTURE_CONFLICT", message: "No se puede completar el cambio: existe un turno abierto o la cuenta requiere una vinculación de Google segura." },
+    "23514": { status: 409, error: "STRUCTURE_CONFLICT", message: "No se puede completar el cambio por una regla de seguridad." },
     "55P03": { status: 409, error: "STRUCTURE_LOCK_TIMEOUT", message: "La organización está siendo actualizada. Espera unos segundos e inténtalo de nuevo." },
     "P0002": { status: 404, error: "BRANCH_MEMBERSHIP_NOT_FOUND", message: "La asignación no existe." },
     "42501": { status: 403, error: "STRUCTURE_FORBIDDEN", message: "No tienes permiso para esta operación." },

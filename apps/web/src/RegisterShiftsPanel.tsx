@@ -102,7 +102,9 @@ export default function RegisterShiftsPanel({ organizationId, role, userName, on
       );
       const openedShift = normalizeOpenedShift(response.shift);
       setShift(openedShift); setClosingUsd(""); setClosingVes("");
+      setOpeningUsd(""); setOpeningVes("");
       setNotice("Turno abierto correctamente. La apertura quedó registrada en auditoría.");
+      await loadBranchState(branchId);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo abrir el turno."); }
     finally { setSaving(false); }
   }

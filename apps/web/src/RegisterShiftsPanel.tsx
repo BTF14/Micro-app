@@ -55,7 +55,15 @@ export default function RegisterShiftsPanel({ organizationId, role, userName, on
       role === "owner" || role === "admin" ? apiRequest<{ items: OpenShift[] }>(root + "/register-shifts/open") : Promise.resolve({ items: [] as OpenShift[] }),
     ]);
     setRegisters(registerResult.items);
-    setShift(shiftResult.shift ? normalizeOpenedShift(shiftResult.shift as unknown as Record<string, unknown>) : null);
+    const currentShift = shiftResult.shift as unknown as Record<string, unknown> | null;
+    if (!currentShift) setShift(null);
+    else if (typeof currentShift.id === "string" && typeof (currentShift.opened_at ?? currentShift.openedAt) === "string" &&
+      typeof (currentShift.opening_cash_usd ?? currentShift.openingCashUsd) === "string" &&
+      typeof (currentShift.opening_cash_ves ?? currentShift.openingCashVes) === "string") {
+      setShift(normalizeOpenedShift(currentShift));
+    } else {
+      setShift((previous) => previous?.branchId === selectedBranchId ? previous : null);
+    }
     setOpenShifts(openResult.items);
     setRegisterId(registerResult.items[0]?.id ?? "");
     setClosingUsd("");

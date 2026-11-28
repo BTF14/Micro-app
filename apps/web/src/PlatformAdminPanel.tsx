@@ -7,8 +7,17 @@ type Overview = {
   audit_logs: Array<{id:number;action:string;actor_email:string;created_at:string;metadata:Record<string,unknown>}>;
 };
 function auditDetail(action:string,metadata:Record<string,unknown>):string {
- const text=(key:string)=>typeof metadata[key]==="string"?String(metadata[key]):"";
- switch(action){case "organization.created":return `Organización creada${text("owner_email")?` para ${text("owner_email")}`:""}.`;case "organization.active_updated":return `Estado de organización actualizado: ${metadata.is_active===true?"activa":"suspendida"}.`;case "platform_admin.access_updated":return `Acceso de administrador ${metadata.is_active===true?"concedido o activado":"revocado"}.`;default:return action.replaceAll("_"," ").replaceAll("."," · ");}
+ const value=(key:string)=>typeof metadata[key]==="string"?String(metadata[key]):"";
+ const reason=value("reason");
+ switch(action){
+  case "organization.created": return `Organización creada${value("owner_email")?` para ${value("owner_email")}`:""}${value("owner_status")==="pending"?" (Owner pendiente)":""}.`;
+  case "organization.activated": return `Organización activada.${reason?` Motivo: ${reason}`:""}`;
+  case "organization.suspended": return `Organización suspendida.${reason?` Motivo: ${reason}`:""}`;
+  case "organization.platform_status_updated": return `Estado de organización actualizado: ${metadata.new_is_active===true?"activa":"suspendida"}.`;
+  case "platform_admin.granted": return `Acceso de administrador de plataforma concedido${value("email")?` a ${value("email")}`:""}.`;
+  case "platform_admin.revoked": return `Acceso de administrador de plataforma revocado${value("email")?` a ${value("email")}`:""}.`;
+  default: return action.replaceAll("_"," ").replaceAll("."," · ");
+ }
 }
 function auditDate(value:string):string{return new Intl.DateTimeFormat("es-VE",{dateStyle:"short",timeStyle:"short",timeZone:"America/Caracas"}).format(new Date(value));}
 export default function PlatformAdminPanel({onOrganizationsChanged}:{onOrganizationsChanged?:()=>Promise<void>|void}={}){

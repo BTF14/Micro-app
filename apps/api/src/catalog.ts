@@ -162,7 +162,7 @@ export function registerCatalogRoutes(app: Hono<{ Bindings: Bindings }>): void {
     const cursor = c.req.query("cursor");
     const search = c.req.query("q")?.trim() ?? "";
     const sortValue = c.req.query("sort");
-    const sort: "id" | "name" | "recent" = sortValue === undefined ? "name" : sortValue as "id" | "name" | "recent";
+    const sort: "id" | "name" | "recent" = sortValue === undefined ? "id" : sortValue as "id" | "name" | "recent";
     if (search.length > 120) return c.json({ error: "INVALID_CATALOG_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
     const nameCursor = cursor !== undefined && sort === "name" ? decodeNameCursor(cursor, search.length > 0) : null;
     const recentCursor = cursor !== undefined && sort === "recent" ? decodeRecentCursor(cursor,search.length>0) : null;

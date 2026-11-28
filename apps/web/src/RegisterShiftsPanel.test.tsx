@@ -18,6 +18,7 @@ const openedShift = {
 let container: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 let activeShift: Record<string, unknown> | null;
+let openShiftListCalls=0;
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -29,7 +30,7 @@ async function settle() {
 }
 
 beforeEach(() => {
-  activeShift = null;
+  activeShift = null;openShiftListCalls=0;
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
@@ -40,6 +41,7 @@ beforeEach(() => {
     if (url.pathname.endsWith("/register-shifts/current")) return jsonResponse({ shift: activeShift ? { branch_id: branchId } : null });
     if (url.pathname.endsWith("/branches")) return jsonResponse({ items: [branch] });
     if (url.pathname.endsWith("/registers")) return jsonResponse({ items: [register] });
+    if (url.pathname.endsWith("/register-shifts/open")) { openShiftListCalls+=1;return jsonResponse({items:activeShift?[{id:shiftId,cashier_user_id:openedShift.cashier_user_id,cashier_name:"Ana Pérez",register_name:"Caja 1",opened_at:openedShift.opened_at,opening_cash_usd:"20.0000",opening_cash_ves:"500.00"}]:[]}); }
     if (url.pathname.endsWith("/register-shifts") && method === "POST") { activeShift = openedShift; return jsonResponse({ shift: openedShift }, 201); }
     if (url.pathname.endsWith("/close") && method === "POST") { activeShift = null; return jsonResponse({ shift: {}, replayed: false }); }
     return jsonResponse({ message: "Not found" }, 404);
@@ -53,7 +55,7 @@ afterEach(async () => {
 
 describe("Register shifts workspace", () => {
   it("loads assigned branches and registers, opens a shift, then closes it", async () => {
-    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="admin" userName="Ana Pérez" />); });
     await settle();
     expect(container.textContent).toContain("Prepara tu caja");
     expect(container.textContent).toContain("Principal");
@@ -63,6 +65,7 @@ describe("Register shifts workspace", () => {
     await act(async () => { openButton.click(); });
     await settle();
     expect(container.textContent).toContain("Turno abierto");
+    expect(openShiftListCalls).toBeGreaterThanOrEqual(2);
     expect(container.textContent).toContain("$ 20,00");
     expect(container.textContent).toContain("100 % digital");
     expect(container.textContent).toContain("Reportes suma las ventas en efectivo netas");

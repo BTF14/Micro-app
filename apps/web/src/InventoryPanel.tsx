@@ -57,6 +57,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
   const [inventorySearch, setInventorySearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [sortOrder,setSortOrder]=useState<"name"|"recent">("name");
+  const sortOrderRef=useRef<"name"|"recent">("name");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
   const [receiptReason, setReceiptReason] = useState("");
@@ -141,7 +142,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branchId]);
 
-  const fetchBalances = useCallback(async (cursor?: string, searchTerm = "", sortValue: "name"|"recent" = sortOrder) => {
+  const fetchBalances = useCallback(async (cursor?: string, searchTerm = "", sortValue: "name"|"recent" = sortOrderRef.current) => {
     if (!branchId || !warehouseId) return;
     const requestId = ++sequence.current;
     setLoading(true); setError("");
@@ -161,7 +162,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
       if (requestId === sequence.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [branchId, warehouseId, organizationId,sortOrder]);
+  }, [branchId, warehouseId, organizationId]);
 
   useEffect(() => {
     setItems([]); setNextCursor(null); setReceiptProductId(""); setCountProductId("");
@@ -298,7 +299,7 @@ export default function InventoryPanel({ organizationId, canManageInventory }: {
 
       <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); setReceiptProductId(""); setCountProductId(""); setActiveSearch(inventorySearch.trim()); }}>
         <label className="catalog-search-label" htmlFor="inventory-sort-order">Ordenar productos</label>
-        <select id="inventory-sort-order" aria-label="Ordenar productos" value={sortOrder} onChange={event=>{const next=event.target.value as "name"|"recent";setSortOrder(next);setItems([]);setNextCursor(null);void fetchBalances(undefined,activeSearch,next);}}><option value="name">Alfabético (A–Z)</option><option value="recent">Más recientes</option></select>
+        <select id="inventory-sort-order" aria-label="Ordenar productos" value={sortOrder} onChange={event=>{const next=event.target.value as "name"|"recent";sortOrderRef.current=next;setSortOrder(next);setItems([]);setNextCursor(null);void fetchBalances(undefined,activeSearch,next);}}><option value="name">Alfabético (A–Z)</option><option value="recent">Más recientes</option></select>
         <label className="catalog-search-label" htmlFor="inventory-quick-search">Buscar en este almacén</label>
         <input id="inventory-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={inventorySearch} onChange={(event) => setInventorySearch(event.target.value)} />
         <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>

@@ -182,10 +182,10 @@ export default function RegisterShiftsPanel({ organizationId, role, userName, on
                   <div><dt>Abierto</dt><dd>{dateTime(openShift.opened_at)}</dd></div>
                   <form className="register-shift-form" onSubmit={event => void forceCloseShift(openShift,event)}>
                     <h3>Cierre forzado</h3>
-                    <label className="register-shifts-field"><span>Efectivo físico USD</span><input inputMode="decimal" required value={draft.usd} onChange={e=>updateForceDraft(openShift.id,"usd",e.target.value)} /></label>
-                    <label className="register-shifts-field"><span>Efectivo físico VES</span><input inputMode="decimal" required value={draft.ves} onChange={e=>updateForceDraft(openShift.id,"ves",e.target.value)} /></label>
+                    <label className="register-shifts-field"><span>Efectivo físico USD</span><input inputMode="decimal" required placeholder="0.00" value={draft.usd} onChange={e=>updateForceDraft(openShift.id,"usd",e.target.value)} /></label>
+                    <label className="register-shifts-field"><span>Efectivo físico VES</span><input inputMode="decimal" required placeholder="0.00" value={draft.ves} onChange={e=>updateForceDraft(openShift.id,"ves",e.target.value)} /></label>
                     <label className="register-shifts-field"><span>Motivo obligatorio</span><textarea required minLength={3} maxLength={300} value={draft.reason} onChange={e=>updateForceDraft(openShift.id,"reason",e.target.value)} /></label>
-                    <button type="submit" className="primary-button" disabled={saving}>Cerrar turno y auditar</button>
+                    <button type="submit" className="register-shifts-primary" disabled={saving}>Cerrar turno y auditar</button>
                   </form>
                 </article>;
               })}

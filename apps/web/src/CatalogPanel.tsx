@@ -112,9 +112,9 @@ export default function CatalogPanel({
   useEffect(() => {
     setItems([]);
     setNextCursor(null);
-    void fetchPage();
+    void fetchPage(undefined, false, activeSearch);
     return () => { requestSequence.current += 1; };
-  }, [fetchPage]);
+  }, [fetchPage, activeSearch]);
 
   const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;
   const canReadCosts = items.some((item) => item.cost_usd !== undefined);

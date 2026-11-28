@@ -600,4 +600,12 @@ describe("platform administration workspace", () => {
     expect(container.textContent).not.toContain("Administración de plataforma");
     expect([...container.querySelectorAll("button")].some(button => button.textContent?.trim() === "Plataforma")).toBe(false);
   });
+  it("clears a stale OAuth callback banner when /auth/me restores a valid session",async()=>{
+    window.history.replaceState({},"","/?auth_error=not_allowlisted");
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(authResponse)).mockResolvedValueOnce(jsonResponse(bcvSyncStateResponse)).mockResolvedValueOnce(jsonResponse(bcvRateResponse));
+    await renderApp();await settle();
+    expect(container.textContent).toContain("Hola, Ana.");
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+  });
+
 });

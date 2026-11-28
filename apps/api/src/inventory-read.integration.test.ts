@@ -434,5 +434,16 @@ describe.skipIf(!databaseUrl)("inventory balance and ledger read APIs against Po
     const inactive = await get(root() + "/inventory");
     expect(inactive.status).toBe(404);
     await admin.query("UPDATE warehouses SET is_active = true WHERE organization_id = $1 AND id = $2", [organizationId, warehouseId]);
+  }); 
+  it("paginates recent inventory products with opaque created_at keyset cursors",async()=>{
+    const first=await get(root()+"/inventory?limit=1&sort=recent");
+    expect(first.status).toBe(200);
+    const firstBody=await first.json() as {items:Array<{product_id:string}>;nextCursor:string|null};
+    expect(firstBody.items).toHaveLength(1);expect(firstBody.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/);expect(firstBody.nextCursor).not.toBe(firstBody.items[0]!.product_id);
+    const second=await get(root()+"/inventory?limit=1&sort=recent&cursor="+firstBody.nextCursor);
+    expect(second.status).toBe(200);
+    const secondBody=await second.json() as {items:Array<{product_id:string}>;nextCursor:string|null};
+    expect(secondBody.items).toHaveLength(1);expect(secondBody.items[0]!.product_id).not.toBe(firstBody.items[0]!.product_id);
   });
+
 });

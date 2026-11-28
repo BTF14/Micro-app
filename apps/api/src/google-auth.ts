@@ -115,6 +115,7 @@ export function getConfiguredFrontendOrigin(value: string | undefined): string |
 }
 
 function redirectToFrontend(c: AppContext, path: string): Response {
+  c.header("Cache-Control", "private, no-store");
   const configured = getConfiguredFrontendOrigin(c.env.FRONTEND_ORIGIN);
   if (!configured) {
     // No safe place to send the browser; fail closed with a plain response
@@ -127,6 +128,7 @@ function redirectToFrontend(c: AppContext, path: string): Response {
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 async function startGoogleAuthorization(c: AppContext, bootstrapRequest?: BootstrapRequest): Promise<Response> {
+  c.header("Cache-Control", "private, no-store");
   const clientId = c.env.GOOGLE_CLIENT_ID;
   const redirectUri = c.env.GOOGLE_REDIRECT_URI;
   if (!clientId || !redirectUri) {

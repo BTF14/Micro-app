@@ -7,7 +7,7 @@ import {apiDownload,apiRequest} from "./auth";
 vi.mock("./auth",()=>({apiRequest:vi.fn(),apiDownload:vi.fn()}));
 const org="11111111-1111-4111-8111-111111111111",branch="22222222-2222-4222-8222-222222222222",shift="33333333-3333-4333-8333-333333333333";
 let root:Root,container:HTMLDivElement,currentRole:"owner"|"admin"|"inventory"|"cashier"="owner";
-const closed={id:shift,branch_id:branch,branch_name:"Principal",register_name:"Caja 1",cashier_name:"Ana",opened_at:"2026-11-21T12:00:00Z",closed_at:"2026-11-21T13:00:00Z",opening_cash_usd:"10.0000",opening_cash_ves:"100.00",closing_cash_usd:"8.0000",closing_cash_ves:"90.00"};
+const closed={id:shift,branch_id:branch,branch_name:"Principal",register_name:"Caja 1",cashier_name:"Ana",opened_at:"2026-11-21T12:00:00Z",closed_at:"2026-11-21T13:00:00Z",opening_cash_usd:"10.0000",opening_cash_ves:"100.00",closing_cash_usd:"8.0000",closing_cash_ves:"90.00",force_closed:true,force_close_reason:"Cajero no disponible",closed_by_name:"Owner"};
 beforeEach(()=>{container=document.createElement("div");document.body.appendChild(container);root=createRoot(container);vi.mocked(apiRequest).mockImplementation(async(p:string)=>{if(p.includes("/register-shifts?"))return{items:[closed]} as never;if(p.includes("closure-summary"))return{shift:closed,completed_sales_count:"2",non_completed_sales_count:"1",total_usd:"20.0000",total_ves_snapshot:"2000.00",payments:[],fx_breakdown:[],sale_snapshots:[{settlement_currency:"VES",fx_source:"bcv_official",exchange_rate_snapshot:"918.76620000",exchange_rate_effective_date:"2026-11-20"},{settlement_currency:"VES",fx_source:"bcv_official",exchange_rate_snapshot:"918.76620000",exchange_rate_effective_date:"2026-11-20"},{settlement_currency:"VES",fx_source:"bcv_official",exchange_rate_snapshot:"918.76620000",exchange_rate_effective_date:"2026-11-20"}],expected_cash_usd:"10.0000",expected_cash_ves:"100.00",difference_cash_usd:"-2.0000",difference_cash_ves:"-10.00"} as never;if(p.includes("/reports/sales"))return{items:[],total_usd:"0",total_ves_snapshot:"0",excluded_non_completed_count:"0"} as never;if(p.includes("/branches"))return{items:[]} as never;return{items:[],include_valuation:currentRole==="owner",total_retail_valuation_usd:"0",total_cost_valuation_usd:"0"} as never})});
 afterEach(async()=>{await act(async()=>root.unmount());container.remove();vi.unstubAllGlobals();vi.restoreAllMocks()});
 async function render(role:"owner"|"admin"|"inventory"|"cashier"){currentRole=role;await act(async()=>root.render(<ReportsPanel organizationId={org} role={role} initialShift={{branchId:branch,shiftId:shift}}/>))}
@@ -73,6 +73,14 @@ describe("ReportsPanel",()=>{
   expect(container.textContent).not.toContain("1 ventas");
   expect(container.textContent).toContain("0,00");
   expect(container.textContent).not.toContain("−0,00");
+ });
+
+ it("shows forced-close status, actor and reason in the closure summary",async()=>{
+  await act(async()=>root.render(<ReportsPanel organizationId={org} role="owner"/>));
+  await act(async()=>{await Promise.resolve();});
+  expect(container.textContent).toContain("Cierre forzado");
+  expect(container.textContent).toContain("Owner");
+  expect(container.textContent).toContain("Cajero no disponible");
  });
 
 });

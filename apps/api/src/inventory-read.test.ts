@@ -163,4 +163,6 @@ describe("inventory read route guards", () => {
     expect(rejected.status).toBe(400);
     expect(await rejected.json()).toMatchObject({ error: "INVALID_INVENTORY_QUERY" });
   });
+  it("orders recent inventory pages by creation timestamp and id with exact matches first",()=>{const query=buildInventoryReadQuery({organizationId,branchId,warehouseId,search:"SKU",activeOnly:false,cursor:"22222222-3333-4444-8555-666666666666",cursorRank:0,cursorCreatedAt:"2026-11-27T12:00:00.000Z",limit:10,sort:"recent",canReadCost:false});expect(query.statement).toContain("p.created_at DESC, p.id DESC");expect(query.statement).toContain("(p.created_at,p.id) <");expectSequentialSqlParameters(query.statement,query.values);});
+
 });

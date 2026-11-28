@@ -333,4 +333,13 @@ describe("catalog CSV import", () => {
     expect(String(vi.mocked(fetch).mock.calls[1]?.[0])).toContain("q=750123");
   });
 
+ it("offers alphabetical and recent ordering and requests the recent sort",async()=>{
+  vi.mocked(fetch).mockResolvedValue(jsonResponse({items:[],nextCursor:null,limit:25}));
+  await renderPanel({organizationId:"org-1",exchangeRate:null,exchangeRateStatus:"unavailable",canManage:false});
+  const select=container.querySelector<HTMLSelectElement>("#catalog-sort-order");
+  expect(select?.value).toBe("name");expect(select?.textContent).toContain("Más recientes");
+  if(select)await act(async()=>{select.value="recent";select.dispatchEvent(new Event("change",{bubbles:true}));});
+  expect(vi.mocked(fetch).mock.calls.some(call=>String(call[0]).includes("sort=recent"))).toBe(true);
+ });
+
 });

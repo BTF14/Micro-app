@@ -53,6 +53,11 @@ function mutationGuard(c: Ctx) {
 }
 function dbError(c: Ctx, error: unknown) {
   const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+  const dbMessage = error && typeof error === "object" && "message" in error ? String(error.message) : "";
+  if (code === "42501" && dbMessage.includes("PLATFORM_ADMIN_SELF_REVOKE_FORBIDDEN")) return c.json({error:"PLATFORM_ADMIN_FORBIDDEN",message:"No puedes revocar tu propio acceso de administrador de plataforma."},403);
+  if (code === "23514" && dbMessage.includes("PLATFORM_ADMIN_LAST_ADMIN")) return c.json({error:"PLATFORM_CONFLICT",message:"Debe permanecer al menos un administrador de plataforma activo."},409);
+  if (code === "23514" && dbMessage.includes("PLATFORM_OWNER_ACCOUNT_NOT_ELIGIBLE")) return c.json({error:"PLATFORM_CONFLICT",message:"La cuenta indicada como Owner está inactiva o sin vinculación con Google."},409);
+  if (code === "23514" && dbMessage.includes("PLATFORM_ADMIN_TARGET_NOT_ELIGIBLE")) return c.json({error:"PLATFORM_CONFLICT",message:"La cuenta debe existir, estar activa y tener sesión verificada con Google."},409);
   const map: Record<string, { status: 400|403|404|409; error: string; message: string }> = {
     "22023": { status: 400, error: "INVALID_PLATFORM_INPUT", message: "Los datos suministrados no son válidos." },
     "42501": { status: 403, error: "PLATFORM_ADMIN_FORBIDDEN", message: "No tienes permisos para esta operación." },

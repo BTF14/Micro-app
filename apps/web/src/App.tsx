@@ -433,7 +433,7 @@ export default function App() {
       return () => { active = false; };
     }
     apiRequest<AuthResponse>("/auth/me")
-      .then((result) => { if (active) setSession(result); })
+      .then((result) => { if (active) { setSession(result); setError(""); } })
       .catch((reason: unknown) => {
         if (!active) return;
         if (!(reason instanceof ApiError && reason.status === 401)) {
@@ -501,7 +501,7 @@ export default function App() {
     };
   }, [session]);
 
-  async function refreshSession() { const result = await apiRequest<AuthResponse>("/auth/me"); setSession(result); }
+  async function refreshSession() { const result = await apiRequest<AuthResponse>("/auth/me"); setSession(result); setError(""); }
 
   async function handleLogout() {
     setBusy(true);
@@ -598,6 +598,8 @@ export default function App() {
         ? { ...item, description: canManageCatalog
           ? "Administra el catálogo y consulta precios exactos en USD."
           : "Consulta el catálogo y precios exactos en USD." }
+        : item.view === "reports" && role === "inventory"
+        ? { ...item, description: "Consulta existencias, movimientos y valoración retail del inventario." }
         : item);
   const renderedView: WorkspaceView = session.organizations.length === 0 && session.is_platform_admin ? "platform-admin" : roleCanAccessView(organization?.role, activeView, session.is_platform_admin) ? activeView : "overview";
 

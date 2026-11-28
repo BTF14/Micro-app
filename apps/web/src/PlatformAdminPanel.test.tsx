@@ -40,4 +40,14 @@ describe("PlatformAdminPanel",()=>{
   expect(onOrganizationsChanged).toHaveBeenCalledTimes(1);
  });
 
+ it("retains the administrator email when granting access fails",async()=>{
+  vi.mocked(fetch).mockResolvedValueOnce(response({organizations:[],admins:[],audit_logs:[]})).mockResolvedValueOnce(new Response(JSON.stringify({message:"Cuenta no elegible"}),{status:409,headers:{"Content-Type":"application/json"}}));
+  await act(async()=>root.render(<PlatformAdminPanel/>));
+  const input=[...host.querySelectorAll("label")].find(x=>x.textContent?.includes("Correo Google existente"))?.querySelector("input");if(!input)throw new Error("Admin email input missing");
+  const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;setter?.call(input,"admin@example.com");input.dispatchEvent(new Event("input",{bubbles:true}));
+  const form=[...host.querySelectorAll("form")].at(-1);if(!form)throw new Error("Admin form missing");
+  await act(async()=>{form.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));await Promise.resolve();});
+  expect(input.value).toBe("admin@example.com");expect(host.querySelector('[role="alert"]')?.textContent).toContain("Cuenta no elegible");
+ });
+
 });

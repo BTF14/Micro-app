@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "./index";
+import { organizationStructureConstraintMessage } from "./organization-structure";
 
 const organizationId = "11111111-2222-4333-8444-555555555555";
 const branchId = "22222222-2222-4333-8444-555555555555";
@@ -64,4 +65,11 @@ describe("organization structure route guards", () => {
     });
     expect(write.status).toBe(401);
   });
+  it("maps distinct 23514 organization constraints to actionable Spanish messages",()=>{
+    expect(organizationStructureConstraintMessage("23514","ORGANIZATION_MEMBER_HAS_OPEN_REGISTER_SHIFT")).toBe("No se puede desactivar o cambiar el rol porque este cajero tiene un turno de caja abierto.");
+    expect(organizationStructureConstraintMessage("23514","INVITED_USER_REQUIRES_GOOGLE_LINK")).toBe("Esta cuenta ya existe sin vinculación con Google y requiere recuperación segura.");
+    expect(organizationStructureConstraintMessage("23514","OTHER_CONSTRAINT")).toBe("No se puede completar el cambio por una regla de seguridad.");
+    expect(organizationStructureConstraintMessage("23505","OTHER_CONSTRAINT")).toBeNull();
+  });
+
 });

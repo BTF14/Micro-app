@@ -277,4 +277,15 @@ describe.skipIf(!databaseUrl)("catalog route against PostgreSQL", () => {
     expect(second.items[0]!.id).not.toBe(first.items[0]!.id);
     expect(second.nextCursor).toBeNull();
   });
+  it("paginates recent catalog products with an opaque tenant-scoped timestamp cursor",async()=>{
+    const firstResponse=await requestCatalog(members.owner.token,organizationA,"?limit=1&sort=recent");
+    expect(firstResponse.status).toBe(200);
+    const first=await firstResponse.json() as {items:Array<{id:string}>;nextCursor:string|null};
+    expect(first.items).toHaveLength(1);expect(first.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/);expect(first.nextCursor).not.toBe(first.items[0]!.id);
+    const secondResponse=await requestCatalog(members.owner.token,organizationA,"?limit=1&sort=recent&cursor="+first.nextCursor);
+    expect(secondResponse.status).toBe(200);
+    const second=await secondResponse.json() as {items:Array<{id:string}>;nextCursor:string|null};
+    expect(second.items).toHaveLength(1);expect(second.items[0]!.id).not.toBe(first.items[0]!.id);
+  });
+
 });

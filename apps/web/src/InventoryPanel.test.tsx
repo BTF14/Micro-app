@@ -379,4 +379,10 @@ describe("inventory panel", () => {
     expect(key(10)).not.toBe(firstKey);
   });
 
+ it("offers alphabetical and recent ordering for inventory",async()=>{
+  await renderPanel(false);
+  const select=container.querySelector<HTMLSelectElement>("#inventory-sort-order");
+  expect(select?.value).toBe("name");expect(select?.textContent).toContain("Más recientes");
+ });
+
 });

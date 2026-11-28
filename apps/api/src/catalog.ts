@@ -117,9 +117,9 @@ export function buildCatalogQuery(
       }
     } else if (sort === "recent") {
       if (!cursorCreatedAt) throw new Error("A recent cursor requires its creation timestamp.");
-      if (normalizedSearch) { if (cursorRank === undefined) throw new Error("A searched recent cursor requires its search rank."); values.push(cursorRank); const rank=values.length; values.push(cursorCreatedAt); const created=values.length; values.push(cursor); filters.push(`((CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END) > ${rank} OR ((CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END) = ${rank} AND (p.created_at,p.id) < (${created},${values.length}))`); }
-      else { values.push(cursorCreatedAt); const created=values.length; values.push(cursor); filters.push(`(p.created_at,p.id) < (${created},${values.length})`); }
-    } else { values.push(cursor); filters.push(`id > ${values.length}`); }
+      if (normalizedSearch) { if (cursorRank === undefined) throw new Error("A searched recent cursor requires its search rank."); values.push(cursorRank); const rank=values.length; values.push(cursorCreatedAt); const created=values.length; values.push(cursor); filters.push(`((CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END) > $${rank} OR ((CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END) = $${rank} AND (p.created_at,p.id) < ($${created},$${values.length}))`); }
+      else { values.push(cursorCreatedAt); const created=values.length; values.push(cursor); filters.push(`(p.created_at,p.id) < ($${created},$${values.length})`); }
+    } else { values.push(cursor); filters.push(`id > $${values.length}`); }
   }
   values.push(pageSize + 1);
   const order = sort === "recent" ? (normalizedSearch ? "CASE WHEN p.barcode = $2 THEN 0 WHEN lower(p.sku) = lower($2) THEN 1 ELSE 2 END ASC, p.created_at DESC, p.id DESC" : "p.created_at DESC, p.id DESC") : sort === "name"

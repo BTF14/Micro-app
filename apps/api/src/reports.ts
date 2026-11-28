@@ -169,7 +169,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
                   rs.cashier_user_id, u.display_name AS cashier_name, rs.opened_at::text AS opened_at,
                   rs.closed_at::text AS closed_at, rs.opening_cash_usd::text AS opening_cash_usd,
                   rs.opening_cash_ves::text AS opening_cash_ves, rs.closing_cash_usd::text AS closing_cash_usd,
-                  rs.closing_cash_ves::text AS closing_cash_ves, rs.force_closed, rs.force_close_reason, cu.display_name AS closed_by_name, rs.force_closed, rs.force_close_reason, cu.display_name AS closed_by_name
+                  rs.closing_cash_ves::text AS closing_cash_ves, rs.force_closed, rs.force_close_reason, cu.display_name AS closed_by_name
              FROM public.register_shifts rs
              LEFT JOIN public.app_users cu ON cu.id=rs.closed_by_user_id
              JOIN public.branches b ON b.organization_id=rs.organization_id AND b.id=rs.branch_id
@@ -207,7 +207,7 @@ export function registerReportsRoutes(app: Hono<{ Bindings: Bindings }>): void {
                   rs.cashier_user_id, u.display_name AS cashier_name, rs.opened_at::text AS opened_at,
                   rs.closed_at::text AS closed_at, rs.opening_cash_usd::text AS opening_cash_usd,
                   rs.opening_cash_ves::text AS opening_cash_ves, rs.closing_cash_usd::text AS closing_cash_usd,
-                  rs.closing_cash_ves::text AS closing_cash_ves
+                  rs.closing_cash_ves::text AS closing_cash_ves, rs.force_closed, rs.force_close_reason, cu.display_name AS closed_by_name
              FROM public.register_shifts rs
              LEFT JOIN public.app_users cu ON cu.id=rs.closed_by_user_id
              JOIN public.branches b ON b.organization_id=rs.organization_id AND b.id=rs.branch_id

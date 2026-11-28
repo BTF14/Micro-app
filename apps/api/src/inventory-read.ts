@@ -151,13 +151,13 @@ export function buildInventoryReadQuery(input: {
       }
     } else if(input.sort==="recent") {
       if(!input.cursorCreatedAt)throw new Error("A recent cursor requires its creation timestamp.");
-      if(input.search){if(input.cursorRank===undefined)throw new Error("A searched recent cursor requires its rank.");values.push(input.cursorRank);const rank=values.length;values.push(input.cursorCreatedAt);const created=values.length;values.push(input.cursor);filters.push(`((CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END) > ${rank} OR ((CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END) = ${rank} AND (p.created_at,p.id) < (${created},${values.length}))`);}
-      else{values.push(input.cursorCreatedAt);const created=values.length;values.push(input.cursor);filters.push(`(p.created_at,p.id) < (${created},${values.length})`);}
-    } else { values.push(input.cursor); filters.push(`p.id > ${values.length}`); }
+      if(input.search){if(input.cursorRank===undefined)throw new Error("A searched recent cursor requires its rank.");values.push(input.cursorRank);const rank=values.length;values.push(input.cursorCreatedAt);const created=values.length;values.push(input.cursor);filters.push(`((CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END) > $${rank} OR ((CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END) = $${rank} AND (p.created_at,p.id) < ($${created},$${values.length}))`);}
+      else{values.push(input.cursorCreatedAt);const created=values.length;values.push(input.cursor);filters.push(`(p.created_at,p.id) < ($${created},$${values.length})`);}
+    } else { values.push(input.cursor); filters.push(`p.id > $${values.length}`); }
   }
   values.push(input.limit + 1);
   let order = "p.id ASC";
-  if(input.sort==="recent")order=input.search&&exact!==null?`CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END ASC, p.created_at DESC, p.id DESC`:"p.created_at DESC, p.id DESC";
+  if(input.sort==="recent")order=input.search&&exact!==null?`CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END ASC, p.created_at DESC, p.id DESC`:"p.created_at DESC, p.id DESC";
   if (input.sort === "relevance" && input.search && exact !== null && partial !== null && prefix !== null) {
     order = `CASE
       WHEN p.barcode = $${exact} THEN 0
@@ -172,8 +172,8 @@ export function buildInventoryReadQuery(input: {
       : "lower(p.name) ASC, p.id ASC";
   }
   const cursorProjection = input.sort === "name"
-    ? `, lower(p.name) AS cursor_name${input.search && exact !== null ? `, CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END AS cursor_rank` : ""}`
-    : input.sort === "recent" ? `, p.created_at::text AS cursor_created_at${input.search && exact !== null ? `, CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END AS cursor_rank` : ""}` : "";
+    ? `, lower(p.name) AS cursor_name${input.search && exact !== null ? `, CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END AS cursor_rank` : ""}`
+    : input.sort === "recent" ? `, p.created_at::text AS cursor_created_at${input.search && exact !== null ? `, CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END AS cursor_rank` : ""}` : "";
   const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
   const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit, p.quantity_mode,
       p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,

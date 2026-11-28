@@ -171,4 +171,6 @@ describe("GET /api/orgs/:organizationId/catalog", () => {
     expect(rejected.status).toBe(400);
     await expect(rejected.json()).resolves.toMatchObject({ error: "INVALID_CATALOG_QUERY" });
   });
+  it("orders recent catalog pages by creation timestamp and id with exact matches first",()=>{const query=buildCatalogQuery("cashier",organizationId,"22222222-3333-4444-8555-666666666666",10,"SKU","recent",undefined,0,"2026-11-27T12:00:00.000Z");expect(query.statement).toContain("p.created_at DESC, p.id DESC");expect(query.statement).toContain("(p.created_at,p.id) <");expect(query.values).toEqual([organizationId,"SKU","%SKU%",0,"2026-11-27T12:00:00.000Z","22222222-3333-4444-8555-666666666666",11]);});
+
 });

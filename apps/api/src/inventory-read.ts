@@ -7,6 +7,9 @@ import { withDatabaseClient, withDatabaseTransaction } from "./database";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type NameCursor = { id: string; name: string; rank?: 0 | 1 | 2 };
+type RecentCursor={id:string;created_at:string;rank?:0|1|2};
+function encodeRecentCursor(x:RecentCursor):string{const bytes=new TextEncoder().encode(JSON.stringify(x));let binary="";for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replaceAll("+","-").replaceAll("/","_").replace(/=+$/g,"");}
+function decodeRecentCursor(value:string,hasSearch:boolean):RecentCursor|null{if(value.length>2048||!/^[A-Za-z0-9_-]+$/.test(value))return null;try{const base64=value.replace(/-/g,"+").replace(/_/g,"/");const binary=atob(base64+"=".repeat((4-base64.length%4)%4));const parsed:unknown=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(binary,c=>c.charCodeAt(0))));if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))return null;const x=parsed as Record<string,unknown>;if(Object.keys(x).sort().join(",")!==(hasSearch?"created_at,id,rank":"created_at,id")||typeof x.id!=="string"||!UUID_PATTERN.test(x.id)||typeof x.created_at!=="string"||!/^\\d{4}-\\d{2}-\\d{2}T/.test(x.created_at)||!Number.isFinite(Date.parse(x.created_at))||(hasSearch&&x.rank!==0&&x.rank!==1&&x.rank!==2))return null;return{id:x.id,created_at:x.created_at,...(hasSearch?{rank:x.rank as 0|1|2}:{})};}catch{return null;}}
 
 function encodeNameCursor(cursor: NameCursor): string {
   const bytes = new TextEncoder().encode(JSON.stringify(cursor));
@@ -87,6 +90,7 @@ type InventoryBalanceRow = {
   cost_usd?: string;
   cursor_name?: string;
   cursor_rank?: number;
+  cursor_created_at?: string;
 };
 
 type InventoryMovementRow = {
@@ -107,10 +111,10 @@ type InventoryMovementRow = {
 };
 
 
-export type InventoryReadSort = "id" | "name" | "relevance";
+export type InventoryReadSort = "id" | "name" | "relevance" | "recent";
 export function buildInventoryReadQuery(input: {
   organizationId: string; branchId: string; warehouseId: string; search: string;
-  activeOnly: boolean; cursor?: string; cursorName?: string; cursorRank?: number; limit: number; sort: InventoryReadSort; canReadCost: boolean;
+  activeOnly: boolean; cursor?: string; cursorName?: string; cursorRank?: number; cursorCreatedAt?: string; limit: number; sort: InventoryReadSort; canReadCost: boolean;
 }): { statement: string; values: unknown[] } {
   const values: unknown[] = [input.organizationId, input.branchId, input.warehouseId];
   const filters = ["p.organization_id = $1", input.activeOnly ? "p.is_active = true" : "(p.is_active = true OR b.balance_version IS NOT NULL)"];
@@ -145,12 +149,15 @@ export function buildInventoryReadQuery(input: {
         filters.push("(lower(p.name), p.id) > ($" + nameParameter + ", $" + values.length + ")");
         filters.push("p.id <> $" + values.length);
       }
-    } else {
-      values.push(input.cursor); filters.push(`p.id > $${values.length}`);
-    }
+    } else if(input.sort==="recent") {
+      if(!input.cursorCreatedAt)throw new Error("A recent cursor requires its creation timestamp.");
+      if(input.search){if(input.cursorRank===undefined)throw new Error("A searched recent cursor requires its rank.");values.push(input.cursorRank);const rank=values.length;values.push(input.cursorCreatedAt);const created=values.length;values.push(input.cursor);filters.push(`((CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END) > ${rank} OR ((CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END) = ${rank} AND (p.created_at,p.id) < (${created},${values.length}))`);}
+      else{values.push(input.cursorCreatedAt);const created=values.length;values.push(input.cursor);filters.push(`(p.created_at,p.id) < (${created},${values.length})`);}
+    } else { values.push(input.cursor); filters.push(`p.id > ${values.length}`); }
   }
   values.push(input.limit + 1);
   let order = "p.id ASC";
+  if(input.sort==="recent")order=input.search&&exact!==null?`CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END ASC, p.created_at DESC, p.id DESC`:"p.created_at DESC, p.id DESC";
   if (input.sort === "relevance" && input.search && exact !== null && partial !== null && prefix !== null) {
     order = `CASE
       WHEN p.barcode = $${exact} THEN 0
@@ -165,10 +172,8 @@ export function buildInventoryReadQuery(input: {
       : "lower(p.name) ASC, p.id ASC";
   }
   const cursorProjection = input.sort === "name"
-    ? `, lower(p.name) AS cursor_name${input.search && exact !== null
-      ? `, CASE WHEN p.barcode = $${exact} THEN 0 WHEN lower(p.sku) = lower($${exact}) THEN 1 ELSE 2 END AS cursor_rank`
-      : ""}`
-    : "";
+    ? `, lower(p.name) AS cursor_name${input.search && exact !== null ? `, CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END AS cursor_rank` : ""}`
+    : input.sort === "recent" ? `, p.created_at::text AS cursor_created_at${input.search && exact !== null ? `, CASE WHEN p.barcode = ${exact} THEN 0 WHEN lower(p.sku) = lower(${exact}) THEN 1 ELSE 2 END AS cursor_rank` : ""}` : "";
   const cost = input.canReadCost ? ", p.cost_usd::text AS cost_usd" : "";
   const statement = `SELECT p.id AS product_id, p.is_active, p.sku, p.barcode, p.name, p.unit, p.quantity_mode,
       p.price_usd::text AS price_usd, p.minimum_stock::text AS minimum_stock,
@@ -199,10 +204,11 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
     const sort: InventoryReadSort = sortValue === undefined ? "id" : sortValue as InventoryReadSort;
     if (search.length > 120) return c.json({ error: "INVALID_INVENTORY_QUERY", message: "La búsqueda no puede superar 120 caracteres." }, 400);
     const nameCursor = cursor !== undefined && sort === "name" ? decodeNameCursor(cursor, search.length > 0) : null;
+    const recentCursor = cursor !== undefined && sort === "recent" ? decodeRecentCursor(cursor,search.length>0) : null;
     if (limit === null ||
-        (cursor !== undefined && (sort === "name" ? nameCursor === null : !UUID_PATTERN.test(cursor))) ||
+        (cursor !== undefined && (sort === "name" ? nameCursor === null : sort === "recent" ? recentCursor === null : !UUID_PATTERN.test(cursor))) ||
         (activeOnlyValue !== undefined && activeOnlyValue !== "true" && activeOnlyValue !== "false") ||
-        (sortValue !== undefined && sortValue !== "id" && sortValue !== "name" && sortValue !== "relevance") ||
+        (sortValue !== undefined && sortValue !== "id" && sortValue !== "name" && sortValue !== "relevance" && sortValue !== "recent") ||
         (sort === "relevance" && cursor !== undefined)) {
       return c.json({ error: "INVALID_INVENTORY_QUERY", message: "Los parámetros de consulta no son válidos." }, 400);
     }
@@ -232,21 +238,22 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
 
           let cursorName: string | undefined;
           let cursorRank: number | undefined;
-          const cursorId = sort === "name" ? nameCursor?.id : cursor;
-          if (cursorId && sort === "name" && nameCursor) {
+          let cursorCreatedAt: string | undefined;
+          const cursorId = sort === "name" ? nameCursor?.id : sort === "recent" ? recentCursor?.id : cursor;
+          if (cursorId && sort !== "id" && sort !== "relevance") {
             const cursorProduct = await tx.query<{ cursor_exists: number }>(
               "SELECT 1 AS cursor_exists FROM products WHERE organization_id = $1 AND id = $2",
               [branch.organizationId, cursorId],
             );
             if (!cursorProduct.rows[0]) return { kind: "invalid_cursor" as const };
-            cursorName = nameCursor.name;
-            cursorRank = nameCursor.rank;
+            if(sort==="name"&&nameCursor){cursorName=nameCursor.name;cursorRank=nameCursor.rank;}
+            if(sort==="recent"&&recentCursor){cursorCreatedAt=recentCursor.created_at;cursorRank=recentCursor.rank;}
           }
 
           const canReadCost = authorizeCommercialOperation(branch.organizationRole, "catalog.read_costs");
           const query = buildInventoryReadQuery({
             organizationId: branch.organizationId, branchId: branch.branchId, warehouseId,
-            search, activeOnly, cursor: cursorId, cursorName, cursorRank, limit, sort, canReadCost,
+            search, activeOnly, cursor: cursorId, cursorName, cursorRank, cursorCreatedAt, limit, sort, canReadCost,
           });
           const rows = await tx.query<InventoryBalanceRow>(query.statement, query.values);
           const hasMore = rows.rows.length > limit;
@@ -277,6 +284,7 @@ export function registerInventoryReadRoutes(app: Hono<{ Bindings: Bindings }>): 
                     name: items[items.length - 1]!.cursor_name!,
                     ...(search ? { rank: items[items.length - 1]!.cursor_rank as 0 | 1 | 2 } : {}),
                   })
+                  : sort === "recent" ? encodeRecentCursor({id:items[items.length-1]!.product_id,created_at:items[items.length-1]!.cursor_created_at!,...(search?{rank:items[items.length-1]!.cursor_rank as 0|1|2}:{})})
                   : items[items.length - 1]!.product_id
                 : null,
               limit,

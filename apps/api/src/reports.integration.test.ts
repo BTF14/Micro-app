@@ -200,6 +200,8 @@ describe.skipIf(!adminUrl || !runtimeUrl || !bcvUrl)("reports API with restricte
     expect(body.expected_cash_usd).toBe("10.0000");
     expect(body.expected_cash_ves).toBe("100.00");
     expect(body.difference_cash_usd).toBeNull();
+    expect(body.shift).toMatchObject({force_closed:false,force_close_reason:null});
+    expect(body.shift).toHaveProperty("closed_by_name");
     expect(body.disclaimer).toBe("COMPROBANTE DE CONTROL INTERNO — NO ES FACTURA FISCAL");
     expect(await request("inventory",orgPath()+"/register-shifts")).toHaveProperty("status",403);
   });

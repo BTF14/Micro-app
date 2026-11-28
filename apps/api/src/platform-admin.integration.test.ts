@@ -86,4 +86,10 @@ describe.skipIf(!adminUrl||!runtimeUrl)("platform administration API",()=>{
   const enabledAllowlist=await admin.query<{is_active:boolean}>("SELECT is_active FROM public.auth_allowlist WHERE lower(email)=lower($1)",[targetEmail]);
   expect(enabledAllowlist.rows[0]?.is_active).toBe(true);
  });
+ it("returns the specific self-revocation denial message",async()=>{
+  const response=await request(actorToken,"POST","/api/platform/admins",{email:actorEmail,is_active:false,note:"self revoke"});
+  expect(response.status).toBe(403);
+  await expect(response.json()).resolves.toMatchObject({error:"PLATFORM_ADMIN_FORBIDDEN",message:"No puedes revocar tu propio acceso de administrador de plataforma."});
+ });
+
 });

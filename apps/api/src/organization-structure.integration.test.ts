@@ -202,7 +202,7 @@ describe.skipIf(!adminUrl || !runtimeUrl)("owner-only organization structure API
     expect(opened.status).toBe(201);
     const deactivate = await request(f, "owner", "PATCH", root + "/branches/" + branchId + "/members/" + f.users.cashier.id, { is_active: false });
     expect(deactivate.status).toBe(409);
-    expect(await deactivate.json()).toMatchObject({ error: "STRUCTURE_CONFLICT" });
+    expect(await deactivate.json()).toMatchObject({ error: "STRUCTURE_CONFLICT", message: "No se puede desactivar o cambiar el rol porque este cajero tiene un turno de caja abierto." });
   });
 
   it("keeps open-shift protection branch-scoped instead of blocking another branch", async () => {

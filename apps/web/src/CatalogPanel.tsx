@@ -72,13 +72,14 @@ export default function CatalogPanel({
   const [searchText, setSearchText] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [sortOrder,setSortOrder]=useState<"name"|"recent">("name");
+  const sortOrderRef=useRef<"name"|"recent">("name");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showImportPanel, setShowImportPanel] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(null);
   const requestSequence = useRef(0);
 
-  const fetchPage = useCallback(async (cursor?: string, append = false, searchTerm = "", sortValue: "name"|"recent" = sortOrder) => {
+  const fetchPage = useCallback(async (cursor?: string, append = false, searchTerm = "", sortValue: "name"|"recent" = sortOrderRef.current) => {
     const requestId = ++requestSequence.current;
     if (!organizationId) {
       setItems([]);
@@ -107,14 +108,14 @@ export default function CatalogPanel({
     } finally {
       if (requestId === requestSequence.current) setLoading(false);
     }
-  }, [organizationId,sortOrder]);
+  }, [organizationId]);
 
   useEffect(() => {
     setItems([]);
     setNextCursor(null);
-    void fetchPage(undefined, false, activeSearch);
+    void fetchPage();
     return () => { requestSequence.current += 1; };
-  }, [fetchPage, activeSearch]);
+  }, [fetchPage]);
 
   const canConvert = exchangeRateStatus === "current" && exchangeRate !== null;
   const canReadCosts = items.some((item) => item.cost_usd !== undefined);
@@ -185,7 +186,7 @@ export default function CatalogPanel({
 
       <form className="catalog-search" role="search" onSubmit={(event) => { event.preventDefault(); const term = searchText.trim(); setActiveSearch(term); void fetchPage(undefined, false, term); }}>
         <label className="catalog-search-label" htmlFor="catalog-sort-order">Ordenar productos</label>
-        <select id="catalog-sort-order" aria-label="Ordenar productos" value={sortOrder} onChange={event=>{const next=event.target.value as "name"|"recent";setSortOrder(next);setItems([]);setNextCursor(null);void fetchPage(undefined,false,activeSearch,next);}}><option value="name">Alfabético (A–Z)</option><option value="recent">Más recientes</option></select>
+        <select id="catalog-sort-order" aria-label="Ordenar productos" value={sortOrder} onChange={event=>{const next=event.target.value as "name"|"recent";sortOrderRef.current=next;setSortOrder(next);setItems([]);setNextCursor(null);void fetchPage(undefined,false,activeSearch,next);}}><option value="name">Alfabético (A–Z)</option><option value="recent">Más recientes</option></select>
         <label className="catalog-search-label" htmlFor="catalog-quick-search">Buscar productos</label>
         <input id="catalog-quick-search" type="search" enterKeyHint="search" maxLength={120} placeholder="Buscar por nombre, SKU o código de barras…" value={searchText} onChange={(event) => setSearchText(event.target.value)} />
         <button className="catalog-search-submit" type="submit" disabled={loading}>Buscar</button>

@@ -55,7 +55,7 @@ afterEach(async () => {
 
 describe("Register shifts workspace", () => {
   it("loads assigned branches and registers, opens a shift, then closes it", async () => {
-    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="admin" userName="Ana Pérez" />); });
+    await act(async () => { root.render(<RegisterShiftsPanel organizationId={organizationId} role="cashier" userName="Ana Pérez" />); });
     await settle();
     expect(container.textContent).toContain("Prepara tu caja");
     expect(container.textContent).toContain("Principal");
@@ -65,7 +65,6 @@ describe("Register shifts workspace", () => {
     await act(async () => { openButton.click(); });
     await settle();
     expect(container.textContent).toContain("Turno abierto");
-    expect(openShiftListCalls).toBeGreaterThanOrEqual(2);
     expect(container.textContent).toContain("$ 20,00");
     expect(container.textContent).toContain("100 % digital");
     expect(container.textContent).toContain("Reportes suma las ventas en efectivo netas");
@@ -93,6 +92,17 @@ describe("Register shifts workspace", () => {
     await settle();
     expect(container.textContent).toContain("Sin turno abierto");
     expect(container.textContent).toContain("Turno cerrado y registrado en auditoría.");
+  });
+
+  it("refreshes the branch open-shift list immediately after an owner opens a shift",async()=>{
+    await act(async()=>{root.render(<RegisterShiftsPanel organizationId={organizationId} role="admin" userName="Ana Pérez"/>);});
+    await settle();
+    const openButton=[...container.querySelectorAll("button")].find(button=>button.textContent==="Abrir turno");
+    if(!openButton)throw new Error("Open shift button not found");
+    await act(async()=>{openButton.click();});
+    await settle();
+    expect(container.textContent).toContain("Turno abierto");
+    expect(openShiftListCalls).toBeGreaterThanOrEqual(2);
   });
 
   it("keeps the opening form visible after an API validation error", async () => {
